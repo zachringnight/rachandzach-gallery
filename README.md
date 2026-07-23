@@ -2,7 +2,12 @@
 
 A private, password-gated wedding gallery: browse and download the full photo catalog, find yourself by event or person, search moments in plain language, submit your own photos for approval, and relive the weekend. Built with Next.js and Supabase. Guests and admin both authenticate; nothing here is public except the marketing pages.
 
-**Status: NOT DEPLOYED. Build and data are complete and verified.** The full photo catalog is synced to the cloud project and reconciled clean; `npm run verify` is fully green. No production domain, no live Vercel project, no Git remote yet. See `docs/HANDOFF_CURRENT.md` for the current authoritative state and the exact commands for every remaining step, `docs/0719_Launch_Checklist_v1.md` for the full checklist, and `docs/0719_Content_Needed_v1.md` for everything still waiting on a decision from Zach.
+**Status: LIVE.** The premium gallery is deployed on Vercel at
+[rachandzach.com](https://rachandzach.com), backed by this private GitHub
+repository and the reconciled 1,721-photo Supabase catalog. Start with
+`docs/ONLINE_HANDOFF.md` for the current production, branch, DNS, environment,
+and continuation state. Older planning documents remain useful history but
+their pre-launch status language is superseded by that live handoff.
 
 ## Stack
 
