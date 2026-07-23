@@ -1,16 +1,14 @@
 name: CI
 
-# NOTE: this repository has no Git remote yet (see docs/0719_Launch_Checklist_v1.md,
-# "Create the GitHub remote"). This workflow file is authored ahead of that
-# approval and has never executed; it activates the moment the repo is pushed
-# to GitHub with Actions enabled. Nothing here deploys, publishes, or sends
-# anything -- it only runs the local verify suite (packet 12, task step
+# This workflow verifies source changes only. Nothing here deploys, publishes,
+# or sends anything -- it only runs the local verify suite (packet 12, task step
 # "Add npm run verify to execute typecheck, lint, unit tests, build, and the
 # bounded Playwright suite").
 #
 # Branch policy mirrors scripts/vercel-ignore-build.mjs, which Vercel's
 # "ignoreCommand" already enforces for deploys: build main, staging, and
-# preview/*; skip dependabot/*, codex/*, claude/*, wip/*, and everything else.
+# preview/*, plus the explicitly approved wedding-overhaul continuation branch;
+# skip every other dependabot/*, codex/*, claude/*, wip/*, and unlisted branch.
 # Keeping CI's trigger list and the Vercel build allowlist in lockstep means a
 # branch that Vercel would deploy always has a green (or red) CI run to point
 # at first.
@@ -24,6 +22,7 @@ name: CI
       - main
       - staging
       - "preview/**"
+      - codex/wedding-premium-overhaul
   workflow_dispatch: {}
 
 permissions:

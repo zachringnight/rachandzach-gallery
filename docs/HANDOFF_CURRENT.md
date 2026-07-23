@@ -1,8 +1,17 @@
-# 0719 + co. Handoff: Current State
+# 0719 + co. Handoff: Historical Pre-launch Snapshot
 
-**Status: NOT DEPLOYED. Build and data are COMPLETE AND VERIFIED.**
+> [!IMPORTANT]
+> This document preserves the final pre-launch state from 2026-07-23. It is
+> historical, not the current production handoff. For the live domain,
+> deployment, DNS, branch, and continuation state, use
+> [`docs/ONLINE_HANDOFF.md`](ONLINE_HANDOFF.md) as the single source of truth.
 
-This is the single authoritative current-state document for the 0719 + co. digital wedding home. Read this one first. It supersedes every earlier version of this file and every stale number in the companion docs (`docs/0719_Content_Needed_v1.md`, `docs/0719_Launch_Checklist_v1.md`, `README.md`, all refreshed alongside this pass; see section 11 for the full companion-doc list).
+**Historical status at capture: NOT DEPLOYED. Build and data were COMPLETE AND VERIFIED.**
+
+This was the authoritative pre-launch document for the 0719 + co. digital
+wedding home. It remains useful for build history, data reconciliation, and
+the original launch gates, but it no longer describes the live repository or
+deployment state.
 
 **This pass:** final documentation refresh, written after tonight's build and verification session (2026-07-22 into the early hours of 2026-07-23 PT) finished. The numbers below come from that session's own logs, reports, and code on disk, cited inline, plus the final verification transcript in `docs/plans/2026-07-22-0719-digital-wedding-home/reviews/polish-sweep.md`. This pass edited docs only: `docs/HANDOFF_CURRENT.md` (this file), `docs/0719_Content_Needed_v1.md`, `docs/0719_Launch_Checklist_v1.md`, and `README.md`. Nothing else in the repository was touched.
 

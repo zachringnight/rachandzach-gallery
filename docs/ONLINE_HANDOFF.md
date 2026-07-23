@@ -1,6 +1,6 @@
 # Rach & Zach gallery: online handoff
 
-Updated July 23, 2026.
+Updated 2026-07-23.
 
 ## Live surfaces
 
@@ -55,19 +55,29 @@ npm install
 npm run dev
 ```
 
+This exact continuation branch is explicitly allowed through both GitHub
+Actions and Vercel's preview-build guard. Other `codex/*` branches remain
+excluded unless they are intentionally added to those allowlists.
+
 Create `.env.local` from `.env.example` when local private-gallery access is
 needed. The production Vercel environment is already configured.
 
 ## Latest verification
 
-- TypeScript: passed
-- ESLint: 0 errors; 13 non-blocking warnings
-- Unit/component suite: 841 passed before the final Moment Search regression
-  test, plus that focused regression test passing independently
-- Production build: passed
-- Catalog reconciliation: 1,721 / 1,721
-- Sampled local and remote originals: 100 / 100 SHA-256 matches
-- Live apex domain: HTTP 200 from Vercel
+The launch verification passed across TypeScript, ESLint, unit/component
+tests, the production build, catalog reconciliation, sampled-original
+integrity, and the live Vercel apex-domain check. Exact warning and test totals
+are intentionally not repeated here because they change as the suite grows.
+Use these commands for the current checkout:
+
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run verify:build
+npm run verify:catalog
+npm run verify:originals
+```
 
 Manual design QA was stopped at Zach's request once the source, deployment,
 and continuation branch were online.
