@@ -1705,10 +1705,13 @@ button {
   }
 
   .atlas-moment-tabs {
+    border-right: 0;
+  }
+
+  .atlas-moment-tablist {
     display: grid;
     grid-template-columns: repeat(5, minmax(8.5rem, 1fr));
     overflow-x: auto;
-    border-right: 0;
     scrollbar-width: thin;
   }
 

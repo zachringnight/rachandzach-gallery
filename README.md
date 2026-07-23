@@ -6,8 +6,9 @@ A private, password-gated wedding gallery: browse and download the full photo ca
 [rachandzach.com](https://rachandzach.com), backed by this private GitHub
 repository and the reconciled 1,721-photo Supabase catalog. Start with
 `docs/ONLINE_HANDOFF.md` for the current production, branch, DNS, environment,
-and continuation state. Older planning documents remain useful history but
-their pre-launch status language is superseded by that live handoff.
+and continuation state. Older planning documents, including the explicitly
+historical `docs/HANDOFF_CURRENT.md`, remain useful history, but their
+pre-launch status language is superseded by that live handoff.
 
 ## Stack
 
@@ -48,9 +49,12 @@ Development:
 
 Verification (packet 12):
 - `npm run verify` -- the full local gate: typecheck, lint, unit tests, a production build with a synthetic environment, then the bounded e2e suite (`playwright test tests/e2e --project=chromium`)
-- `npm run verify:catalog` -- reconciles the read-only clean-master manifest against the local catalog (and, with `-- --db-env-file <file>`, against a real database)
-- `npm run verify:originals` -- sampled SHA-256 integrity check of local source files against the catalog (and, with `-- --remote --project-ref <ref> --allowlist <ref> --env-file <file>`, against real cloud storage metadata)
+- `npm run verify:catalog` -- reconciles the read-only clean-master manifest against the local catalog; an optional `-- --db-env-file <file>` may target a loopback Supabase stack only
+- `npm run verify:originals` -- sampled SHA-256 integrity check of local source files against the catalog; its optional metadata check is also loopback-only and intentionally rejects cloud credentials
 - `npm run verify:egress` -- storage/egress cost estimator, takes current plan rates as input rather than hardcoding prices
+
+The reproducible live Supabase and deployed-domain checks are documented in
+`docs/ONLINE_HANDOFF.md`; the two media commands above are deliberately local.
 
 Import and sync (read-only against the source; writes are opt-in and explicit):
 - `npm run gallery:import` -- builds the catalog from the read-only wedding master (`scripts/build-gallery-v2.mjs`)

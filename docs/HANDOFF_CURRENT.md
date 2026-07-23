@@ -37,10 +37,14 @@ Everything that can be built, synced, and verified without a live domain is done
 - **The Moment Search embeddings backfill hit and fixed a real bug along the way.** PostgREST caps un-ranged responses at 1,000 rows, so the backfill's read of already-embedded photos was silently missing everything past the first page. Fixed in `scripts/build-embeddings.py` with Range-header pagination, 500 rows per page. Confirmed clean: `checkpointed 1721/1721` in `metadata/import/embeddings-run.log`.
 - **The legacy static gallery is fully cut over and deleted.** This Next.js app is the only wedding gallery left.
 
-Standard reconciliation commands for this class of check, safe to run anytime to reconfirm against live cloud state (tonight's clean result came from the post-sync verification sweep above, not necessarily this literal invocation):
+The clean cloud result above came from the saved, read-only Supabase workflow
+at `docs/plans/2026-07-22-0719-digital-wedding-home/workflows/wedding-home-post-sync-verify.js`.
+The standard package commands below verify the protected local master and
+catalog only; they intentionally reject cloud credentials:
 ```bash
-npm run verify:catalog -- --db-env-file .env.cloud
-npm run verify:originals -- --remote --project-ref rnfvmqflktghriqefatc --allowlist rnfvmqflktghriqefatc --env-file .env.cloud
+export SOURCE_PHOTO_DIR="/absolute/path/to/Rachel & Zach - Wedding Master Clean"
+npm run verify:catalog
+npm run verify:originals
 ```
 
 ---

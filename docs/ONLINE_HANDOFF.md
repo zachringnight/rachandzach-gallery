@@ -55,9 +55,10 @@ npm install
 npm run dev
 ```
 
-This exact continuation branch is explicitly allowed through both GitHub
-Actions and Vercel's preview-build guard. Other `codex/*` branches remain
-excluded unless they are intentionally added to those allowlists.
+The continuation branch named above is an explicit exception in both GitHub
+Actions and Vercel's preview-build guard, so pushes produce CI and a protected
+preview. Other `codex/*` branches remain excluded unless they are intentionally
+added to those allowlists.
 
 Create `.env.local` from `.env.example` when local private-gallery access is
 needed. The production Vercel environment is already configured.
@@ -68,16 +69,60 @@ The launch verification passed across TypeScript, ESLint, unit/component
 tests, the production build, catalog reconciliation, sampled-original
 integrity, and the live Vercel apex-domain check. Exact warning and test totals
 are intentionally not repeated here because they change as the suite grows.
-Use these commands for the current checkout:
+
+### Source and application checks
+
+These commands work in any checkout and do not require the protected wedding
+master:
 
 ```bash
 npm run typecheck
 npm run lint
 npm run test
 npm run verify:build
+gh pr checks 1
+curl --fail --silent --show-error --location \
+  --output /dev/null --write-out '%{http_code}\n' https://rachandzach.com
+```
+
+`gh pr checks 1` is the reproducible online check for both GitHub Actions and
+the Vercel preview. The domain command must print `200`.
+
+### Local media integrity checks
+
+The media commands require the protected clean-master photo directory and are
+local-only by design. A fresh cloud clone does not contain those originals.
+Set the path explicitly before running them:
+
+```bash
+export SOURCE_PHOTO_DIR="/absolute/path/to/Rachel & Zach - Wedding Master Clean"
 npm run verify:catalog
 npm run verify:originals
 ```
+
+`verify:catalog` accepts an optional loopback Supabase env file, and
+`verify:originals` has an optional loopback metadata mode. Both scripts
+intentionally refuse production/cloud Supabase credentials, so a skipped
+database or remote section is not evidence that the live project was checked.
+
+### Live Supabase catalog and storage check
+
+The actual post-sync cloud verification is the saved read-only workflow at
+`docs/plans/2026-07-22-0719-digital-wedding-home/workflows/wedding-home-post-sync-verify.js`.
+Run it with a Supabase connector that has read access to project
+`rnfvmqflktghriqefatc`, using:
+
+- `catalogPath`: `src/generated/gallery-v2.json`
+- `projectId`: `rnfvmqflktghriqefatc`
+- `shards`: `6`
+- `sampleSize`: `40`
+
+The workflow deterministically divides the catalog into non-overlapping
+samples, then performs read-only queries against `rachandzach_photos`,
+`rachandzach_photo_previews`, and `storage.objects`. It compares database
+hashes, object paths, and byte counts without downloading media or writing to
+Supabase. A passing rerun reports zero `mismatches` and zero `missingRemote`
+objects. The launch run sampled 241 photos across the six shards and was clean.
 
 Manual design QA was stopped at Zach's request once the source, deployment,
 and continuation branch were online.
