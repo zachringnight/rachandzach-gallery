@@ -14,6 +14,7 @@ import { useSelection } from "@/components/gallery/useSelection";
 import { VirtualPhotoGrid } from "@/components/gallery/VirtualPhotoGrid";
 import { Lightbox } from "@/components/gallery/Lightbox";
 import { DownloadSelectionButton } from "@/components/downloads/DownloadSelectionButton";
+import { SavePhotosButton } from "@/components/downloads/SavePhotosButton";
 import { MomentSearch } from "@/components/search/MomentSearch";
 import { featureFlags } from "@/content/features";
 import { favoriteStore } from "@/lib/favorites/store";
@@ -346,6 +347,13 @@ export function GalleryShell({
               label="Download"
               zipFilename="rach-and-zach-selection.zip"
               className="atlas-selection-download"
+            />
+          }
+          saveControl={
+            <SavePhotosButton
+              photoIds={selectedIds}
+              label="Save photos"
+              className="atlas-selection-save"
             />
           }
         />

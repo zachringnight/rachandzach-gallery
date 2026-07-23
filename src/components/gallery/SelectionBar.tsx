@@ -10,6 +10,8 @@ export interface SelectionBarProps {
   onSelectAllVisible?: () => void;
   /** Reuses the existing streamed-ZIP control without duplicating its logic. */
   downloadControl?: React.ReactNode;
+  /** Native file-share control, feature-detected by SavePhotosButton. */
+  saveControl?: React.ReactNode;
 }
 
 export function SelectionBar({
@@ -19,6 +21,7 @@ export function SelectionBar({
   onClear,
   onSelectAllVisible,
   downloadControl,
+  saveControl,
 }: SelectionBarProps) {
   return (
     <aside
@@ -45,6 +48,8 @@ export function SelectionBar({
             Download
           </button>
         )}
+
+        {saveControl}
 
         <button type="button" onClick={onFavoriteAll} disabled={count === 0}>
           <Heart aria-hidden="true" size={15} strokeWidth={1.6} />
