@@ -36,7 +36,6 @@ ds-bundle/
 # stories"). Re-fetch locally rather than committing; do not add without
 # discussing storage (Git LFS or a fetch script) first.
 models/
-# Local scratch from ad hoc design/QA sessions (Playwright MCP, comp
-# screenshots dropped at repo root); never source, never commit.
+# Playwright MCP tool cache (DOM/console dumps from ad hoc browser
+# automation sessions); pure tool exhaust, never source, never commit.
 .playwright-mcp/
-/comp-*.jpeg
