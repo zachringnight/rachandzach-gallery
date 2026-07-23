@@ -13,7 +13,7 @@ import { siteConfig } from "@/content/site";
 import { storyPhotos } from "@/content/story-photos";
 
 export const metadata: Metadata = {
-  title: "Rach & Zach | Santa Barbara Wedding",
+  title: "Santa Barbara Wedding | Rach & Zach",
   description:
     "Rachel and Zach's wedding weekend in Santa Barbara, California, July 19, 2025: the story, the photos, and the people we love.",
 };

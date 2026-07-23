@@ -5,7 +5,7 @@ import { bodyFont, displayFont } from "@/components/brand/Wordmark";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Rach & Zach | Santa Barbara Wedding",
+  title: "Santa Barbara Wedding | Rach & Zach",
   description:
     "Rachel and Zach got married in Santa Barbara, California on July 19, 2025. The weekend story and photo gallery live here.",
 };

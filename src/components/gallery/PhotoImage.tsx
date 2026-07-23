@@ -58,18 +58,11 @@ export function PhotoImage({
   );
   const placeholder = ordered[0] ?? null;
   const target = pickTarget(ordered, tier, targetWidth);
-  const [status, setStatus] = useState({
-    url: target?.url ?? null,
-    loaded: false,
-    failed: false,
-  });
-  if (status.url !== (target?.url ?? null)) {
-    setStatus({
-      url: target?.url ?? null,
-      loaded: false,
-      failed: false,
-    });
-  }
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const targetUrl = target?.url ?? null;
+  const loaded = targetUrl !== null && loadedUrl === targetUrl;
+  const failed = targetUrl !== null && failedUrl === targetUrl;
 
   const wrapperClass = ["atlas-photo-image", className].filter(Boolean).join(" ");
   const targetClass = ["atlas-photo-image-target", imageClassName]
@@ -82,8 +75,8 @@ export function PhotoImage({
     <span
       className={wrapperClass}
       style={{ aspectRatio: photo.aspectRatio > 0 ? photo.aspectRatio : 1 }}
-      data-loaded={status.loaded ? "true" : "false"}
-      data-failed={status.failed ? "true" : "false"}
+      data-loaded={loaded ? "true" : "false"}
+      data-failed={failed ? "true" : "false"}
     >
       {showPlaceholder ? (
         <img
@@ -98,7 +91,7 @@ export function PhotoImage({
         />
       ) : null}
 
-      {target && !status.failed ? (
+      {target && !failed ? (
         <img
           src={target.url}
           alt={alt}
@@ -109,17 +102,19 @@ export function PhotoImage({
           fetchPriority={fetchPriority}
           className={targetClass}
           onLoad={() => {
-            setStatus((current) => ({ ...current, loaded: true }));
+            setLoadedUrl(target.url);
+            setFailedUrl(null);
             onLoad?.();
           }}
           onError={() => {
-            setStatus((current) => ({ ...current, failed: true }));
+            setFailedUrl(target.url);
+            setLoadedUrl(null);
             onError?.();
           }}
         />
       ) : (
         <span className="atlas-photo-image-fallback">
-          {status.failed ? "Preview unavailable" : ""}
+          {failed ? "Preview unavailable" : ""}
         </span>
       )}
     </span>

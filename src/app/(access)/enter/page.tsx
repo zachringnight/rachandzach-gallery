@@ -14,7 +14,7 @@ import { sanitizeNextPath } from "@/lib/auth/guest-session";
 import { AccessForm } from "./AccessForm";
 
 export const metadata: Metadata = {
-  title: "Come on in | Rachel & Zach",
+  title: "Come on in | Rach & Zach",
   robots: { index: false, follow: false },
 };
 

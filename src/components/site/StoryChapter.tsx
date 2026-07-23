@@ -51,14 +51,14 @@ export function StoryChapter({
               style={{ objectPosition: focalObjectPosition(photo) }}
             />
             <figcaption>
-              <span>{number ?? "—"} / 05</span>
+              <span>{number ?? "00"} / 05</span>
               <span>{photo.alt}</span>
             </figcaption>
           </Reveal>
         ) : null}
         <Reveal className="atlas-story-copy" y={22}>
           <span className="atlas-story-number" aria-hidden="true">
-            {number ?? "—"}
+            {number ?? "00"}
           </span>
           <p className="atlas-kicker">{kicker}</p>
           <h2 id={`${id}-title`}>

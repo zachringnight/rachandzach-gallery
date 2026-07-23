@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import {
   GalleryAccessError,
@@ -19,6 +20,10 @@ import { SiteHeader } from "@/components/site/SiteHeader";
  * Packet 08 (Add Yours) renders inside this shell and must not recreate it.
  */
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Private Gallery | Rach & Zach",
+  robots: { index: false, follow: false },
+};
 
 export default async function GuestLayout({
   children,
