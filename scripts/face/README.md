@@ -1,0 +1,143 @@
+# Face-recognition moderation assist (pipeline half)
+
+Local-only InsightFace pipeline that learns per-person face signatures from the
+1,721 confirmed-tagged archive photos and audits existing tags against them.
+Admin-side tooling only: nothing here is guest-facing, embeddings and reports
+never leave local disk (`metadata/faces/` is gitignored), and the audit output
+is a review list for a human, never an auto-correction. The admin-UI wiring
+(proposing tags on new guest uploads in the review screen) is the next phase
+and consumes `signatures.json` as its contract.
+
+## Environment
+
+Dedicated uv venv at the repo root (`.venv-faces/`, gitignore follow-up noted
+in the handoff), CPython 3.12.13, created and provisioned with:
+
+```bash
+uv venv .venv-faces --python 3.12
+uv pip install -p .venv-faces/bin/python \
+    insightface==0.7.3 onnxruntime==1.27.0 numpy==1.26.4 \
+    pillow==12.3.0 opencv-python-headless==4.11.0.86
+```
+
+Exact pins that matter (`uv pip freeze -p .venv-faces/bin/python`), verified on
+macOS arm64 (Apple M5, CPU execution provider):
+
+```
+insightface==0.7.3
+onnxruntime==1.27.0
+numpy==1.26.4
+pillow==12.3.0
+opencv-python-headless==4.11.0.86
+# insightface transitives resolved alongside:
+onnx==1.22.0  scipy==1.17.1  scikit-learn==1.9.0  scikit-image==0.26.0
+albumentations==2.0.8  cython==3.2.8
+```
+
+`numpy` stays below 2.0 on purpose: insightface 0.7.3 predates numpy 2 and the
+1.26 line is the known-good pairing with these onnxruntime/opencv builds.
+
+Model: `buffalo_l` (SCRFD 10G detector + w600k_r50 ArcFace recognizer),
+auto-downloaded once by insightface (~275 MB) to `~/.insightface/models/buffalo_l/`.
+Only the detection and recognition modules are loaded; landmark and gender/age
+models are skipped.
+
+## Scripts
+
+### 1. `build-face-signatures.py`
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/build-face-signatures.py
+```
+
+Phase 1 (slow, resumable): reads originals from the source master (READ-ONLY,
+`/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean`), decodes each
+JPEG at a bounded long edge (2048 px, JPEG draft-mode fast path), detects at a
+bounded det size (640), embeds every face, and appends one JSON line per photo
+to `metadata/faces/detections.jsonl`. Ctrl-C any time; the next run resumes
+from the checkpoint (a truncated trailing line from a hard kill is dropped
+automatically). `--limit N` processes at most N new photos (smoke tests).
+Full-archive pass measured 2026-07-22 on the M5: 12.5 min wall for 1,709
+photos (2.3 photos/s, 6,535 faces; 3 decode threads feeding a single
+inference thread, bounded prefetch queue). A complete checkpoint makes
+re-runs skip phase 1 entirely; phase 2 then reproduces signatures.json
+byte-for-byte in about a second.
+
+Phase 2 (fast, deterministic, re-runs automatically once phase 1 is complete):
+
+1. **Cluster**: faces with det score >= 0.65 and bbox height >= 1.8% of the
+   long edge enter a union-find over cosine similarity >= 0.60, followed by
+   greedy centroid-level merges down to 0.52. Two guards keep lookalikes and
+   relatives apart: faces in the same photo never union directly, and two
+   clusters that appear together in >= 2 photos never merge (one person cannot
+   be in a frame twice).
+2. **Name by co-occurrence**: in a photo tagged with k people, only the k most
+   prominent clustered faces carry tag evidence, each at weight 1/k, so solo
+   and small-group photos anchor identities. A cluster earns a slug only with
+   support across >= 3 photos (>= 2 for people with <= 4 tagged photos), a
+   weighted-score lead of >= 1.6x over the runner-up slug, and no same-frame
+   contradiction with clusters already assigned to that slug. Up to 4
+   explaining-away passes let confident assignments absorb ambiguous evidence
+   (a photo tagged {rachel, zach} where zach's cluster is already present stops
+   counting toward other clusters for the zach tag).
+3. **Write `metadata/faces/signatures.json`**: per person: slug, name, one or
+   more cluster centroids (512-d unit vectors), face/photo counts, support,
+   solo-anchor count, confidence; plus unresolved multi-face clusters with
+   their top co-occurring tags (the raw material for naming more people
+   later), calibration percentiles, params, and an inputs fingerprint.
+
+### 2. `audit-archive-tags.py`
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/audit-archive-tags.py
+```
+
+Pure numpy over the saved artifacts (no model inference), so it finishes in
+seconds and is byte-for-byte idempotent for unchanged inputs (outputs carry an
+inputs fingerprint instead of timestamps). Writes
+`metadata/faces/audit-report.json` and `metadata/faces/audit-report.md`, ranked
+by confidence:
+
+- **(a) tagged-but-no-matching-face**: severity `high` means the photo has
+  enough usable faces for everyone tagged and each one identified as somebody
+  else (tag probably wrong); `medium` means enough faces but some went
+  unidentified; `low` means the face simply is not usable in the frame (back
+  turned, occluded), the tag is probably fine and rows are only summarized.
+- **(b) confident-face-but-untagged**: prominent faces only (bbox height
+  >= 3.5% of long edge, det score >= 0.70) matching a signature at cosine
+  >= 0.55 with >= 0.08 margin over the runner-up person. Incidental background
+  guests never flag by design. `strong` tier at >= 0.62 is near-certain.
+
+## Thresholds and calibration
+
+All thresholds live as named constants at the top of each script and were
+checked against this archive's measured distributions (the 2026-07-22 full
+run, 6,535 faces, 108 of 132 tagged people resolved):
+
+- genuine (assigned faces vs their own centroid): p05 = 0.575, p25 = 0.691,
+  median = 0.770 (same-day hair, makeup, and lighting keep sims high)
+- impostor (a person's centroid vs other assigned people's faces, peak per
+  cluster pair): p95 = 0.185, p99 = 0.250, max = 0.592 - and that max is
+  parker-soskin vs riley-soskin, real family lookalikes; the next-closest
+  cross-person centroid pair sits at 0.425
+- so: clustering edges at 0.60 sit above every cross-person centroid sim,
+  centroid merges at 0.52 reconnect pose/expression fragments, the audit
+  "present" floor of 0.36 is far below genuine p05, and untagged flags at
+  0.55 (strong: 0.62) clear every impostor peak except the Soskin siblings,
+  which the 0.08 runner-up margin rule absorbs
+
+`signatures.json` re-reports genuine/impostor percentiles from the final
+assignment under `calibration` on every run; if those drift after a re-tag
+wave, revisit the constants.
+
+## Privacy and safety rails
+
+- Source master opened read-only; only the catalog and `metadata/faces/` are
+  written.
+- Embeddings, signatures, and reports stay on local disk (gitignored), service
+  workflows never see them in this phase.
+- The audit is a review list: a human confirms every row against the actual
+  photo before any tag changes, and low-severity rows exist precisely because
+  a missing face match usually means "back of head", not "wrong tag".

@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+.env
+.env*.local
+.DS_Store
+
+# Local review workflow files. The deployed app only needs public/, src/,
+# package files, and the generated gallery JSON.
+metadata
+scripts

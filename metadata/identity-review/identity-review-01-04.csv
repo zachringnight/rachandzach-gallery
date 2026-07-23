@@ -1,0 +1,49 @@
+path,recommendation,people,confidence,notes
+Day 1/rachelzachday1-61.jpg,replace,Robbie,high,confident Robbie match from references; background faces not useful
+Day 1/rachelzachday1-53.jpg,needs_identity,,medium,hug participants partly hidden and visible guests not confidently matched
+Day 1/rachelzachday1-85.jpg,needs_identity,,high,clear older woman no confident reference match
+Day 1/rachelzachday1-82.jpg,needs_identity,,medium,crowd scene with useful visible guests not confidently matched
+Day 1/rachelzachday1-59.jpg,replace,Ronald Harris,high,confident Ronald Harris match; child and backs are not useful searchable faces
+Day 1/rachelzachday1-71.jpg,needs_identity,,high,clear hugging guest not confidently matched
+Day 1/rachelzachday1-96.jpg,needs_identity,,high,clear older blonde woman no confident reference match
+Day 1/rachelzachday1-98.jpg,needs_identity,,high,clear older woman no confident reference match
+Day 1/rachelzachday1-86.jpg,needs_identity,,high,guest couple portrait no confident reference matches
+Day 1/rachelzachday1-99.jpg,needs_identity,,high,two useful visible guests no confident reference matches
+Day 1/rachelzachday1-100.jpg,needs_identity,,high,guest couple portrait no confident reference matches
+Day 1/rachelzachday1-91.jpg,needs_identity,,medium,side profile guest no confident reference match
+Day 1/rachelzachday1-119.jpg,needs_identity,,high,clear older woman no confident reference match
+Day 1/rachelzachday1-92.jpg,needs_identity,,medium,side profile guest no confident reference match
+Day 1/rachelzachday1-105.jpg,needs_identity,,high,two clear cocktail guests no confident reference matches
+Day 1/rachelzachday1-128.jpg,needs_identity,,high,clear older woman no confident reference match
+Day 1/rachelzachday1-113.jpg,replace,Maura,high,confident Maura match; other visible faces are cropped or not useful
+Day 1/rachelzachday1-132.jpg,needs_identity,,medium,possible known guests but additional visible faces remain unnamed
+Day 1/rachelzachday1-131.jpg,needs_identity,,high,clear woman profile no confident reference match
+Day 1/rachelzachday1-134.jpg,replace,Robbie,high,confident Robbie match; other faces not useful
+Day 1/rachelzachday1-151.jpg,needs_identity,,high,clear older red-haired woman no confident reference match
+Day 1/rachelzachday1-120.jpg,needs_identity,,medium,wide cocktail crowd with visible guests not confidently matched
+Day 1/rachelzachday1-156.jpg,needs_identity,,high,clear blonde woman and nearby guests not confidently matched
+Day 1/rachelzachday1-164.jpg,needs_identity,,high,clear woman and younger guest no confident complete match
+Day 1/rachelzachday1-199.jpg,needs_identity,,medium,group scene with useful visible guests not confidently matched
+Day 1/rachelzachday1-287.jpg,needs_identity,,high,speaker and nearby guests no confident reference match
+Day 1/rachelzachday1-139.jpg,ignore,,high,hug faces are hidden or cropped; no useful searchable face
+Day 1/rachelzachday1-173.jpg,replace,Parker,high,confident Parker match from patterned jacket and profile; other faces not useful
+Getting Ready/rachelzach-7.jpg,needs_identity,,medium,getting-ready guests or vendors visible with no confident reference match
+Day 1/rachelzachday1-300.jpg,needs_identity,,high,clear officiant or speaker pair no confident reference match
+Ceremony/rachelzach-199.jpg,needs_identity,,medium,ceremony guests or staff visible no confident reference match
+Ceremony/rachelzach-209.jpg,needs_identity,,high,clear photographer guest no confident reference match
+Getting Ready/rachelzach-58.jpg,needs_identity,,high,Zach Soskin visible with unidentified groomsman or guest
+Ceremony/rachelzach-217.jpg,needs_identity,,high,clear ceremony guests no confident complete match
+Getting Ready/rachelzach-31.jpg,ignore,,medium,faces are cropped down or obscured; no useful searchable face
+Ceremony/rachelzach-229.jpg,needs_identity,,medium,wide group includes useful visible ceremony guests not confidently matched
+Ceremony/rachelzach-227.jpg,needs_identity,,medium,wide group with visible ceremony guests not confidently matched
+Ceremony/rachelzach-234.jpg,needs_identity,,medium,wide group includes useful visible ceremony guests not confidently matched
+Getting Ready/rachelzach-32.jpg,ignore,,medium,faces are cropped down or obscured; no useful searchable face
+Ceremony/rachelzach-232.jpg,needs_identity,,medium,visible ceremony guest no confident reference match
+Ceremony/rachelzach-246.jpg,needs_identity,,medium,seated ceremony guests visible no confident complete match
+Ceremony/rachelzach-213.jpg,replace,Chris;Maura,high,confident Chris and Maura matches from references
+Ceremony/rachelzach-262.jpg,needs_identity,,medium,hug participants and background faces obscured or not confidently matched
+Ceremony/rachelzach-250.jpg,needs_identity,,high,clear seated guests no confident complete match
+Ceremony/rachelzach-267.jpg,needs_identity,,medium,hug includes visible guest face but no confident reference match
+Ceremony/rachelzach-273.jpg,needs_identity,,low,hug and background faces mostly obscured with no confident match
+Ceremony/rachelzach-239.jpg,needs_identity,,medium,cocktail guests visible from distance no confident complete match
+Ceremony/rachelzach-266.jpg,needs_identity,,medium,ceremony hug face visible but not confidently matched to reference

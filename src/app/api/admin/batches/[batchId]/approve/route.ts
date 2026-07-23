@@ -1,0 +1,174 @@
+/**
+ * POST /api/admin/batches/[batchId]/approve (packet 10).
+ *
+ * Approves one or more items within a batch (BatchReviewer's accept /
+ * select-all actions). Order matters for safety: processApprovedPhoto runs
+ * BEFORE transitionUploadItem for each item, so an item is only ever marked
+ * "approved" once its photo and previews genuinely exist -- a HEIC decode
+ * failure or any other processing error leaves that item "pending" with a
+ * per-item error in the response, never silently approved. Other items in
+ * the same request are unaffected by one item's failure.
+ *
+ * Node runtime, generous maxDuration: HEIC decode of a large photo can take
+ * real time (see docs/plans/.../spikes/heic-decode.md).
+ */
+import { NextResponse, type NextRequest } from "next/server";
+import { AdminAccessError, requireAdmin } from "@/lib/auth/admin-session";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isUuid } from "@/lib/uploads/contracts";
+import {
+  IllegalTransitionError,
+  ModerationNotFoundError,
+  ModerationPersistenceError,
+  recomputeBatchStatus,
+  transitionUploadItem,
+} from "@/lib/moderation/state-machine";
+import {
+  HeicDecodeError,
+  UnprocessableItemStateError,
+  UnsupportedImageFormatError,
+  processApprovedPhoto,
+} from "@/lib/moderation/process-approved-photo";
+import { notifyUploadDecision } from "@/lib/notifications/resend";
+
+export const runtime = "nodejs";
+export const maxDuration = 300;
+
+interface ApproveBody {
+  itemIds: string[];
+  eventSlug: string | null;
+  peopleSlugs: string[];
+  keywords: string[];
+  noteApproved: boolean;
+}
+
+function parseBody(raw: unknown): ApproveBody | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const body = raw as Record<string, unknown>;
+  if (
+    !Array.isArray(body.itemIds) ||
+    body.itemIds.length === 0 ||
+    body.itemIds.some((id) => typeof id !== "string" || !isUuid(id))
+  ) {
+    return null;
+  }
+  return {
+    itemIds: body.itemIds as string[],
+    eventSlug:
+      typeof body.eventSlug === "string" && body.eventSlug.trim().length > 0
+        ? body.eventSlug
+        : null,
+    peopleSlugs: Array.isArray(body.peopleSlugs)
+      ? body.peopleSlugs.filter((slug): slug is string => typeof slug === "string")
+      : [],
+    keywords: Array.isArray(body.keywords)
+      ? body.keywords.filter((kw): kw is string => typeof kw === "string")
+      : [],
+    noteApproved: body.noteApproved === true,
+  };
+}
+
+function describeError(error: unknown): string {
+  if (
+    error instanceof HeicDecodeError ||
+    error instanceof UnsupportedImageFormatError ||
+    error instanceof UnprocessableItemStateError ||
+    error instanceof IllegalTransitionError ||
+    error instanceof ModerationNotFoundError ||
+    error instanceof ModerationPersistenceError
+  ) {
+    return error.message;
+  }
+  return "Could not approve this photo.";
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ batchId: string }> },
+) {
+  let actor: { userId: string; email: string };
+  try {
+    actor = await requireAdmin();
+  } catch (error) {
+    if (error instanceof AdminAccessError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    throw error;
+  }
+
+  const { batchId } = await context.params;
+  if (!isUuid(batchId)) {
+    return NextResponse.json({ error: "Invalid batch id." }, { status: 400 });
+  }
+
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+  const body = parseBody(raw);
+  if (!body) {
+    return NextResponse.json(
+      { error: "itemIds must be a non-empty array of upload item UUIDs." },
+      { status: 422 },
+    );
+  }
+
+  const db = createAdminClient();
+  const results: Array<{
+    itemId: string;
+    ok: boolean;
+    photoId?: string;
+    error?: string;
+  }> = [];
+
+  for (const itemId of body.itemIds) {
+    try {
+      // Photo + previews must exist before the item can be marked approved.
+      const { photoId } = await processApprovedPhoto(
+        itemId,
+        {
+          eventSlug: body.eventSlug,
+          peopleSlugs: body.peopleSlugs,
+          keywords: body.keywords,
+        },
+        db,
+      );
+      await transitionUploadItem(
+        itemId,
+        {
+          itemId,
+          action: "approve",
+          eventSlug: body.eventSlug,
+          peopleSlugs: body.peopleSlugs,
+          keywords: body.keywords,
+          noteApproved: body.noteApproved,
+          rejectionReason: null,
+        },
+        actor,
+        db,
+      );
+      results.push({ itemId, ok: true, photoId });
+    } catch (error) {
+      results.push({ itemId, ok: false, error: describeError(error) });
+    }
+  }
+
+  const batch = await recomputeBatchStatus(batchId, actor, db);
+  if (
+    batch &&
+    (batch.status === "approved" ||
+      batch.status === "partially_approved" ||
+      batch.status === "rejected")
+  ) {
+    try {
+      await notifyUploadDecision(batchId, { client: db });
+    } catch {
+      // A notification failure must never fail an otherwise-successful
+      // approval response; the admin still sees exactly what happened above.
+    }
+  }
+
+  return NextResponse.json({ results, batchStatus: batch?.status ?? null });
+}

@@ -1,0 +1,165 @@
+{
+  "pack": "shared synthetic test fixtures",
+  "generated": "2026-07-22",
+  "generator": "generate-fixtures.mjs + sips (see README.md)",
+  "sharp_version": "0.35.3",
+  "libvips_version": "8.18.3",
+  "note": "All images are procedurally generated gradients and solid colors. No real photos, no faces, no EXIF.",
+  "files": [
+    {
+      "file": "synthetic-1-tiny.jpg",
+      "bytes": 707,
+      "sha256": "a616153f41ae6e17e1d6e165916562c3aa9136c095ee01ff07d7a87726470283",
+      "mime_actual": "image/jpeg",
+      "magic": {
+        "first_12_bytes_hex": "ff d8 ff db 00 43 00 05 03 04 04 04",
+        "note": "JPEG SOI (ff d8 ff)"
+      },
+      "valid_image": true,
+      "purpose": "Valid tiny JPEG (64px). Fast-path decode, thumbnail, and dedupe tests.",
+      "dimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "sharp_format": "jpeg"
+    },
+    {
+      "file": "synthetic-1-phone.jpg",
+      "bytes": 60756,
+      "sha256": "3772acc5a74dcbfd689c0f35dff73f18bff84c116ad99566eb37e8a3c1efa412",
+      "mime_actual": "image/jpeg",
+      "magic": {
+        "first_12_bytes_hex": "ff d8 ff db 00 43 00 05 03 04 04 04",
+        "note": "JPEG SOI (ff d8 ff)"
+      },
+      "valid_image": true,
+      "purpose": "Valid phone-scale JPEG (3000x2000). Upload, resize, and EXIF-free baseline tests.",
+      "dimensions": {
+        "width": 3000,
+        "height": 2000
+      },
+      "sharp_format": "jpeg"
+    },
+    {
+      "file": "synthetic-2-tiny.png",
+      "bytes": 640,
+      "sha256": "5641687a5beb677944bc90c899d347e633caa11d60e7f3be5fee29703cc8df7f",
+      "mime_actual": "image/png",
+      "magic": {
+        "first_12_bytes_hex": "89 50 4e 47 0d 0a 1a 0a 00 00 00 0d",
+        "note": "PNG signature (89 \"PNG\" 0d 0a 1a 0a)"
+      },
+      "valid_image": true,
+      "purpose": "Valid tiny PNG (64px). Lossless format acceptance tests.",
+      "dimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "sharp_format": "png"
+    },
+    {
+      "file": "synthetic-2-phone.png",
+      "bytes": 31683,
+      "sha256": "e356811a161d0510eae536833dd455f796a40fc1dcef6580410a4dd010d334d5",
+      "mime_actual": "image/png",
+      "magic": {
+        "first_12_bytes_hex": "89 50 4e 47 0d 0a 1a 0a 00 00 00 0d",
+        "note": "PNG signature (89 \"PNG\" 0d 0a 1a 0a)"
+      },
+      "valid_image": true,
+      "purpose": "Valid phone-scale PNG (3000x2000). Large lossless upload tests.",
+      "dimensions": {
+        "width": 3000,
+        "height": 2000
+      },
+      "sharp_format": "png"
+    },
+    {
+      "file": "synthetic-3-tiny.webp",
+      "bytes": 206,
+      "sha256": "ab8f0f4bef06fd874203241c2514af5af3be2a652080c9af6d4a5c9e9cbcdcb4",
+      "mime_actual": "image/webp",
+      "magic": {
+        "first_12_bytes_hex": "52 49 46 46 c6 00 00 00 57 45 42 50",
+        "note": "RIFF/WEBP container"
+      },
+      "valid_image": true,
+      "purpose": "Valid tiny WebP (64px). Modern-format acceptance tests.",
+      "dimensions": {
+        "width": 64,
+        "height": 64
+      },
+      "sharp_format": "webp"
+    },
+    {
+      "file": "synthetic-3-phone.webp",
+      "bytes": 21078,
+      "sha256": "d380ff53c7667d287962bf9cd77bb2573d08ab0a093650de3d1c125397883dbf",
+      "mime_actual": "image/webp",
+      "magic": {
+        "first_12_bytes_hex": "52 49 46 46 4e 52 00 00 57 45 42 50",
+        "note": "RIFF/WEBP container"
+      },
+      "valid_image": true,
+      "purpose": "Valid phone-scale WebP (3000x2000). Modern-format large upload tests.",
+      "dimensions": {
+        "width": 3000,
+        "height": 2000
+      },
+      "sharp_format": "webp"
+    },
+    {
+      "file": "synthetic-4.heic",
+      "bytes": 3957,
+      "sha256": "d83d9226ede139293d7bb9684fbb558d7c3d7515d64c4656252d625c9f2560f3",
+      "mime_actual": "image/heic",
+      "magic": {
+        "first_12_bytes_hex": "00 00 00 24 66 74 79 70 68 65 69 63",
+        "note": "ISO BMFF: \"ftyp\" at offset 4, brand \"heic\" at offset 8"
+      },
+      "valid_image": true,
+      "purpose": "Valid HEIC (1024x768, sips-converted from sharp JPEG). iPhone-format detection and conversion tests.",
+      "dimensions": {
+        "width": 1024,
+        "height": 768
+      },
+      "sharp_format": "heif"
+    },
+    {
+      "file": "fake.jpg",
+      "bytes": 97,
+      "sha256": "c2da93fcf7569b773c6cb4c20fb882e97d69656c1b71a9e5dc975a059a97a046",
+      "mime_actual": "text/plain",
+      "magic": {
+        "first_12_bytes_hex": "54 68 69 73 20 69 73 20 6e 6f 74 20",
+        "note": "plain ASCII text, no binary signature"
+      },
+      "valid_image": false,
+      "purpose": "INVALID: plain text bytes with .jpg extension. MIME/magic mismatch; must be rejected by magic-byte sniffing."
+    },
+    {
+      "file": "truncated.jpg",
+      "bytes": 16384,
+      "sha256": "df779b66d3276ef9c9b96d8b78be02720962049c30548c02c3f9514d9bd01d2b",
+      "mime_actual": "image/jpeg",
+      "magic": {
+        "first_12_bytes_hex": "ff d8 ff db 00 43 00 05 03 04 04 04",
+        "note": "JPEG SOI (ff d8 ff)"
+      },
+      "valid_image": false,
+      "purpose": "INVALID: first 16384 bytes of synthetic-1-phone.jpg. Valid JPEG SOI header, no EOI; full decode must fail (sharp: \"premature end of JPEG image\")."
+    },
+    {
+      "file": "tiny-svg.svg",
+      "bytes": 115,
+      "sha256": "1c06cbb5ac11693e5f93a960e2ff6dc30dd5238229d4f24dd70006beb6a662dc",
+      "mime_actual": "image/svg+xml",
+      "magic": {
+        "first_12_bytes_hex": "3c 73 76 67 20 78 6d 6c 6e 73 3d 22",
+        "note": "XML/SVG text, no binary signature"
+      },
+      "valid_image": false,
+      "purpose": "INVALID by policy: well-formed SVG, a must-reject upload type (script/XSS surface). Reject by MIME/extension allowlist."
+    }
+  ]
+}

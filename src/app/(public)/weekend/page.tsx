@@ -1,0 +1,170 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+import { PublicShell } from "@/components/site/PublicShell";
+import { StoryChapter } from "@/components/site/StoryChapter";
+import { WeekendTimeline } from "@/components/site/WeekendTimeline";
+import { siteConfig } from "@/content/site";
+import { storyPhotos } from "@/content/story-photos";
+
+export const metadata: Metadata = {
+  title: "The Weekend | Rach & Zach",
+  description:
+    "Welcome party, wedding, after party, and Sunday hang: the full story of Rachel and Zach's Santa Barbara wedding weekend, July 18 to 20, 2025.",
+};
+
+/**
+ * The chronological visual story of July 18-20, 2025. The timeline carries
+ * the schedule facts as memory context; the chapters walk the days in order.
+ * The #travel and #faq sections keep the old site's legacy anchors alive.
+ */
+export default function WeekendPage() {
+  const { chapters } = storyPhotos;
+  return (
+    <PublicShell>
+      <header className="mx-auto max-w-3xl px-5 pb-6 pt-16 text-center sm:px-8">
+        <p className="font-body text-sm uppercase tracking-[0.2em] text-muted">
+          July 18-20, 2025 · Santa Barbara, CA
+        </p>
+        <h1 className="mt-4 font-display text-4xl leading-tight text-ink sm:text-5xl">
+          The Weekend
+        </h1>
+        <p className="mx-auto mt-5 max-w-xl font-body text-base leading-relaxed text-ink">
+          Three days by the water with everyone we love. Here is how it went,
+          in order.
+        </p>
+      </header>
+
+      <section aria-labelledby="glance-title" className="py-8">
+        <h2 id="glance-title" className="px-5 text-center font-display text-3xl text-ink sm:px-8">
+          The weekend at a glance
+        </h2>
+        <div className="mt-4">
+          <WeekendTimeline events={siteConfig.weekend} />
+        </div>
+      </section>
+
+      <StoryChapter
+        id="friday"
+        kicker="Friday, July 18 · Hotel Californian"
+        title="Easing in by the water"
+        body="Dinner, drinks, and the weekend finding its feet by the coast, with the best part still a day away."
+        photo={chapters.coast}
+      />
+      <StoryChapter
+        id="ceremony"
+        kicker="Saturday, 4:30 PM · Rincon Pergola"
+        title="The ceremony"
+        body="Outdoors, with Santa Barbara views in every direction, exactly as promised."
+        photo={chapters.ceremony}
+        reverse
+      />
+      <StoryChapter
+        id="dinner"
+        kicker="Saturday evening"
+        title="Dinner"
+        body="Cocktail hour rolled into dinner as the light went golden, and the party ran to 10:00 PM."
+        photo={chapters.dinner}
+      />
+      <StoryChapter
+        id="dancing"
+        kicker="Saturday night"
+        title="The dance floor"
+        body="The reception danced until Santa Barbara said it was time, and the night was nowhere near done."
+        photo={chapters.dancing}
+        reverse
+      />
+      <StoryChapter
+        id="after-party"
+        kicker="Saturday, 10:30 PM · Studio Sound Room"
+        title="The after party"
+        body="The Funk Zone took it from there, and nobody was watching the clock."
+        photo={chapters["after-party"]}
+      />
+      <StoryChapter
+        id="sunday"
+        kicker="Sunday, 9:00 AM · Municipal Winemakers"
+        title="One last hang"
+        body="One more coffee, one more pour, and the slow goodbyes before everyone headed home."
+      />
+
+      <section
+        id="travel"
+        aria-labelledby="travel-title"
+        className="scroll-mt-24 border-t border-wheat bg-sand"
+      >
+        <div className="mx-auto max-w-3xl px-5 py-14 sm:px-8">
+          <h2 id="travel-title" className="font-display text-3xl text-ink">
+            Getting to Santa Barbara
+          </h2>
+          <div className="mt-5 space-y-4 font-body text-base leading-relaxed text-ink">
+            <p>
+              Everyone made the journey: flights into Santa Barbara Municipal
+              Airport or LAX, the two-hour drive up (stunning if you took the
+              Pacific Coast Highway), or Amtrak in about two and a half hours.
+              We appreciated every mile of it.
+            </p>
+            <p>
+              Most of the weekend lived near the water, around Harbour View Inn
+              and Hotel Californian, which sit across the street from one
+              another, with everything walkable or a short shuttle away.
+            </p>
+            <p>
+              If you ever get back to Santa Barbara: Dart Coffee Co, Handlebar
+              Coffee Roasters, Oat Bakery, Helena Avenue Bakery, Broad Street
+              Oyster Company, and Rudy&apos;s are still some of our favorite
+              spots, and we 100% recommend sipping wine at the Funk Zone
+              tasting rooms.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" aria-labelledby="faq-title" className="scroll-mt-24">
+        <div className="mx-auto max-w-3xl px-5 py-14 sm:px-8">
+          <h2 id="faq-title" className="font-display text-3xl text-ink">
+            Questions we kept hearing
+          </h2>
+          <dl className="mt-6 space-y-8">
+            <div>
+              <dt className="font-display text-xl text-ink">How did everyone get to the wedding?</dt>
+              <dd className="mt-2 font-body text-base leading-relaxed text-ink">
+                Shuttles, from the Santa Barbara Visitors Center at 120 State
+                Street. Everyone rode them, and the views were worth it, just
+                like we promised.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-display text-xl text-ink">What was Santa Barbara cocktail?</dt>
+              <dd className="mt-2 font-body text-base leading-relaxed text-ink">
+                Light suits, fun dresses, jumpsuits, bow ties, and personality.
+                Everyone understood the assignment.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-display text-xl text-ink">What was the weather plan?</dt>
+              <dd className="mt-2 font-body text-base leading-relaxed text-ink">
+                The ceremony and reception were outdoors rain or shine, with a
+                backup ready and fingers crossed it would not be needed.
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section className="border-t border-wheat">
+        <div className="mx-auto max-w-3xl px-5 py-14 text-center sm:px-8">
+          <p className="font-body text-base leading-relaxed text-ink">
+            {siteConfig.voice.galleryIntro}
+          </p>
+          <Link
+            href="/photos"
+            className="mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-7 font-body text-sm font-medium text-cream hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+          >
+            Find your photos
+          </Link>
+        </div>
+      </section>
+    </PublicShell>
+  );
+}

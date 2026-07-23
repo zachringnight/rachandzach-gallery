@@ -1,0 +1,380 @@
+#!/usr/bin/env python3
+"""Backward audit: compare detected face identities against catalog tags.
+
+Consumes the artifacts written by build-face-signatures.py (no model inference
+here, pure numpy over saved embeddings, so re-runs take seconds and are
+byte-for-byte idempotent for unchanged inputs). Produces a ranked REVIEW LIST
+for a human. It never edits tags, the catalog, or anything else.
+
+Two buckets:
+  (a) tagged-but-no-matching-face: a confirmed tag whose person's signature
+      matches no detected face in that photo. Severity separates "plenty of
+      other identified faces, this person is just not among them" (likely a
+      mistag) from "few or no usable faces" (probably back-of-head or
+      occlusion, tag likely fine).
+  (b) confident-face-but-untagged: a prominent, high-confidence face that
+      matches a person's signature while that person is missing from the tags.
+      Incidental background guests are excluded by design: small faces and
+      sub-threshold matches are never flagged.
+
+Usage (from the repo root):
+  uv run --no-project --python .venv-faces/bin/python \
+      scripts/face/audit-archive-tags.py
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import json
+from collections import defaultdict
+from pathlib import Path
+
+import numpy as np
+
+REPO = Path(__file__).resolve().parents[2]
+CATALOG_PATH = REPO / "src" / "generated" / "gallery-v2.json"
+FACES_DIR = REPO / "metadata" / "faces"
+DETECTIONS_PATH = FACES_DIR / "detections.jsonl"
+SIGNATURES_PATH = FACES_DIR / "signatures.json"
+REPORT_JSON_PATH = FACES_DIR / "audit-report.json"
+REPORT_MD_PATH = FACES_DIR / "audit-report.md"
+
+# ---- Thresholds (calibrated on this archive; see scripts/face/README.md) ----
+# Bucket (a): a tag counts as "matched" when any face in the photo reaches
+# T_PRESENT against that person's centroid(s). Below T_ABSENT_HARD the person's
+# face is definitively not visible in the frame.
+T_PRESENT = 0.36
+T_ABSENT_HARD = 0.30
+# A face is "identified" as a person when it reaches T_IDENT (used to explain
+# which people ARE visible in a flagged photo).
+T_IDENT = 0.50
+# Bucket (b): untagged-person flags require a prominent face (fraction of the
+# image long edge), a confident detection, a strong match, and a clear margin
+# over the runner-up person, so incidental background guests never surface.
+MIN_UNTAGGED_FACE_FRAC = 0.035
+MIN_UNTAGGED_DET_SCORE = 0.70
+T_UNTAGGED = 0.55
+T_UNTAGGED_STRONG = 0.62
+MIN_UNTAGGED_MARGIN = 0.08
+# Faces counted as "usable" when judging whether everyone tagged could have
+# been matched at all.
+MIN_USABLE_DET_SCORE = 0.70
+MIN_USABLE_FACE_FRAC = 0.025
+
+PARAMS = {
+    "tPresent": T_PRESENT,
+    "tAbsentHard": T_ABSENT_HARD,
+    "tIdent": T_IDENT,
+    "minUntaggedFaceFrac": MIN_UNTAGGED_FACE_FRAC,
+    "minUntaggedDetScore": MIN_UNTAGGED_DET_SCORE,
+    "tUntagged": T_UNTAGGED,
+    "tUntaggedStrong": T_UNTAGGED_STRONG,
+    "minUntaggedMargin": MIN_UNTAGGED_MARGIN,
+    "minUsableDetScore": MIN_USABLE_DET_SCORE,
+    "minUsableFaceFrac": MIN_USABLE_FACE_FRAC,
+}
+
+
+def load_detections() -> dict[str, dict]:
+    records = {}
+    with DETECTIONS_PATH.open(encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            records[record["photoId"]] = record
+    return records
+
+
+def main() -> None:
+    catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    signatures = json.loads(SIGNATURES_PATH.read_text(encoding="utf-8"))
+    detections = load_detections()
+
+    people_by_slug = {p["slug"]: p["name"] for p in catalog["people"]}
+    event_by_photo = {p["id"]: p["eventSlug"] for p in catalog["photos"]}
+
+    # Centroid matrix over every signature cluster, with a person index per row.
+    centroid_rows: list[list[float]] = []
+    row_slug: list[str] = []
+    signature_slugs: list[str] = []
+    for person in signatures["people"]:
+        signature_slugs.append(person["slug"])
+        for cluster in person["clusters"]:
+            centroid_rows.append(cluster["centroid"])
+            row_slug.append(person["slug"])
+    centroids = np.asarray(centroid_rows, dtype=np.float32)
+    signature_set = set(signature_slugs)
+
+    tagged_slugs = sorted({s for p in catalog["photos"] for s in p["peopleSlugs"]})
+    unauditable = [s for s in tagged_slugs if s not in signature_set]
+
+    absent_items = []
+    untagged_items = []
+    tags_checked = 0
+
+    for photo in catalog["photos"]:
+        record = detections.get(photo["id"])
+        if record is None:
+            continue
+        faces = record["faces"]
+        tags = photo["peopleSlugs"]
+        long_edge = max(record["dw"], record["dh"])
+
+        if faces:
+            emb = np.frombuffer(
+                b"".join(base64.b64decode(f["emb"]) for f in faces), dtype=np.float32
+            ).reshape(len(faces), 512)
+            sims = emb @ centroids.T  # (faces, clusters)
+            # Best sim per (face, person).
+            person_best: dict[str, np.ndarray] = {}
+            for column, slug in enumerate(row_slug):
+                current = person_best.get(slug)
+                col = sims[:, column]
+                person_best[slug] = col if current is None else np.maximum(current, col)
+        else:
+            person_best = {}
+
+        fracs = [(f["bbox"][3] - f["bbox"][1]) / long_edge for f in faces]
+        usable = [
+            i
+            for i, f in enumerate(faces)
+            if f["score"] >= MIN_USABLE_DET_SCORE and fracs[i] >= MIN_USABLE_FACE_FRAC
+        ]
+
+        # Who is confidently visible (to explain flagged photos)?
+        identified: dict[int, tuple[str, float]] = {}
+        for slug, per_face in person_best.items():
+            for i in usable:
+                value = float(per_face[i])
+                if value >= T_IDENT and (i not in identified or value > identified[i][1]):
+                    identified[i] = (slug, value)
+        identified_slugs = sorted({slug for slug, _ in identified.values()})
+
+        # ---- Bucket (a): tagged but no matching face -------------------------
+        for slug in tags:
+            if slug not in signature_set:
+                continue
+            tags_checked += 1
+            best = float(person_best[slug].max()) if slug in person_best and faces else -1.0
+            if best >= T_PRESENT:
+                continue
+            others = [s for s in identified_slugs if s != slug]
+            if len(usable) >= len(tags) and best < T_ABSENT_HARD and len(others) >= len(usable):
+                severity = "high"
+            elif len(usable) >= len(tags) and best < T_ABSENT_HARD:
+                severity = "medium"
+            else:
+                severity = "low"
+            absent_items.append(
+                {
+                    "photoId": photo["id"],
+                    "path": photo["originalRelativePath"],
+                    "event": event_by_photo.get(photo["id"], ""),
+                    "slug": slug,
+                    "name": people_by_slug.get(slug, slug),
+                    "bestSimForPerson": round(best, 3),
+                    "faceCount": len(faces),
+                    "usableFaceCount": len(usable),
+                    "tagCount": len(tags),
+                    "identifiedOthers": others,
+                    "severity": severity,
+                }
+            )
+
+        # ---- Bucket (b): confident face but untagged -------------------------
+        tag_set = set(tags)
+        best_by_person: dict[str, dict] = {}
+        for i, face in enumerate(faces):
+            if face["score"] < MIN_UNTAGGED_DET_SCORE or fracs[i] < MIN_UNTAGGED_FACE_FRAC:
+                continue
+            ranked = sorted(
+                ((float(per_face[i]), slug) for slug, per_face in person_best.items()),
+                reverse=True,
+            )
+            if not ranked:
+                continue
+            top_sim, top_slug = ranked[0]
+            runner_sim = ranked[1][0] if len(ranked) > 1 else -1.0
+            if top_slug in tag_set:
+                continue
+            if top_sim < T_UNTAGGED or (top_sim - runner_sim) < MIN_UNTAGGED_MARGIN:
+                continue
+            entry = {
+                "photoId": photo["id"],
+                "path": photo["originalRelativePath"],
+                "event": event_by_photo.get(photo["id"], ""),
+                "slug": top_slug,
+                "name": people_by_slug.get(top_slug, top_slug),
+                "sim": round(top_sim, 3),
+                "margin": round(top_sim - runner_sim, 3),
+                "faceIndex": face["i"],
+                "faceFrac": round(fracs[i], 3),
+                "detScore": face["score"],
+                "tier": "strong" if top_sim >= T_UNTAGGED_STRONG else "review",
+                "currentTags": sorted(tags),
+            }
+            existing = best_by_person.get(top_slug)
+            if existing is None or entry["sim"] > existing["sim"]:
+                best_by_person[top_slug] = entry
+        untagged_items.extend(best_by_person.values())
+
+    severity_rank = {"high": 0, "medium": 1, "low": 2}
+    absent_items.sort(
+        key=lambda e: (severity_rank[e["severity"]], e["bestSimForPerson"], e["photoId"], e["slug"])
+    )
+    untagged_items.sort(key=lambda e: (-e["sim"], e["photoId"], e["slug"]))
+
+    fingerprint = hashlib.sha256()
+    fingerprint.update(CATALOG_PATH.read_bytes())
+    fingerprint.update(DETECTIONS_PATH.read_bytes())
+    fingerprint.update(SIGNATURES_PATH.read_bytes())
+    fingerprint.update(json.dumps(PARAMS, sort_keys=True).encode())
+
+    report = {
+        "schemaVersion": 1,
+        "inputsFingerprint": fingerprint.hexdigest(),
+        "params": PARAMS,
+        "summary": {
+            "photosAudited": len(detections),
+            "peopleWithSignatures": len(signature_slugs),
+            "taggedPeopleTotal": len(tagged_slugs),
+            "unauditablePeople": unauditable,
+            "tagsChecked": tags_checked,
+            "taggedButNoMatchingFace": {
+                "total": len(absent_items),
+                "high": sum(1 for e in absent_items if e["severity"] == "high"),
+                "medium": sum(1 for e in absent_items if e["severity"] == "medium"),
+                "low": sum(1 for e in absent_items if e["severity"] == "low"),
+            },
+            "confidentFaceButUntagged": {
+                "total": len(untagged_items),
+                "strong": sum(1 for e in untagged_items if e["tier"] == "strong"),
+                "review": sum(1 for e in untagged_items if e["tier"] == "review"),
+            },
+        },
+        "taggedButNoMatchingFace": absent_items,
+        "confidentFaceButUntagged": untagged_items,
+    }
+
+    with REPORT_JSON_PATH.open("w", encoding="utf-8") as handle:
+        json.dump(report, handle, indent=1)
+        handle.write("\n")
+    REPORT_MD_PATH.write_text(render_markdown(report), encoding="utf-8")
+    summary = report["summary"]
+    print(
+        f"audit: {summary['tagsChecked']} tags checked across {summary['photosAudited']} photos\n"
+        f"  (a) tagged-but-no-matching-face: {summary['taggedButNoMatchingFace']}\n"
+        f"  (b) confident-face-but-untagged: {summary['confidentFaceButUntagged']}\n"
+        f"wrote {REPORT_JSON_PATH}\nwrote {REPORT_MD_PATH}"
+    )
+
+
+def render_markdown(report: dict) -> str:
+    summary = report["summary"]
+    a = summary["taggedButNoMatchingFace"]
+    b = summary["confidentFaceButUntagged"]
+    lines = [
+        "# Face audit report",
+        "",
+        "Review list only. Nothing here changed any tag. Every row needs a human",
+        "look at the photo before acting.",
+        "",
+        f"- Photos audited: {summary['photosAudited']}",
+        f"- People with face signatures: {summary['peopleWithSignatures']} of "
+        f"{summary['taggedPeopleTotal']} tagged people",
+        f"- Tags checked: {summary['tagsChecked']}",
+        f"- Bucket (a) tagged-but-no-matching-face: {a['total']} "
+        f"(high {a['high']}, medium {a['medium']}, low {a['low']})",
+        f"- Bucket (b) confident-face-but-untagged: {b['total']} "
+        f"(strong {b['strong']}, review {b['review']})",
+        "",
+    ]
+    if summary["unauditablePeople"]:
+        lines += [
+            "People without signatures (too few confident tagged faces to learn from; "
+            "their tags could not be audited): "
+            + ", ".join(summary["unauditablePeople"]),
+            "",
+        ]
+
+    lines += [
+        "## (b) Confident face, but person not tagged",
+        "",
+        "Prominent faces only; incidental background guests are excluded by",
+        "design (small or low-confidence faces never flag). Sorted by match",
+        "strength. `strong` rows are near-certain; `review` rows are likely but",
+        "want a closer look.",
+        "",
+    ]
+    if report["confidentFaceButUntagged"]:
+        lines += [
+            "| tier | person | match | face size | photo | event | current tags |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ]
+        for item in report["confidentFaceButUntagged"]:
+            tags = ", ".join(item["currentTags"]) if item["currentTags"] else "(none)"
+            lines.append(
+                f"| {item['tier']} | {item['name']} | {item['sim']:.3f} | "
+                f"{item['faceFrac']:.1%} | {item['path']} | {item['event']} | {tags} |"
+            )
+    else:
+        lines.append("Nothing flagged.")
+    lines.append("")
+
+    lines += [
+        "## (a) Tagged, but no matching face found",
+        "",
+        "`high`: the photo has enough clear faces for everyone tagged and each",
+        "one identified as somebody else — the tag is probably wrong.",
+        "`medium`: enough clear faces, none matches, but some faces went",
+        "unidentified. `low`: the person's face is simply not usable in the",
+        "frame (back turned, occluded, tiny) — the tag is probably fine; listed",
+        "for completeness.",
+        "",
+    ]
+    for severity in ("high", "medium"):
+        items = [e for e in report["taggedButNoMatchingFace"] if e["severity"] == severity]
+        lines += [f"### Severity {severity} ({len(items)})", ""]
+        if not items:
+            lines += ["Nothing flagged.", ""]
+            continue
+        lines += [
+            "| person | best sim | faces (usable) | tags | identified in photo | photo | event |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ]
+        for item in items:
+            others = ", ".join(item["identifiedOthers"]) if item["identifiedOthers"] else "(none)"
+            lines.append(
+                f"| {item['name']} | {item['bestSimForPerson']:.3f} | "
+                f"{item['faceCount']} ({item['usableFaceCount']}) | {item['tagCount']} | "
+                f"{others} | {item['path']} | {item['event']} |"
+            )
+        lines.append("")
+    low_items = [e for e in report["taggedButNoMatchingFace"] if e["severity"] == "low"]
+    lines += [
+        f"### Severity low ({len(low_items)})",
+        "",
+        "Face not visible or not usable; tags almost certainly fine. Grouped by",
+        "person, photo counts only.",
+        "",
+    ]
+    if low_items:
+        by_person: dict[str, list[dict]] = defaultdict(list)
+        for item in low_items:
+            by_person[item["name"]].append(item)
+        for name in sorted(by_person):
+            photos = by_person[name]
+            sample = ", ".join(item["path"] for item in photos[:3])
+            more = f" (+{len(photos) - 3} more)" if len(photos) > 3 else ""
+            lines.append(f"- {name}: {len(photos)} photos — {sample}{more}")
+    else:
+        lines.append("Nothing flagged.")
+    lines.append("")
+    return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    main()

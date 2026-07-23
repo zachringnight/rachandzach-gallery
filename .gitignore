@@ -1,0 +1,42 @@
+node_modules
+.next
+out
+.env
+.env*.local
+.env.cloud
+# 700+ MB uv-managed Python venv (CLIP embeddings); never commit.
+.venv-search/
+# uv-managed Python venv (face-recognition pipeline); never commit.
+.venv-faces/
+metadata/faces/
+# Playwright run artifacts; regenerate on every e2e run.
+playwright-report/
+test-results/
+.DS_Store
+npm-debug.log*
+# --- Gate 1 additions (2026-07-23): local-only metadata that must never
+# reach the remote. Face crops and review assets stay on this machine
+# (privacy operations); import/verify state is bulky derived data,
+# regenerable from the master + cloud. Curation CSVs stay tracked.
+metadata/import/
+metadata/verify/
+metadata/audit/review-sheets/
+metadata/identity-review/*
+!metadata/identity-review/*.csv
+# Claude Design session artifacts (external design session drops these in
+# the worktree; generated bundles, not source).
+ds-bundle/
+.design-sync/
+.ds-sync/
+# Vendored OpenCV face-detection/recognition ONNX models (37M + 228K) used by
+# scripts/find-manual-person-matches.py and scripts/suggest-untagged-people.py.
+# Excluded from git for the same reason as .venv-faces/: large vendored
+# binaries, not source, and this network has a documented problem pushing
+# large single request bodies (see docs/HANDOFF_CURRENT.md "Operational war
+# stories"). Re-fetch locally rather than committing; do not add without
+# discussing storage (Git LFS or a fetch script) first.
+models/
+# Local scratch from ad hoc design/QA sessions (Playwright MCP, comp
+# screenshots dropped at repo root); never source, never commit.
+.playwright-mcp/
+/comp-*.jpeg

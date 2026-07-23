@@ -1,0 +1,103 @@
+# Supabase local development configuration for the 0719 + co. digital wedding
+# home. Local-only: no cloud project is linked or created by this file.
+# Reference: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "rachandzach-gallery"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+# Global ceiling; per-bucket limits below are stricter where it matters.
+file_size_limit = "200MiB"
+
+# Every bucket is private. Browsers only ever receive short-lived signed URLs
+# minted server-side. These local declarations mirror the authoritative bucket
+# rows inserted by supabase/migrations/202607220002_storage_policies.sql.
+
+[storage.buckets.rachandzach-originals]
+public = false
+
+[storage.buckets.rachandzach-previews]
+public = false
+
+[storage.buckets.rachandzach-guest-pending]
+public = false
+file_size_limit = "50MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/heic"]
+
+[storage.buckets.rachandzach-guest-approved]
+public = false
+file_size_limit = "50MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/heic"]
+
+[storage.buckets.rachandzach-download-exports]
+public = false
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+# Fail closed: no self-serve signups. The only account is the admin magic-link
+# identity (wedding@rachandzach.com), provisioned explicitly by packet 04.
+enable_signup = false
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+minimum_password_length = 12
+
+[auth.email]
+enable_signup = false
+double_confirm_changes = true
+enable_confirmations = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

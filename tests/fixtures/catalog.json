@@ -1,0 +1,215 @@
+{
+  "generatedAt": "2026-07-22T00:00:00.000Z",
+  "sourceRoot": "tests/fixtures/photos",
+  "photos": [
+    {
+      "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "imageDataHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "fileSha256": "3772acc5a74dcbfd689c0f35dff73f18bff84c116ad99566eb37e8a3c1efa412",
+      "originalRelativePath": "01 Ceremony/ceremony-1.jpg",
+      "originalFilename": "ceremony-1.jpg",
+      "originalBytes": 60756,
+      "width": 3000,
+      "height": 2000,
+      "orientation": "landscape",
+      "eventSlug": "ceremony",
+      "capturedAt": null,
+      "peopleSlugs": [
+        "rachel-casciano",
+        "zach-soskin"
+      ],
+      "keywords": [
+        "Golden Hour",
+        "Wedding"
+      ],
+      "previewObjects": [
+        {
+          "objectPath": "previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/480.avif",
+          "width": 480,
+          "height": 320,
+          "format": "avif",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/480.webp",
+          "width": 480,
+          "height": 320,
+          "format": "webp",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/960.avif",
+          "width": 960,
+          "height": 640,
+          "format": "avif",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/960.webp",
+          "width": 960,
+          "height": 640,
+          "format": "webp",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/1600.avif",
+          "width": 1600,
+          "height": 1067,
+          "format": "avif",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/1600.webp",
+          "width": 1600,
+          "height": 1067,
+          "format": "webp",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/2400.jpeg",
+          "width": 2400,
+          "height": 1600,
+          "format": "jpeg",
+          "cacheControl": "public,max-age=31536000,immutable"
+        }
+      ],
+      "source": "photographer",
+      "status": "approved"
+    },
+    {
+      "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "imageDataHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "fileSha256": "2ccdfaa9b14e72258a5b9f0dd2bd8d8982f99efb0658b74301119e3c9fd42521",
+      "originalRelativePath": "01 Ceremony/ceremony-2.jpg",
+      "originalFilename": "ceremony-2.jpg",
+      "originalBytes": 92225,
+      "width": 2000,
+      "height": 3000,
+      "orientation": "portrait",
+      "eventSlug": "ceremony",
+      "capturedAt": null,
+      "peopleSlugs": [
+        "rachel-casciano"
+      ],
+      "keywords": [],
+      "previewObjects": [
+        {
+          "objectPath": "previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/480.avif",
+          "width": 480,
+          "height": 720,
+          "format": "avif",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/480.webp",
+          "width": 480,
+          "height": 720,
+          "format": "webp",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/960.avif",
+          "width": 960,
+          "height": 1440,
+          "format": "avif",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/960.webp",
+          "width": 960,
+          "height": 1440,
+          "format": "webp",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/1600.avif",
+          "width": 1600,
+          "height": 2400,
+          "format": "avif",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/1600.webp",
+          "width": 1600,
+          "height": 2400,
+          "format": "webp",
+          "cacheControl": "public,max-age=31536000,immutable"
+        }
+      ],
+      "source": "photographer",
+      "status": "approved"
+    },
+    {
+      "id": "cccccccccccccccccccccccccccccccc",
+      "imageDataHash": "cccccccccccccccccccccccccccccccc",
+      "fileSha256": "d12cb6b45eef6c16dc3575f8fe30e79e7578470d98c32452619cda32da8a1c55",
+      "originalRelativePath": "02 Dancing/first dance #1.jpg",
+      "originalFilename": "first dance #1.jpg",
+      "originalBytes": 6638,
+      "width": 800,
+      "height": 533,
+      "orientation": "landscape",
+      "eventSlug": "dancing",
+      "capturedAt": null,
+      "peopleSlugs": [
+        "zach-soskin"
+      ],
+      "keywords": [
+        "Dancing"
+      ],
+      "previewObjects": [
+        {
+          "objectPath": "previews/cccccccccccccccccccccccccccccccc/480.avif",
+          "width": 480,
+          "height": 320,
+          "format": "avif",
+          "cacheControl": "public,max-age=31536000,immutable"
+        },
+        {
+          "objectPath": "previews/cccccccccccccccccccccccccccccccc/480.webp",
+          "width": 480,
+          "height": 320,
+          "format": "webp",
+          "cacheControl": "public,max-age=31536000,immutable"
+        }
+      ],
+      "source": "photographer",
+      "status": "approved"
+    }
+  ],
+  "people": [
+    {
+      "slug": "rachel-casciano",
+      "name": "Rachel Casciano",
+      "photoCount": 2
+    },
+    {
+      "slug": "zach-soskin",
+      "name": "Zach Soskin",
+      "photoCount": 2
+    }
+  ],
+  "events": [
+    {
+      "slug": "ceremony",
+      "name": "Ceremony",
+      "order": 0,
+      "photoCount": 2
+    },
+    {
+      "slug": "dancing",
+      "name": "Dancing",
+      "order": 1,
+      "photoCount": 1
+    }
+  ],
+  "stats": {
+    "manifestRows": 3,
+    "importedPhotos": 3,
+    "rejectedRows": 0,
+    "people": 2,
+    "events": 2,
+    "totalOriginalBytes": 159619,
+    "issues": []
+  }
+}

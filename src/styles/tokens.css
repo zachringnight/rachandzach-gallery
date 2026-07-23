@@ -1,0 +1,123 @@
+/**
+ * 0719 + co. design tokens.
+ *
+ * Palette approved from the wedding photography: wheat, cream, sand, tan,
+ * dusty coral, charcoal ink. Dusty coral is an accent (the mark, small
+ * highlights), never a page background or long-copy text color.
+ *
+ * Structure: raw values live on --rz-* source variables (namespaced so the
+ * legacy gallery CSS, which also defines --sand and --muted, cannot collide,
+ * and so the Tailwind @theme mapping in globals.css never self-references).
+ * The public token names below them are the packet contract.
+ *
+ * Accessible text pairings on cream (#F6F0E4):
+ * - ink   #282521 -> 13.4:1 (body and headings)
+ * - muted #6B645A ->  5.1:1 (secondary text, passes WCAG AA for normal text)
+ * - coral #D38377 (2.5:1) and tan #AA8D66 are decorative only at text sizes.
+ */
+:root {
+  /* Raw sources */
+  --rz-cream: #f6f0e4;
+  --rz-sand: #e8dbc2;
+  --rz-wheat: #d8c8a8;
+  --rz-tan: #aa8d66;
+  --rz-ink: #282521;
+  --rz-coral: #d38377;
+  --rz-white: #ffffff;
+  /* Muted ink derived from --rz-ink, tuned for >= 4.5:1 on --rz-cream. */
+  --rz-muted: #6b645a;
+
+  /*
+   * Font variables are attached to <html> by next/font (see
+   * src/components/brand/Wordmark.tsx for the loaded faces). The fallback
+   * stacks keep type coherent before the root layout wires the variables.
+   */
+  --rz-font-display: var(--font-display-face, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif);
+  --rz-font-body: var(--font-body-face, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+
+  --rz-radius-card: 0.75rem;
+  --rz-shadow-soft: 0 20px 50px -24px rgba(40, 37, 33, 0.25);
+
+  /* Type scale (packet 00): fluid editorial sizes. Kicker is a fixed label
+   * size (uppercase eyebrow text), the rest scale with the viewport. */
+  --rz-text-hero: clamp(2.75rem, 8vw, 6.5rem);
+  --rz-text-display: clamp(2rem, 5vw, 3.75rem);
+  --rz-text-title: clamp(1.5rem, 3vw, 2.25rem);
+  --rz-text-kicker: 0.75rem;
+
+  /* Motion (packet 00): the site's two easing curves and three speeds.
+   * Every transition and keyframe animation should use these. */
+  --rz-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --rz-ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --rz-dur-fast: 200ms;
+  --rz-dur-med: 450ms;
+  --rz-dur-slow: 800ms;
+
+  /* Rhythm (packet 00): vertical breathing room between page sections, and
+   * the measure for long-form prose blocks. */
+  --rz-space-section: clamp(4rem, 10vw, 8rem);
+  --rz-space-prose: 42rem;
+
+  /* Public tokens */
+  --color-cream: var(--rz-cream);
+  --color-sand: var(--rz-sand);
+  --color-wheat: var(--rz-wheat);
+  --color-tan: var(--rz-tan);
+  --color-ink: var(--rz-ink);
+  --color-coral: var(--rz-coral);
+  --color-white: var(--rz-white);
+  --color-muted: var(--rz-muted);
+  --font-display: var(--rz-font-display);
+  --font-body: var(--rz-font-body);
+  --radius-card: var(--rz-radius-card);
+  --shadow-soft: var(--rz-shadow-soft);
+  --text-hero: var(--rz-text-hero);
+  --text-display: var(--rz-text-display);
+  --text-title: var(--rz-text-title);
+  --text-kicker: var(--rz-text-kicker);
+  /* --ease-out deliberately shadows Tailwind's built-in easing variable (this
+   * file is unlayered, so it wins over @layer theme): the `ease-out` utility
+   * site-wide now resolves to the brand curve. --ease-inout does not collide
+   * (Tailwind's is --ease-in-out). */
+  --ease-out: var(--rz-ease-out);
+  --ease-inout: var(--rz-ease-inout);
+  --dur-fast: var(--rz-dur-fast);
+  --dur-med: var(--rz-dur-med);
+  --dur-slow: var(--rz-dur-slow);
+  --space-section: var(--rz-space-section);
+  --space-prose: var(--rz-space-prose);
+}
+
+/*
+ * Reveal motion primitive (src/components/motion/Reveal.tsx).
+ *
+ * The hidden state exists only while JS is live: the root layout's inline
+ * script stamps `js` onto <html> before hydration, so guests without JS (and
+ * crawlers) always get visible content. The per-instance offset and stagger
+ * ride custom properties set inline by the component; they are inert until
+ * the `.js`-gated rule consumes them.
+ *
+ * Under prefers-reduced-motion the same selectors (equal specificity, later
+ * in the file, so they win) remove the transform and transition entirely --
+ * content just appears.
+ */
+.js [data-reveal]:not([data-reveal="in"]) {
+  opacity: 0;
+  transform: translateY(var(--rz-reveal-y, 24px));
+}
+
+[data-reveal] {
+  transition:
+    opacity var(--rz-dur-slow) var(--rz-ease-out),
+    transform var(--rz-dur-slow) var(--rz-ease-out);
+  transition-delay: var(--rz-reveal-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  .js [data-reveal]:not([data-reveal="in"]) {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

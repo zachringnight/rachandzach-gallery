@@ -1,0 +1,8 @@
+{
+  "description": "Offline fixture for scripts/build-embeddings.py --fixture --verify. Photo entries reference synthetic images from tests/fixtures/shared/ (read-only, procedurally generated gradients, no real photos, no faces, no EXIF, no names). photoId values are fixture-only identifiers, not real catalog ids.",
+  "photos": [
+    { "photoId": "search-fixture-0001", "path": "../shared/synthetic-1-phone.jpg" },
+    { "photoId": "search-fixture-0002", "path": "../shared/synthetic-2-phone.png" },
+    { "photoId": "search-fixture-0003", "path": "../shared/synthetic-3-phone.webp" }
+  ]
+}

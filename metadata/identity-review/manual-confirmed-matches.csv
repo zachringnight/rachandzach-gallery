@@ -1,0 +1,6 @@
+path,recommendation,people,confidence,notes
+Day 1/rachelzachday1-61.jpg,replace,Bob P,high,manual visual match against Bob P reference crops
+Day 1/rachelzachday1-96.jpg,replace,Janice,high,manual visual match against Janice reference crops
+Day 1/rachelzachday1-134.jpg,replace,Bob P,high,manual visual match against Bob P reference crops
+Day 1/rachelzachday1-287.jpg,replace,Trelawny,high,foreground speaker manually matched to Trelawny reference crops; background-only faces ignored
+Day 1/rachelzachday1-300.jpg,replace,Patti; Robbie,high,foreground toast speakers manually matched to Patti and Robbie reference crops; background-only faces ignored

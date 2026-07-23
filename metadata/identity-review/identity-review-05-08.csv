@@ -1,0 +1,52 @@
+path,recommendation,people,confidence,notes
+Ceremony/rachelzach-360.jpg,needs_identity,,high,clear seated guests no confident complete match
+Ceremony/rachelzach-347.jpg,needs_identity,,high,Rachel and officiant visible with officiant unnamed
+Ceremony/rachelzach-361.jpg,needs_identity,,high,clear seated guests no confident complete match
+Ceremony/rachelzach-341.jpg,needs_identity,,medium,Rachel and officiant visible but officiant remains unnamed
+Ceremony/rachelzach-384.jpg,needs_identity,,medium,wide seated guests visible but not confidently matched
+Ceremony/rachelzach-370.jpg,needs_identity,,medium,wide seated guests visible but not useful enough for complete naming
+Ceremony/rachelzach-352.jpg,needs_identity,,medium,seated child and guests visible but not confidently matched
+Ceremony/rachelzach-417.jpg,needs_identity,,high,clear recessional guests no confident complete match
+Ceremony/rachelzach-420.jpg,needs_identity,,high,multiple clear ceremony guests no confident complete match
+Ceremony/rachelzach-385.jpg,needs_identity,,medium,bride groom and officiant visible with officiant unnamed
+Cocktail Hour/rachelzach-457.jpg,needs_identity,,high,clear cocktail guest no confident reference match
+Cocktail Hour/rachelzach-456.jpg,needs_identity,,high,clear cocktail guests no confident complete match
+Friends & Family/rachelzach-465.jpg,needs_identity,,medium,wedding party lineup includes multiple people not completely named
+Cocktail Hour/rachelzach-506.jpg,needs_identity,,high,clear cocktail guest and nearby faces no confident complete match
+Cocktail Hour/rachelzach-515.jpg,needs_identity,,medium,clear cocktail guests remain unnamed or out of focus
+Cocktail Hour/rachelzach-504.jpg,ignore,,high,faces are hidden by parasols with no useful searchable tag
+Friends & Family/rachelzach-466.jpg,needs_identity,,medium,wedding party lineup includes multiple people not completely named
+Cocktail Hour/rachelzach-550.jpg,needs_identity,,high,clear older guest and surrounding guests no confident complete match
+Cocktail Hour/rachelzach-507.jpg,needs_identity,,medium,cocktail guests visible from distance no confident complete match
+Cocktail Hour/rachelzach-553.jpg,needs_identity,,medium,cocktail guests visible but not confidently matched
+Cocktail Hour/rachelzach-527.jpg,needs_identity,,high,clear cocktail guest no confident reference match
+Cocktail Hour/rachelzach-533.jpg,needs_identity,,medium,cocktail group visible from distance no confident complete match
+Cocktail Hour/rachelzach-557.jpg,needs_identity,,high,clear cocktail guest no confident reference match
+Cocktail Hour/rachelzach-561.jpg,needs_identity,,medium,wide cocktail guests visible with no confident complete match
+Cocktail Hour/rachelzach-560.jpg,replace,Erin,high,confident Erin match with no other useful searchable face
+Cocktail Hour/rachelzach-577.jpg,needs_identity,,high,clear blonde guest no confident reference match
+Cocktail Hour/rachelzach-569.jpg,replace,Tav,high,confident Tav match with foreground heads not useful
+Cocktail Hour/rachelzach-585.jpg,needs_identity,,high,multiple useful guests visible and not completely named
+Cocktail Hour/rachelzach-590.jpg,needs_identity,,high,clear guest portrait no confident reference match
+Cocktail Hour/rachelzach-572.jpg,needs_identity,,high,clear guest portrait no confident reference match
+Cocktail Hour/rachelzach-592.jpg,replace,Tav,high,confident Tav match with background faces not useful
+Cocktail Hour/rachelzach-601.jpg,needs_identity,,medium,guests visible but no confident complete match
+Cocktail Hour/rachelzach-616.jpg,needs_identity,,medium,distant guest pair no confident complete match
+Cocktail Hour/rachelzach-620.jpg,needs_identity,,high,guest conversation includes multiple useful unnamed faces
+Cocktail Hour/rachelzach-606.jpg,replace,Keagen,high,confident Keagen portrait
+Cocktail Hour/rachelzach-611.jpg,replace,Parker,high,confident Parker child portrait
+Cocktail Hour/rachelzach-645.jpg,needs_identity,,medium,guest with children no confident complete match
+Cocktail Hour/rachelzach-646.jpg,needs_identity,,medium,cocktail guests visible but not confidently matched
+Cocktail Hour/rachelzach-642.jpg,needs_identity,,medium,guests with parasol no confident complete match
+Reception/rachelzach-688.jpg,needs_identity,,high,guest couple dancing with background guests not completely named
+Reception/rachelzach-672.jpg,needs_identity,,medium,dancing guests visible but not confidently matched
+Reception/rachelzach-673.jpg,needs_identity,,medium,dancing guests visible but not confidently matched
+Reception/rachelzach-735.jpg,needs_identity,,high,Zach visible with guest who remains unnamed
+Reception/rachelzach-696.jpg,needs_identity,,high,dancing guests no confident complete match
+Reception/rachelzach-840.jpg,needs_identity,,high,couple with guest nearby no confident complete match
+Reception/rachelzach-864.jpg,needs_identity,,high,guests at table no confident complete match
+Reception/rachelzach-718.jpg,needs_identity,,medium,dancing guests visible but not confidently matched
+Reception/rachelzach-846.jpg,needs_identity,,medium,table guests visible but not confidently matched
+Reception/rachelzach-887.jpg,needs_identity,,high,clear guest portrait no confident reference match
+Reception/rachelzach-870.jpg,needs_identity,,high,guest portrait no confident reference match
+Reception/rachelzach-874.jpg,needs_identity,,medium,Zach from back with child not confidently matched
