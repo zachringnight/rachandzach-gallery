@@ -89,6 +89,8 @@ describe("proxy: public routes stay open", () => {
   const publicPaths = [
     "/",
     "/weekend",
+    "/nyc",
+    "/nyc/rachel-running.jpg",
     "/playlists",
     "/marathon",
     "/enter",

@@ -1,12 +1,25 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   computeJustifiedLayout,
   type JustifiedItem,
 } from "@/lib/gallery/layout";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
+import {
+  computeEventBoundaries,
+  EventScrubber,
+} from "@/components/gallery/EventScrubber";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
 
 export interface VirtualPhotoGridProps {
@@ -15,6 +28,14 @@ export interface VirtualPhotoGridProps {
   loading: boolean;
   onOpenPhoto: (photoId: string) => void;
   onLoadMore: () => void;
+  selecting?: boolean;
+  selected?: ReadonlySet<string>;
+  onToggleSelection?: (photoId: string) => void;
+  onStartSelection?: (photoId: string) => void;
+}
+
+export interface VirtualPhotoGridHandle {
+  scrollToIndex(index: number): void;
 }
 
 const TARGET_ROW_HEIGHT = 240;
@@ -43,13 +64,23 @@ function useContainerWidth(): [React.RefObject<HTMLDivElement | null>, number] {
  * Virtualized justified-row grid. Layout is computed deterministically for the
  * full photo list; only the visible rows mount (window virtualization by row).
  */
-export function VirtualPhotoGrid({
-  photos,
-  hasMore,
-  loading,
-  onOpenPhoto,
-  onLoadMore,
-}: VirtualPhotoGridProps) {
+export const VirtualPhotoGrid = forwardRef<
+  VirtualPhotoGridHandle,
+  VirtualPhotoGridProps
+>(function VirtualPhotoGrid(
+  {
+    photos,
+    hasMore,
+    loading,
+    onOpenPhoto,
+    onLoadMore,
+    selecting = false,
+    selected = new Set<string>(),
+    onToggleSelection,
+    onStartSelection,
+  },
+  forwardedRef,
+) {
   const [containerRef, containerWidth] = useContainerWidth();
 
   const items: JustifiedItem[] = useMemo(
@@ -96,6 +127,28 @@ export function VirtualPhotoGrid({
     scrollMargin,
   });
 
+  const scrollToPhotoIndex = useCallback(
+    (photoIndex: number) => {
+      const photo = photos[Math.max(0, Math.min(photoIndex, photos.length - 1))];
+      if (!photo) return;
+      const box = boxById.get(photo.id);
+      if (!box) return;
+      virtualizer.scrollToIndex(box.rowIndex, { align: "start" });
+    },
+    [boxById, photos, virtualizer],
+  );
+
+  useImperativeHandle(
+    forwardedRef,
+    () => ({ scrollToIndex: scrollToPhotoIndex }),
+    [scrollToPhotoIndex],
+  );
+
+  const eventBoundaries = useMemo(
+    () => computeEventBoundaries(photos),
+    [photos],
+  );
+
   // Load more when the last virtualized row is within reach of the tail.
   const virtualRows = virtualizer.getVirtualItems();
   const lastVirtualIndex = virtualRows[virtualRows.length - 1]?.index ?? -1;
@@ -112,6 +165,11 @@ export function VirtualPhotoGrid({
 
   return (
     <div ref={containerRef} className="w-full">
+      <EventScrubber
+        boundaries={eventBoundaries}
+        onJump={scrollToPhotoIndex}
+      />
+
       {containerWidth > 0 && layout.rows.length > 0 ? (
         <div
           style={{ height: virtualizer.getTotalSize(), position: "relative" }}
@@ -153,6 +211,10 @@ export function VirtualPhotoGrid({
                         width={box.width}
                         height={box.height}
                         onOpen={onOpenPhoto}
+                        selecting={selecting}
+                        selected={selected.has(photo.id)}
+                        onToggleSelection={onToggleSelection}
+                        onStartSelection={onStartSelection}
                       />
                     </div>
                   );
@@ -168,4 +230,6 @@ export function VirtualPhotoGrid({
       ) : null}
     </div>
   );
-}
+});
+
+VirtualPhotoGrid.displayName = "VirtualPhotoGrid";

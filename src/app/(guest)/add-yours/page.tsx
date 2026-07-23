@@ -13,7 +13,7 @@ import {
 import { UploadClient } from "./UploadClient";
 
 export const metadata: Metadata = {
-  title: "Add your photos",
+  title: "Add Your Photos | Rach & Zach",
   robots: { index: false, follow: false },
 };
 
@@ -29,23 +29,23 @@ export default async function AddYoursPage() {
 
   return (
     <main
-      className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-12"
-      style={{ fontFamily: "var(--font-body)", color: "var(--color-ink)" }}
+      className="atlas-guest-page atlas-upload-page"
     >
-      <header className="flex flex-col gap-2">
-        <h1
-          className="text-3xl"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Add your photos
-        </h1>
-        <p className="text-base" style={{ color: "var(--color-muted)" }}>
+      <header className="atlas-guest-header">
+        <div>
+          <p className="atlas-kicker">The weekend as you saw it</p>
+          <h1>Add your photos</h1>
+        </div>
+        <p>
           The photographer could not be everywhere. Your phone was. Share what
           you caught over the weekend.
         </p>
+        <span aria-hidden="true">Add another point of view</span>
       </header>
 
-      <UploadClient />
+      <div className="atlas-guest-body atlas-upload-body">
+        <UploadClient />
+      </div>
     </main>
   );
 }

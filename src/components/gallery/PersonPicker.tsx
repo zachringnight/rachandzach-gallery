@@ -31,8 +31,8 @@ export function PersonPicker({ people, selected, onSelect }: PersonPickerProps) 
   if (people.length === 0) return null;
 
   return (
-    <section aria-label="Filter by person">
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
+    <section aria-label="Filter by person" className="atlas-picker atlas-person-picker">
+      <h2>
         People
       </h2>
       <label className="sr-only" htmlFor="person-search">
@@ -44,9 +44,9 @@ export function PersonPicker({ people, selected, onSelect }: PersonPickerProps) 
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search people"
-        className="mb-2 w-full rounded-md border border-wheat bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink"
+        className="atlas-picker-search"
       />
-      <div className="flex gap-2 overflow-x-auto pb-1 sm:max-h-72 sm:flex-col sm:overflow-y-auto sm:overflow-x-visible">
+      <div className="atlas-picker-options">
         <Chip
           label="Everyone"
           active={selected === null}
@@ -82,15 +82,12 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex shrink-0 items-center justify-between gap-3 whitespace-nowrap rounded-full border px-3 py-2 text-left text-sm sm:w-full sm:rounded-md ${
-        active
-          ? "border-ink bg-ink text-cream"
-          : "border-wheat bg-white text-ink hover:border-tan"
-      }`}
+      className="atlas-picker-chip"
+      data-active={active ? "true" : "false"}
     >
       <span className="truncate">{label}</span>
       {active && typeof count === "number" ? (
-        <span className="text-cream/70">{count}</span>
+        <span>{count}</span>
       ) : null}
     </button>
   );

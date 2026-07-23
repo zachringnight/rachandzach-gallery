@@ -291,6 +291,8 @@ describe("PUBLIC_ROUTES / isPublicRoute", () => {
     for (const path of [
       "/",
       "/weekend",
+      "/nyc",
+      "/nyc/rachel-running.jpg",
       "/playlists",
       "/marathon",
       "/enter",

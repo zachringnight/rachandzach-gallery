@@ -14,21 +14,25 @@ export function SiteHeader() {
   );
 
   return (
-    <header className="sticky top-0 z-20 border-b border-wheat bg-cream">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-3 sm:px-8">
+    <header className="atlas-site-header">
+      <div className="atlas-header-inner">
         <Link
           href="/"
-          className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+          className="atlas-brand-link"
         >
-          <BrandMark size={22} alt="0719 + co. home" />
+          <BrandMark size={20} alt="0719 + co. home" />
+          <span aria-hidden="true" className="atlas-header-place">
+            Santa Barbara
+            <small>July 19, 2025</small>
+          </span>
         </Link>
-        <nav aria-label="Site">
-          <ul className="flex flex-wrap items-center gap-x-5 gap-y-1">
+        <nav aria-label="Site" className="atlas-site-nav">
+          <ul>
             {items.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="font-body text-sm tracking-wide text-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+                  className="atlas-nav-link"
                 >
                   {item.label}
                 </Link>

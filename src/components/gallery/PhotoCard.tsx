@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import type { ClientPhoto } from "@/lib/gallery/client-types";
+import { Check, Download } from "lucide-react";
+import { useCallback, useRef } from "react";
+
+import { DownloadOriginalButton } from "@/components/downloads/DownloadOriginalButton";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
+import { PhotoImage } from "@/components/gallery/PhotoImage";
+import type { ClientPhoto } from "@/lib/gallery/client-types";
 
 export interface PhotoCardProps {
   photo: ClientPhoto;
@@ -10,77 +14,145 @@ export interface PhotoCardProps {
   width: number;
   height: number;
   onOpen: (photoId: string) => void;
-}
-
-function bestPreviewUrl(photo: ClientPhoto, targetWidth: number): string | null {
-  if (photo.previews.length === 0) return null;
-  // Smallest preview at least as wide as the box; fall back to the largest.
-  const sorted = [...photo.previews].sort((a, b) => a.width - b.width);
-  const fit = sorted.find((p) => p.width >= targetWidth);
-  return (fit ?? sorted[sorted.length - 1]).url;
+  /** Optional caller-owned control rendered in the selection affordance slot. */
+  selectionSlot?: React.ReactNode;
+  selecting?: boolean;
+  selected?: boolean;
+  onToggleSelection?: (photoId: string) => void;
+  onStartSelection?: (photoId: string) => void;
 }
 
 function names(photo: ClientPhoto): string {
-  return photo.people.map((p) => p.displayName).join(", ");
+  return photo.people.map((person) => person.displayName).join(", ");
 }
 
 /**
- * One photo in the justified grid. The box dimensions are fixed by the layout
- * math, so the reserved space never shifts once the image decodes.
+ * One photo in the justified grid.
  *
- * Structure: a fixed-size relative wrapper holds the open-photo button and,
- * as a sibling (buttons must not nest), the absolutely-positioned
- * FavoriteButton overlay -- the same card pattern FavoritesGallery uses. The
- * overlay is positioned out of flow, so favoriting never shifts the image
- * layout (packet 09 contract).
+ * The open target, favorite, original-download, and selection controls are
+ * siblings so buttons never nest. A deliberate long press starts selection
+ * on touch devices; ordinary taps continue to open the shared lightbox.
  */
-export function PhotoCard({ photo, width, height, onOpen }: PhotoCardProps) {
-  const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const src = bestPreviewUrl(photo, width);
+export function PhotoCard({
+  photo,
+  width,
+  height,
+  onOpen,
+  selectionSlot,
+  selecting = false,
+  selected = false,
+  onToggleSelection,
+  onStartSelection,
+}: PhotoCardProps) {
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressOpen = useRef(false);
   const label = names(photo);
+  const subject = label || photo.eventName;
+
+  const cancelLongPress = useCallback(() => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+  }, []);
+
+  const beginLongPress = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (!onStartSelection || event.pointerType === "mouse") return;
+      cancelLongPress();
+      pressTimer.current = setTimeout(() => {
+        suppressOpen.current = true;
+        onStartSelection(photo.id);
+      }, 480);
+    },
+    [cancelLongPress, onStartSelection, photo.id],
+  );
+
+  const handleOpen = useCallback(() => {
+    cancelLongPress();
+    if (suppressOpen.current) {
+      suppressOpen.current = false;
+      return;
+    }
+    if (selecting && onToggleSelection) {
+      onToggleSelection(photo.id);
+      return;
+    }
+    onOpen(photo.id);
+  }, [cancelLongPress, onOpen, onToggleSelection, photo.id, selecting]);
 
   return (
-    <div className="group relative" style={{ width, height }}>
+    <div
+      className="atlas-photo-card group relative"
+      style={{ width, height }}
+      data-selecting={selecting ? "true" : "false"}
+      data-selected={selected ? "true" : "false"}
+    >
       <button
         type="button"
-        onClick={() => onOpen(photo.id)}
-        className="block h-full w-full overflow-hidden rounded-sm bg-wheat/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        onClick={handleOpen}
+        onPointerDown={beginLongPress}
+        onPointerUp={cancelLongPress}
+        onPointerCancel={cancelLongPress}
+        onPointerLeave={cancelLongPress}
+        className="atlas-photo-open"
+        role={selecting ? "checkbox" : undefined}
+        aria-checked={selecting ? selected : undefined}
         aria-label={
-          label
-            ? `Open photo from ${photo.eventName} with ${label}`
-            : `Open photo from ${photo.eventName}`
+          selecting
+            ? `${selected ? "Deselect" : "Select"} photo from ${photo.eventName}${
+                label ? ` with ${label}` : ""
+              }`
+            : label
+              ? `Open photo from ${photo.eventName} with ${label}`
+              : `Open photo from ${photo.eventName}`
         }
       >
-        {src && !failed ? (
-          <img
-            src={src}
-            alt={label ? `${label} at ${photo.eventName}` : photo.eventName}
-            width={photo.width}
-            height={photo.height}
-            loading="lazy"
-            decoding="async"
-            onLoad={() => setLoaded(true)}
-            onError={() => setFailed(true)}
-            className={`h-full w-full object-cover transition-opacity duration-300 ${
-              loaded ? "opacity-100" : "opacity-0"
-            }`}
-            style={{ width, height }}
-          />
-        ) : (
-          <span className="flex h-full w-full items-center justify-center bg-tan/50 text-xs text-muted">
-            {failed ? "Preview unavailable" : ""}
-          </span>
-        )}
+        <PhotoImage
+          photo={photo}
+          alt={label ? `${label} at ${photo.eventName}` : photo.eventName}
+          tier="card"
+          targetWidth={width}
+          className="h-full w-full"
+          imageClassName="h-full w-full object-cover"
+        />
 
-        {label ? (
-          <span className="pointer-events-none absolute inset-x-1 bottom-1 truncate rounded-sm bg-ink/70 px-2 py-1 text-xs font-medium text-cream opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-            {label}
-          </span>
-        ) : null}
+        <span className="atlas-photo-caption">
+          <span>{photo.eventName}</span>
+          {label ? <strong>{label}</strong> : null}
+        </span>
       </button>
 
-      <FavoriteButton photoId={photo.id} label={label || photo.eventName} />
+      {selectionSlot ?? (
+        onToggleSelection && onStartSelection ? (
+          <button
+            type="button"
+            className="atlas-photo-select"
+            aria-label={`${selected ? "Deselect" : "Select"} ${subject}`}
+            aria-pressed={selected}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (!selecting) onStartSelection(photo.id);
+              else onToggleSelection(photo.id);
+            }}
+          >
+            <Check aria-hidden="true" size={15} strokeWidth={2} />
+          </button>
+        ) : null
+      )}
+
+      <FavoriteButton
+        photoId={photo.id}
+        label={subject}
+        className="atlas-photo-favorite"
+      />
+
+      <DownloadOriginalButton
+        photoId={photo.id}
+        className="atlas-photo-download"
+      >
+        <Download aria-hidden="true" size={15} strokeWidth={1.7} />
+        <span>Download</span>
+      </DownloadOriginalButton>
     </div>
   );
 }

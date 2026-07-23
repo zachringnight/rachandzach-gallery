@@ -15,7 +15,11 @@ export function PhotoMarquee({ photos }: PhotoMarqueeProps) {
   if (photos.length === 0) return null;
   const loop = [...photos, ...photos];
   return (
-    <div data-marquee aria-hidden="true" className="overflow-hidden border-y border-wheat bg-sand py-6">
+    <div data-marquee aria-hidden="true" className="atlas-marquee">
+      <div className="atlas-marquee-label">
+        <span>Weekend contact sheet</span>
+        <span>Every frame has somewhere to go</span>
+      </div>
       <div className="rz-marquee-track">
         {loop.map((photo, index) => (
           // eslint-disable-next-line @next/next/no-img-element
@@ -27,7 +31,7 @@ export function PhotoMarquee({ photos }: PhotoMarqueeProps) {
             height={photo.height}
             loading="lazy"
             decoding="async"
-            className="h-40 w-auto rounded-card object-cover sm:h-52"
+            className="atlas-marquee-image"
           />
         ))}
       </div>

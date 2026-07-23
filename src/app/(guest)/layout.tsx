@@ -3,6 +3,8 @@ import {
   GalleryAccessError,
   requireGalleryAccess,
 } from "@/lib/auth/guest-session";
+import { ScrollProgress } from "@/components/site/ScrollProgress";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 
 /**
@@ -37,15 +39,17 @@ export default async function GuestLayout({
   }
 
   return (
-    <div className="min-h-screen bg-cream font-body text-ink">
+    <div className="atlas-shell min-h-screen bg-cream font-body text-ink">
       <a
         href="#gallery-main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:bg-ink focus:px-4 focus:py-2 focus:text-cream"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-cream"
       >
         Skip to content
       </a>
+      <ScrollProgress />
       <SiteHeader />
       <main id="gallery-main">{children}</main>
+      <SiteFooter />
     </div>
   );
 }

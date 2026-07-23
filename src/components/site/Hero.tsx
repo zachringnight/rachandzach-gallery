@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowDown, ArrowUpRight } from "lucide-react";
 
 import { BrandMark } from "@/components/brand/BrandMark";
 import { siteConfig } from "@/content/site";
@@ -15,49 +16,68 @@ import { storyPhotos } from "@/content/story-photos";
 export function Hero() {
   const photo = storyPhotos.hero;
   return (
-    <section>
-      <div className="relative w-full overflow-hidden bg-sand">
-        {/* Static public derivative; next/image adds only config surface here. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={photo.src}
-          alt={photo.alt}
-          width={photo.width}
-          height={photo.height}
-          decoding="async"
-          fetchPriority="high"
-          className="rz-reveal h-[52vh] min-h-[320px] w-full object-cover sm:h-[68vh]"
-        />
-      </div>
-      <div className="mx-auto max-w-3xl px-5 py-14 text-center sm:px-8 sm:py-20">
-        <BrandMark
-          size={40}
-          alt="0719 + co."
-          className="mx-auto"
-        />
-        <p className="mt-8 font-body text-sm uppercase tracking-[0.2em] text-muted">
-          {siteConfig.voice.eyebrow}
-        </p>
-        <h1 className="mt-4 font-display text-4xl leading-tight text-ink sm:text-6xl">
-          From the coast to the dance floor
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl font-body text-base leading-relaxed text-ink sm:text-lg">
-          {siteConfig.voice.heroBody}
-        </p>
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
-            href="/photos"
-            className="inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-7 font-body text-sm font-medium text-cream hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-          >
-            Find your photos
-          </Link>
-          <Link
-            href="/weekend"
-            className="inline-flex min-h-12 items-center justify-center rounded-full border border-ink px-7 font-body text-sm font-medium text-ink hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-          >
-            Browse the weekend
-          </Link>
+    <section className="atlas-hero">
+      <div className="atlas-hero-copy">
+        <div className="atlas-hero-topline">
+          <BrandMark size={31} alt="0719 + co." />
+          <span>Private wedding home</span>
         </div>
+
+        <div className="atlas-hero-main">
+          <p className="atlas-kicker">{siteConfig.voice.eyebrow}</p>
+          <h1>
+            From the coast{" "}
+            <span>to the dance floor</span>
+          </h1>
+          <p className="atlas-hero-body">{siteConfig.voice.heroBody}</p>
+          <div className="atlas-hero-actions">
+            <Link href="/photos" className="atlas-primary-link">
+              Find your photos
+              <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.5} />
+            </Link>
+            <Link href="/weekend" className="atlas-secondary-link">
+              Browse the weekend
+              <ArrowDown aria-hidden="true" size={16} strokeWidth={1.5} />
+            </Link>
+          </div>
+        </div>
+
+        <div className="atlas-hero-signature">
+          <span className="atlas-signature-line" aria-hidden="true" />
+          <span className="atlas-hero-wordmark">
+            {siteConfig.names.primary} &amp; {siteConfig.names.secondary}
+          </span>
+          <span>With all of our favorite people</span>
+        </div>
+      </div>
+
+      <figure className="atlas-hero-image">
+        <picture>
+          <source
+            media="(max-width: 720px)"
+            srcSet="/story/hero-sunset-mobile-adobe.png"
+          />
+          {/* Static public derivative; next/image adds only config surface here. */}
+          <img
+            src={photo.src}
+            alt={photo.alt}
+            width={photo.width}
+            height={photo.height}
+            decoding="async"
+            fetchPriority="high"
+          />
+        </picture>
+        <figcaption>
+          <span>01</span>
+          <span>Santa Barbara, California</span>
+          <span>34.4208° N · 119.6982° W</span>
+        </figcaption>
+      </figure>
+
+      <div className="atlas-hero-index" aria-hidden="true">
+        <span>R</span>
+        <span>+</span>
+        <span>Z</span>
       </div>
     </section>
   );

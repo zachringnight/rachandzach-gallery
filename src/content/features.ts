@@ -4,8 +4,8 @@
  * Rules (packet 01):
  * - playlists, marathon, anniversaryCapsule, and memoryNotes stay false until
  *   real content and links are supplied. Do not flip them here.
- * - momentSearch is true only in development until packet 07 passes its
- *   done-check, then it can graduate to production.
+ * - momentSearch graduated to every environment in the 2026-07-23 overhaul:
+ *   its 1,721-image embedding backfill and protected search path are complete.
  */
 export interface FeatureFlags {
   /** Weekend playlists module. Off until real playlist links exist. */
@@ -29,11 +29,11 @@ export type FeatureFlagName = keyof FeatureFlags;
 export function resolveFeatureFlags(
   env: string | undefined = process.env.NODE_ENV,
 ): FeatureFlags {
-  const isDevelopment = env === "development";
+  void env;
   return {
     playlists: false,
     marathon: false,
-    momentSearch: isDevelopment,
+    momentSearch: true,
     anniversaryCapsule: false,
     memoryNotes: false,
   };

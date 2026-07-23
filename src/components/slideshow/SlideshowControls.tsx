@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  Captions,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  Pause,
+  Play,
+} from "lucide-react";
+
 export interface SlideshowControlsProps {
   playing: boolean;
   onTogglePlay: () => void;
@@ -19,7 +29,7 @@ export interface SlideshowControlsProps {
 }
 
 const BUTTON_CLASS =
-  "inline-flex items-center gap-1.5 rounded-md border border-cream/25 bg-cream/10 px-3 py-1.5 text-sm text-cream transition hover:bg-cream/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream disabled:cursor-not-allowed disabled:opacity-40";
+  "atlas-slideshow-button";
 
 /**
  * The transport bar under a Slideshow: play/pause, previous/next, caption
@@ -46,7 +56,7 @@ export function SlideshowControls({
     <div
       className={
         className ??
-        "flex flex-wrap items-center justify-center gap-2 border-t border-cream/10 p-3"
+        "atlas-slideshow-controls-inner"
       }
     >
       <button
@@ -56,7 +66,8 @@ export function SlideshowControls({
         className={BUTTON_CLASS}
         aria-label="Previous photo"
       >
-        &lsaquo; Prev
+        <ChevronLeft aria-hidden="true" size={15} strokeWidth={1.6} />
+        Prev
       </button>
       <button
         type="button"
@@ -64,6 +75,11 @@ export function SlideshowControls({
         className={BUTTON_CLASS}
         aria-pressed={playing}
       >
+        {playing ? (
+          <Pause aria-hidden="true" size={14} strokeWidth={1.6} />
+        ) : (
+          <Play aria-hidden="true" size={14} strokeWidth={1.6} />
+        )}
         {playing ? "Pause" : "Play"}
       </button>
       <button
@@ -73,7 +89,8 @@ export function SlideshowControls({
         className={BUTTON_CLASS}
         aria-label="Next photo"
       >
-        Next &rsaquo;
+        Next
+        <ChevronRight aria-hidden="true" size={15} strokeWidth={1.6} />
       </button>
 
       <button
@@ -82,6 +99,7 @@ export function SlideshowControls({
         aria-pressed={showCaptions}
         className={BUTTON_CLASS}
       >
+        <Captions aria-hidden="true" size={15} strokeWidth={1.6} />
         {showCaptions ? "Hide captions" : "Show captions"}
       </button>
 
@@ -91,10 +109,15 @@ export function SlideshowControls({
         aria-pressed={isFullscreen}
         className={BUTTON_CLASS}
       >
+        {isFullscreen ? (
+          <Minimize2 aria-hidden="true" size={14} strokeWidth={1.6} />
+        ) : (
+          <Maximize2 aria-hidden="true" size={14} strokeWidth={1.6} />
+        )}
         {isFullscreen ? "Exit full screen" : "Full screen"}
       </button>
 
-      <label className="flex items-center gap-2 text-xs text-cream/80">
+      <label className="atlas-slideshow-speed">
         Speed
         <input
           type="range"

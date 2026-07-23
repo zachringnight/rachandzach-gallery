@@ -28,25 +28,28 @@ export default async function MyWeekendPage() {
   const facets = await getGalleryFacets(source);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-8 pb-16 sm:px-6">
-      <header className="max-w-2xl">
-        <p className="text-xs uppercase tracking-wider text-muted">Just for you</p>
-        <h1 className="mt-1 font-display text-3xl text-ink sm:text-4xl">My Weekend</h1>
-        <p className="mt-3 text-ink/70">
+    <section className="atlas-guest-page">
+      <header className="atlas-guest-header">
+        <div>
+          <p className="atlas-kicker">Just for you</p>
+          <h1>My Weekend</h1>
+        </div>
+        <p>
           Tell us who you are and we will gather every photo of {siteConfig.names.primary}{" "}
           and {siteConfig.names.secondary}&rsquo;s weekend that includes you.
         </p>
+        <span aria-hidden="true">Find your way back</span>
       </header>
 
-      <div className="mt-8">
+      <div className="atlas-guest-body">
         <MyWeekendClient people={facets.people} />
       </div>
 
       {featureFlags.momentSearch ? (
-        <div className="mt-16 border-t border-wheat pt-10">
-          <p className="text-xs uppercase tracking-wider text-muted">Beta</p>
-          <h2 className="mt-1 font-display text-2xl text-ink">Search for a moment</h2>
-          <div className="mt-4">
+        <div className="atlas-guest-feature">
+          <p className="atlas-kicker">Beta</p>
+          <h2>Search for a moment</h2>
+          <div>
             <MomentSearch events={facets.events} />
           </div>
         </div>

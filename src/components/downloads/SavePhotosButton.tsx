@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
-import type { OriginalDownload, SelectionDownload } from "@/lib/downloads/contracts";
+import type { OriginalDownload } from "@/lib/downloads/contracts";
 import { canShareFiles, chunkForShare, isAbortError } from "./share-sheet";
+import {
+  fetchSelectionDownloads,
+  SelectionPreparationError,
+} from "./fetch-selection";
 
 export interface SavePhotosButtonProps {
   photoIds: string[];
@@ -172,19 +176,12 @@ export function SavePhotosButton({ photoIds, label = "Save photos", className }:
     if (photoIds.length === 0) return;
     setStatus({ phase: "requesting" });
     try {
-      // Same authorized flow DownloadSelectionButton uses -- no separate
-      // API path for the share-sheet slice.
-      const response = await fetch("/api/downloads/selection", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ photoIds }),
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: string } | null;
-        setStatus({ phase: "error", message: body?.error ?? "Could not get your photos ready to save." });
-        return;
-      }
-      const selection = (await response.json()) as SelectionDownload;
+      // Same authorized flow DownloadSelectionButton uses -- bounded calls
+      // are combined client-side when the UI selection is larger than 50.
+      const selection = await fetchSelectionDownloads(
+        photoIds,
+        "Could not get your photos ready to save.",
+      );
       if (selection.items.length === 0) {
         setStatus({ phase: "error", message: "Nothing here is available to save yet." });
         return;
@@ -193,10 +190,13 @@ export function SavePhotosButton({ photoIds, label = "Save photos", className }:
       sharedCountRef.current = 0;
       totalCountRef.current = selection.items.length;
       await runChunk(0);
-    } catch {
+    } catch (error) {
       setStatus({
         phase: "error",
-        message: "Could not get your photos ready to save. Check your connection and try again.",
+        message:
+          error instanceof SelectionPreparationError
+            ? error.message
+            : "Could not get your photos ready to save. Check your connection and try again.",
       });
     }
   }, [photoIds, runChunk]);

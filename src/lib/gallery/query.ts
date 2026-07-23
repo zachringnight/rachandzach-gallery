@@ -493,13 +493,22 @@ function dedupeKeywordsAgainstPeople(
   );
 }
 
+/**
+ * Presentation-only event names. The source folder named "Film" contains
+ * still photographs made on a film camera; spell that out so the gallery
+ * never reads like a video or movie experience.
+ */
+export function displayEventName(slug: string, sourceName: string): string {
+  return slug === "film" ? "Film Camera" : sourceName;
+}
+
 function toView(photo: GalleryPhotoSource): GalleryPhotoView {
   const aspectRatio = photo.height > 0 ? photo.width / photo.height : 1;
   const people = confirmedPeople(photo);
   return {
     id: photo.id,
     eventSlug: photo.eventSlug,
-    eventName: photo.eventName,
+    eventName: displayEventName(photo.eventSlug, photo.eventName),
     source: photo.source,
     orientation: photo.orientation,
     width: photo.width,
@@ -621,7 +630,7 @@ export async function getGalleryFacets(
   const eventFacets = [...eventCounts.entries()]
     .map(([slug, count]) => ({
       slug,
-      name: eventName.get(slug) ?? slug,
+      name: displayEventName(slug, eventName.get(slug) ?? slug),
       count,
       order: eventOrder.get(slug) ?? Number.MAX_SAFE_INTEGER,
     }))

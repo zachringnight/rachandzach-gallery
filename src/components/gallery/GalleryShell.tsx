@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ClientGalleryFacets,
   ClientGalleryPage,
@@ -9,14 +9,21 @@ import type {
 } from "@/lib/gallery/client-types";
 import { EMPTY_FILTER_STATE } from "@/lib/gallery/client-types";
 import { FilterBar } from "@/components/gallery/FilterBar";
+import { SelectionBar } from "@/components/gallery/SelectionBar";
+import { useSelection } from "@/components/gallery/useSelection";
 import { VirtualPhotoGrid } from "@/components/gallery/VirtualPhotoGrid";
 import { Lightbox } from "@/components/gallery/Lightbox";
+import { DownloadSelectionButton } from "@/components/downloads/DownloadSelectionButton";
+import { MomentSearch } from "@/components/search/MomentSearch";
+import { featureFlags } from "@/content/features";
+import { favoriteStore } from "@/lib/favorites/store";
 
 export interface GalleryShellProps {
   initialPage: ClientGalleryPage;
   facets: ClientGalleryFacets;
   initialFilters: GalleryFilterState;
   initialPhotoId: string | null;
+  toolbarSlot?: React.ReactNode;
 }
 
 const PAGE_LIMIT = 60;
@@ -79,6 +86,7 @@ export function GalleryShell({
   facets,
   initialFilters,
   initialPhotoId,
+  toolbarSlot,
 }: GalleryShellProps) {
   const [filters, setFilters] = useState<GalleryFilterState>(initialFilters);
   const [photos, setPhotos] = useState<ClientPhoto[]>(initialPage.photos);
@@ -90,6 +98,11 @@ export function GalleryShell({
   const [state, setState] = useState<LoadState>("idle");
   const [activePhotoId, setActivePhotoId] = useState<string | null>(
     initialPhotoId,
+  );
+  const selection = useSelection();
+  const selectedIds = useMemo(
+    () => Array.from(selection.selected),
+    [selection.selected],
   );
 
   // Guards against stale responses when filters change mid-flight.
@@ -243,17 +256,40 @@ export function GalleryShell({
 
   const showEmpty = state === "idle" && photos.length === 0;
 
+  const favoriteSelected = useCallback(() => {
+    for (const photoId of selectedIds) {
+      if (!favoriteStore.has(photoId)) favoriteStore.toggle(photoId);
+    }
+  }, [selectedIds]);
+
   return (
-    <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="atlas-gallery-shell">
       <FilterBar
         facets={facets}
         filters={filters}
         total={total}
         onChange={applyFilters}
         onReset={resetFilters}
+        selecting={selection.selecting}
+        selectedCount={selectedIds.length}
+        onStartSelection={selection.start}
       />
 
-      <div className="min-w-0">
+      <div className="atlas-gallery-main">
+        {featureFlags.momentSearch || toolbarSlot ? (
+          <div className="atlas-gallery-toolbar">
+            {featureFlags.momentSearch ? (
+              <details className="atlas-search-disclosure">
+                <summary>Search the moments</summary>
+                <div className="atlas-search-disclosure-body">
+                  <MomentSearch events={facets.events} />
+                </div>
+              </details>
+            ) : null}
+            {toolbarSlot}
+          </div>
+        ) : null}
+
         {state === "error-session" ? (
           <ErrorState
             title="Your session expired"
@@ -271,12 +307,12 @@ export function GalleryShell({
             onAction={() => void runQuery(filters)}
           />
         ) : showEmpty ? (
-          <div className="rounded-md border border-wheat bg-white p-10 text-center">
-            <p className="text-lg text-ink">No photos match these filters.</p>
+          <div className="atlas-empty-state">
+            <p>No photos match these filters.</p>
             <button
               type="button"
               onClick={resetFilters}
-              className="mt-3 text-sm underline underline-offset-4"
+              className="atlas-text-button"
             >
               Clear filters
             </button>
@@ -288,9 +324,32 @@ export function GalleryShell({
             loading={state === "loading"}
             onOpenPhoto={openPhoto}
             onLoadMore={() => void loadMore()}
+            selecting={selection.selecting}
+            selected={selection.selected}
+            onToggleSelection={selection.toggle}
+            onStartSelection={(photoId) => selection.toggle(photoId)}
           />
         )}
       </div>
+
+      {selection.selecting ? (
+        <SelectionBar
+          count={selectedIds.length}
+          onFavoriteAll={favoriteSelected}
+          onClear={selection.clear}
+          onSelectAllVisible={() =>
+            selection.selectAllVisible(photos.map((photo) => photo.id))
+          }
+          downloadControl={
+            <DownloadSelectionButton
+              photoIds={selectedIds}
+              label="Download"
+              zipFilename="rach-and-zach-selection.zip"
+              className="atlas-selection-download"
+            />
+          }
+        />
+      ) : null}
 
       {activePhoto ? (
         <Lightbox
@@ -328,14 +387,14 @@ function ErrorState({
   return (
     <div
       role="alert"
-      className="rounded-md border border-coral/40 bg-white p-10 text-center"
+      className="atlas-empty-state"
     >
-      <p className="text-lg text-ink">{title}</p>
-      <p className="mt-1 text-sm text-ink/70">{body}</p>
+      <p>{title}</p>
+      <p>{body}</p>
       <button
         type="button"
         onClick={onAction}
-        className="mt-4 rounded-md bg-ink px-4 py-2 text-sm text-cream"
+        className="atlas-inline-action"
       >
         {actionLabel}
       </button>

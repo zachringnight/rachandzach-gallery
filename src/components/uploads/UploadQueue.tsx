@@ -40,45 +40,31 @@ export function UploadQueue({
   if (items.length === 0) return null;
 
   return (
-    <ul
-      className="flex flex-col gap-2"
-      style={{ fontFamily: "var(--font-body)" }}
-    >
+    <ul className="atlas-upload-queue">
       {items.map((item) => (
         <li
           key={item.id}
-          className="flex flex-col gap-2 border px-4 py-3"
-          style={{
-            borderColor: "var(--color-sand)",
-            borderRadius: "var(--radius-card)",
-            backgroundColor: "var(--color-white)",
-          }}
+          className="atlas-upload-queue-item"
+          data-status={item.status}
         >
           <div className="flex items-center justify-between gap-3">
-            <span
-              className="truncate text-sm font-medium"
-              style={{ color: "var(--color-ink)" }}
-            >
+            <span className="truncate text-sm font-medium">
               {item.displayName}
             </span>
-            <span className="text-xs" style={{ color: "var(--color-muted)" }}>
+            <span className="text-xs text-muted">
               {formatBytes(item.bytes)} · {STATUS_LABEL[item.status]}
             </span>
           </div>
 
           <div
-            className="h-1.5 w-full overflow-hidden"
-            style={{
-              backgroundColor: "var(--color-wheat)",
-              borderRadius: "var(--radius-card)",
-            }}
+            className="atlas-upload-progress"
             role="progressbar"
             aria-valuenow={Math.round(item.progress * 100)}
             aria-valuemin={0}
             aria-valuemax={100}
           >
             <div
-              className="h-full transition-all"
+              className="atlas-upload-progress-bar"
               style={{
                 width: `${Math.round(item.progress * 100)}%`,
                 backgroundColor:
@@ -101,12 +87,12 @@ export function UploadQueue({
             </p>
           ) : null}
 
-          <div className="flex gap-3 text-xs">
+          <div className="atlas-upload-queue-actions">
             {item.status === "uploading" ? (
               <button
                 type="button"
                 onClick={() => onPause(item.id)}
-                style={{ color: "var(--color-ink)" }}
+                className="atlas-upload-queue-action"
               >
                 Pause
               </button>
@@ -115,7 +101,7 @@ export function UploadQueue({
               <button
                 type="button"
                 onClick={() => onResume(item.id)}
-                style={{ color: "var(--color-ink)" }}
+                className="atlas-upload-queue-action"
               >
                 Resume
               </button>
@@ -124,7 +110,7 @@ export function UploadQueue({
               <button
                 type="button"
                 onClick={() => onRetry(item.id)}
-                style={{ color: "var(--color-ink)" }}
+                className="atlas-upload-queue-action"
               >
                 Retry
               </button>
@@ -133,7 +119,7 @@ export function UploadQueue({
               <button
                 type="button"
                 onClick={() => onRemove(item.id)}
-                style={{ color: "var(--color-muted)" }}
+                className="atlas-upload-queue-action atlas-upload-queue-remove"
               >
                 Remove
               </button>

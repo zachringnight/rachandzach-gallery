@@ -58,6 +58,8 @@ export const PUBLIC_ROUTES = {
   exact: [
     "/",
     "/weekend",
+    "/nyc",
+    "/nyc/rachel-running.jpg",
     "/playlists",
     "/marathon",
     "/enter",

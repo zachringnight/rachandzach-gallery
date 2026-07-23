@@ -14,6 +14,7 @@
  * receipt link may be the very first URL a guest opens in a new tab.
  */
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { GalleryAccessError, requireGalleryAccess } from "@/lib/auth/guest-session";
@@ -63,37 +64,37 @@ export default async function SubmissionStatusPage({
   const view = await loadSubmissionReceiptView(batchId, receipt, { getUploadStatus });
 
   return (
-    <section className="mx-auto max-w-2xl px-4 pt-8 pb-16 sm:px-6">
-      <header className="max-w-xl">
-        <p className="text-xs uppercase tracking-wider text-muted">Your upload</p>
-        <h1 className="mt-1 font-display text-3xl text-ink sm:text-4xl">
+    <section className="atlas-submission-page">
+      <header className="atlas-submission-header">
+        <p className="atlas-kicker">Your upload</p>
+        <h1>
           Submission status
         </h1>
       </header>
 
-      <div className="mt-8 rounded-card border border-wheat bg-white p-6 shadow-soft">
+      <div className="atlas-submission-card">
         {view.kind === "opaque" ? (
           <>
-            <h2 className="font-display text-xl text-ink">We could not find that upload</h2>
-            <p className="mt-2 font-body text-sm leading-relaxed text-muted">
+            <h2>We could not find that upload</h2>
+            <p>
               Double-check the link from your receipt, including the code at the end of the
               address. If you still cannot find it, you are welcome to submit again from{" "}
-              <a
+              <Link
                 href="/add-yours"
-                className="font-medium text-ink underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+                className="atlas-text-link"
               >
                 Add Yours
-              </a>
+              </Link>
               .
             </p>
           </>
         ) : (
           <>
-            <h2 className="font-display text-xl text-ink">{view.copy.headline}</h2>
-            <p className="mt-2 font-body text-sm leading-relaxed text-muted">{view.copy.body}</p>
-            <p className="mt-4 font-body text-sm text-ink">{formatCounts(view.status.counts)}</p>
+            <h2>{view.copy.headline}</h2>
+            <p>{view.copy.body}</p>
+            <p className="atlas-submission-counts">{formatCounts(view.status.counts)}</p>
             {view.status.submittedAt ? (
-              <p className="mt-1 font-body text-xs text-muted">
+              <p className="atlas-submission-date">
                 Submitted {new Date(view.status.submittedAt).toLocaleString("en-US", {
                   dateStyle: "medium",
                   timeStyle: "short",

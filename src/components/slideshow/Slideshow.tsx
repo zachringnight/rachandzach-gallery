@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { DownloadOriginalButton } from "@/components/downloads/DownloadOriginalButton";
 import { SlideshowControls } from "./SlideshowControls";
@@ -66,6 +67,8 @@ export interface SlideshowProps {
   startIndex?: number;
   intervalMs?: number;
   onClose?: () => void;
+  /** TV-mode treatment: hide transport chrome after idle, reveal on input. */
+  autoHideChrome?: boolean;
 }
 
 const DEFAULT_INTERVAL_MS = 5000;
@@ -129,6 +132,7 @@ export function Slideshow({
   startIndex = 0,
   intervalMs = DEFAULT_INTERVAL_MS,
   onClose,
+  autoHideChrome = false,
 }: SlideshowProps) {
   const reducedMotion = usePrefersReducedMotion();
   const [index, setIndex] = useState(() => clampIndex(startIndex, photos.length));
@@ -136,8 +140,10 @@ export function Slideshow({
   const [showCaptions, setShowCaptions] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [interval_, setInterval_] = useState(() => clampInterval(intervalMs));
+  const [chromeVisible, setChromeVisible] = useState(true);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const hideChromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previouslyFocused = useRef<Element | null>(null);
   const touchStartX = useRef<number | null>(null);
 
@@ -170,6 +176,25 @@ export function Slideshow({
   );
   const next = useCallback(() => goTo(index + 1), [goTo, index]);
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
+
+  const scheduleChromeHide = useCallback(() => {
+    if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
+    if (!autoHideChrome || reducedMotion) return;
+    hideChromeTimer.current = setTimeout(() => setChromeVisible(false), 2800);
+  }, [autoHideChrome, reducedMotion]);
+
+  const revealChrome = useCallback(() => {
+    if (!autoHideChrome) return;
+    setChromeVisible(true);
+    scheduleChromeHide();
+  }, [autoHideChrome, scheduleChromeHide]);
+
+  useEffect(() => {
+    scheduleChromeHide();
+    return () => {
+      if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
+    };
+  }, [scheduleChromeHide]);
 
   // Autoplay.
   useEffect(() => {
@@ -204,6 +229,7 @@ export function Slideshow({
   // Keyboard controls + focus trap, mirroring src/components/gallery/Lightbox.tsx.
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      revealChrome();
       if (event.key === "Escape") {
         event.preventDefault();
         onClose?.();
@@ -263,7 +289,7 @@ export function Slideshow({
         }
       }
     },
-    [onClose, prev, next, toggleFullscreen],
+    [onClose, prev, next, revealChrome, toggleFullscreen],
   );
 
   useEffect(() => {
@@ -292,14 +318,14 @@ export function Slideshow({
         role="dialog"
         aria-modal="true"
         aria-label={dialogLabel}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/95 p-6 text-center text-cream"
+        className="atlas-slideshow atlas-slideshow-empty"
       >
         <p>There is nothing in {modeLabel} to show yet.</p>
         {onClose ? (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-cream/30 bg-cream/10 px-4 py-2 text-sm hover:bg-cream/20"
+            className="atlas-slideshow-button"
           >
             Close
           </button>
@@ -315,7 +341,10 @@ export function Slideshow({
       aria-modal="true"
       aria-label={caption ? `${dialogLabel}: ${caption} at ${photo?.eventName}` : dialogLabel}
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col bg-ink text-cream"
+      className="atlas-slideshow"
+      data-chrome-visible={chromeVisible ? "true" : "false"}
+      onPointerMove={revealChrome}
+      onPointerDown={revealChrome}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose?.();
       }}
@@ -331,30 +360,31 @@ export function Slideshow({
         else if (delta < -60) next();
       }}
     >
-      <div className="flex items-start justify-between gap-4 p-4">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wider text-cream/70">
+      <header className="atlas-slideshow-header">
+        <div className="atlas-slideshow-caption">
+          <p>
             {modeLabel} &middot; {clampedIndex + 1} / {photos.length}
           </p>
           {showCaptions && (caption || photo?.eventName) ? (
-            <h2 className="truncate text-lg font-medium">
+            <h2>
               {caption ? `${caption} · ${photo?.eventName}` : photo?.eventName}
             </h2>
           ) : null}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="atlas-slideshow-tools">
           {photo ? (
             <FavoriteButton
               photoId={photo.id}
               label={caption || photo.eventName}
-              className="static flex h-9 w-9 items-center justify-center rounded-full border border-cream/30 bg-cream/10 text-cream hover:bg-cream/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream"
+              className="atlas-slideshow-icon"
             />
           ) : null}
           {photo ? (
             <DownloadOriginalButton
               photoId={photo.id}
-              className="rounded-md border border-cream/30 bg-cream/10 px-3 py-1.5 text-sm text-cream hover:bg-cream/20"
+              className="atlas-slideshow-button"
             >
+              <Download aria-hidden="true" size={15} strokeWidth={1.6} />
               Download
             </DownloadOriginalButton>
           ) : null}
@@ -363,23 +393,23 @@ export function Slideshow({
               type="button"
               onClick={onClose}
               aria-label="Close slideshow"
-              className="rounded-md border border-cream/30 bg-cream/10 px-3 py-1.5 text-sm hover:bg-cream/20"
+              className="atlas-slideshow-icon"
             >
-              Close
+              <X aria-hidden="true" size={17} strokeWidth={1.6} />
             </button>
           ) : null}
         </div>
-      </div>
+      </header>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center">
+      <div className="atlas-slideshow-stage">
         {photos.length > 1 ? (
           <button
             type="button"
             onClick={prev}
             aria-label="Previous photo"
-            className="absolute left-2 top-1/2 z-10 h-14 w-11 -translate-y-1/2 rounded-md border border-cream/25 bg-cream/10 text-2xl hover:bg-cream/20"
+            className="atlas-slideshow-arrow atlas-slideshow-arrow-prev"
           >
-            &lsaquo;
+            <ChevronLeft aria-hidden="true" size={26} strokeWidth={1.35} />
           </button>
         ) : null}
 
@@ -388,7 +418,9 @@ export function Slideshow({
           <img
             src={src}
             alt={caption ? `${caption} at ${photo?.eventName}` : (photo?.eventName ?? "")}
-            className="max-h-full max-w-full object-contain"
+            width={photo?.width}
+            height={photo?.height}
+            className="atlas-slideshow-image"
           />
         ) : (
           <p className="text-sm text-cream/70">This preview is unavailable.</p>
@@ -399,28 +431,30 @@ export function Slideshow({
             type="button"
             onClick={next}
             aria-label="Next photo"
-            className="absolute right-2 top-1/2 z-10 h-14 w-11 -translate-y-1/2 rounded-md border border-cream/25 bg-cream/10 text-2xl hover:bg-cream/20"
+            className="atlas-slideshow-arrow atlas-slideshow-arrow-next"
           >
-            &rsaquo;
+            <ChevronRight aria-hidden="true" size={26} strokeWidth={1.35} />
           </button>
         ) : null}
       </div>
 
-      <SlideshowControls
-        playing={playing}
-        onTogglePlay={() => setPlaying((current) => !current)}
-        onPrev={prev}
-        onNext={next}
-        disablePrevNext={photos.length < 2}
-        showCaptions={showCaptions}
-        onToggleCaptions={() => setShowCaptions((current) => !current)}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={() => void toggleFullscreen()}
-        intervalMs={interval_}
-        onIntervalChange={(ms) => setInterval_(clampInterval(ms))}
-        minIntervalMs={MIN_INTERVAL_MS}
-        maxIntervalMs={MAX_INTERVAL_MS}
-      />
+      <div className="atlas-slideshow-transport">
+        <SlideshowControls
+          playing={playing}
+          onTogglePlay={() => setPlaying((current) => !current)}
+          onPrev={prev}
+          onNext={next}
+          disablePrevNext={photos.length < 2}
+          showCaptions={showCaptions}
+          onToggleCaptions={() => setShowCaptions((current) => !current)}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={() => void toggleFullscreen()}
+          intervalMs={interval_}
+          onIntervalChange={(ms) => setInterval_(clampInterval(ms))}
+          minIntervalMs={MIN_INTERVAL_MS}
+          maxIntervalMs={MAX_INTERVAL_MS}
+        />
+      </div>
     </div>
   );
 }

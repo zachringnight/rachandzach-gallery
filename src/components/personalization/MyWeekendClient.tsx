@@ -61,7 +61,7 @@ export function MyWeekendClient({ people }: MyWeekendClientProps) {
   }, []);
 
   if (personSlug === undefined) {
-    return <p className="py-16 text-sm text-muted">Loading your weekend…</p>;
+    return <p className="atlas-personal-state">Loading your weekend…</p>;
   }
 
   if (personSlug === null) {
@@ -74,6 +74,7 @@ export function MyWeekendClient({ people }: MyWeekendClientProps) {
       personSlug={personSlug}
       personName={person?.displayName ?? "Guest"}
       onChangePerson={handleChangePerson}
+      personalPageHref={`/${personSlug}`}
     />
   );
 }

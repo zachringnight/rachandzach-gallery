@@ -180,16 +180,16 @@ describe("feature flags", () => {
     }
   });
 
-  it("enables momentSearch only in development", () => {
+  it("keeps momentSearch enabled behind the guest gate in every environment", () => {
     expect(resolveFeatureFlags("development").momentSearch).toBe(true);
-    expect(resolveFeatureFlags("production").momentSearch).toBe(false);
-    expect(resolveFeatureFlags("test").momentSearch).toBe(false);
-    expect(resolveFeatureFlags(undefined).momentSearch).toBe(false);
+    expect(resolveFeatureFlags("production").momentSearch).toBe(true);
+    expect(resolveFeatureFlags("test").momentSearch).toBe(true);
+    expect(resolveFeatureFlags(undefined).momentSearch).toBe(true);
   });
 
   it("resolves the ambient flags from the current environment", () => {
     // Vitest runs with NODE_ENV=test, so the ambient snapshot must match.
     expect(featureFlags).toEqual(resolveFeatureFlags(process.env.NODE_ENV));
-    expect(featureFlags.momentSearch).toBe(false);
+    expect(featureFlags.momentSearch).toBe(true);
   });
 });

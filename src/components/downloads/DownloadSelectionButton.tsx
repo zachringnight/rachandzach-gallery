@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { OriginalDownload, SelectionDownload } from "@/lib/downloads/contracts";
+import type { OriginalDownload } from "@/lib/downloads/contracts";
 import {
   needsFallbackSizeWarning,
   splitIntoBoundedBatches,
@@ -9,6 +9,10 @@ import {
   supportsFileSystemAccessZip,
   type ZipStreamEvent,
 } from "@/lib/downloads/stream-zip";
+import {
+  fetchSelectionDownloads,
+  SelectionPreparationError,
+} from "@/components/downloads/fetch-selection";
 
 export interface DownloadSelectionButtonProps {
   photoIds: string[];
@@ -129,17 +133,10 @@ export function DownloadSelectionButton({
     if (photoIds.length === 0) return;
     setStatus({ phase: "requesting" });
     try {
-      const response = await fetch("/api/downloads/selection", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ photoIds }),
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: string } | null;
-        setStatus({ phase: "error", message: body?.error ?? "Could not prepare the download." });
-        return;
-      }
-      const selection = (await response.json()) as SelectionDownload;
+      const selection = await fetchSelectionDownloads(
+        photoIds,
+        "Could not prepare the download.",
+      );
       if (selection.items.length === 0) {
         setStatus({ phase: "error", message: "Nothing here is available to download yet." });
         return;
@@ -155,10 +152,13 @@ export function DownloadSelectionButton({
         return;
       }
       await runBatches([selection.items]);
-    } catch {
+    } catch (error) {
       setStatus({
         phase: "error",
-        message: "Could not prepare the download. Check your connection and try again.",
+        message:
+          error instanceof SelectionPreparationError
+            ? error.message
+            : "Could not prepare the download. Check your connection and try again.",
       });
     }
   }, [photoIds, runBatches]);

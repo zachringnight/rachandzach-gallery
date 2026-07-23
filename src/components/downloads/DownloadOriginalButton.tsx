@@ -5,6 +5,7 @@ export interface DownloadOriginalButtonProps {
   /** Visible label. Defaults to "Download original". */
   children?: React.ReactNode;
   className?: string;
+  anchorRef?: React.Ref<HTMLAnchorElement>;
 }
 
 const DEFAULT_CLASS =
@@ -22,9 +23,11 @@ export function DownloadOriginalButton({
   photoId,
   children,
   className,
+  anchorRef,
 }: DownloadOriginalButtonProps) {
   return (
     <a
+      ref={anchorRef}
       href={`/api/downloads/photo/${encodeURIComponent(photoId)}`}
       className={className ?? DEFAULT_CLASS}
     >

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  displayEventName,
   compareBySortKey,
   decodeCursor,
   encodeCursor,
@@ -488,6 +489,13 @@ describe("getGalleryFacets", () => {
       (p) => p.slug === fixture.confirmedPersonSlug,
     );
     expect(facet!.count).toBe(direct);
+  });
+});
+
+describe("event display names", () => {
+  it("clarifies that Film means still photography from a film camera", () => {
+    expect(displayEventName("film", "Film")).toBe("Film Camera");
+    expect(displayEventName("ceremony", "Ceremony")).toBe("Ceremony");
   });
 });
 

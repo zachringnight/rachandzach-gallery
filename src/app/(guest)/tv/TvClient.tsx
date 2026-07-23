@@ -103,6 +103,7 @@ export function TvClient({ photos }: TvClientProps) {
       <Slideshow
         photos={photos}
         modeLabel="TV mode"
+        autoHideChrome
         onClose={() => router.push("/photos")}
       />
       {/* Decorative: the real exit mechanisms are Slideshow's own Close

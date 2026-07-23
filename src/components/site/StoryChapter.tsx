@@ -1,4 +1,6 @@
 import type { StoryPhotoContent } from "@/content/story-photos";
+import { focalObjectPosition } from "@/content/story-photos";
+import { Reveal } from "@/components/motion/Reveal";
 
 export interface StoryChapterProps {
   /** Anchor id for deep links (e.g. /#ceremony, /weekend#after-party). */
@@ -11,22 +13,33 @@ export interface StoryChapterProps {
   photo?: StoryPhotoContent;
   /** Alternate the photo side for editorial rhythm. */
   reverse?: boolean;
+  /** Atlas sequence number. */
+  number?: string;
 }
 
 /**
  * One photo-led chapter of the weekend story: full-width image beside calm
  * typography, alternating sides, no cards and no icons.
  */
-export function StoryChapter({ id, kicker, title, body, photo, reverse }: StoryChapterProps) {
+export function StoryChapter({
+  id,
+  kicker,
+  title,
+  body,
+  photo,
+  reverse,
+  number,
+}: StoryChapterProps) {
   return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24">
-      <div
-        className={`mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8 md:items-center md:gap-14 ${
-          reverse ? "md:flex-row-reverse" : "md:flex-row"
-        }`}
-      >
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className="atlas-story-chapter"
+      data-reverse={reverse ? "true" : "false"}
+    >
+      <div className="atlas-story-grid">
         {photo ? (
-          <div className="md:w-3/5">
+          <Reveal as="figure" className="atlas-story-image" y={34}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.src}
@@ -35,17 +48,24 @@ export function StoryChapter({ id, kicker, title, body, photo, reverse }: StoryC
               height={photo.height}
               loading="lazy"
               decoding="async"
-              className="rz-reveal w-full rounded-card object-cover shadow-soft"
+              style={{ objectPosition: focalObjectPosition(photo) }}
             />
-          </div>
+            <figcaption>
+              <span>{number ?? "—"} / 05</span>
+              <span>{photo.alt}</span>
+            </figcaption>
+          </Reveal>
         ) : null}
-        <div className={photo ? "md:w-2/5" : "md:max-w-2xl"}>
-          <p className="font-body text-xs uppercase tracking-[0.2em] text-muted">{kicker}</p>
-          <h2 id={`${id}-title`} className="mt-3 font-display text-3xl leading-tight text-ink sm:text-4xl">
+        <Reveal className="atlas-story-copy" y={22}>
+          <span className="atlas-story-number" aria-hidden="true">
+            {number ?? "—"}
+          </span>
+          <p className="atlas-kicker">{kicker}</p>
+          <h2 id={`${id}-title`}>
             {title}
           </h2>
-          <p className="mt-4 font-body text-base leading-relaxed text-ink">{body}</p>
-        </div>
+          <p>{body}</p>
+        </Reveal>
       </div>
     </section>
   );

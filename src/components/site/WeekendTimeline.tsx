@@ -7,29 +7,23 @@ import type { WeekendEventContent } from "@/content/site";
  */
 export function WeekendTimeline({ events }: { events: WeekendEventContent[] }) {
   return (
-    <ol className="mx-auto max-w-3xl divide-y divide-wheat px-5 sm:px-8">
-      {events.map((event) => (
-        <li key={event.id} className="py-8">
+    <ol className="atlas-weekend-timeline">
+      {events.map((event, index) => (
+        <li key={event.id}>
           <article aria-labelledby={`timeline-${event.id}`}>
-            <p className="font-body text-xs uppercase tracking-[0.2em] text-muted">
-              {event.dateLabel}
-              {event.timeLabel ? ` · ${event.timeLabel}` : ""}
-            </p>
-            <h3
-              id={`timeline-${event.id}`}
-              className="mt-2 font-display text-2xl text-ink"
-            >
-              {event.title}
-            </h3>
-            <p className="mt-1 font-body text-sm font-medium text-ink">
-              {event.venue}
-              {event.addressLines ? (
-                <span className="font-normal text-muted"> · {event.addressLines.join(", ")}</span>
-              ) : null}
-            </p>
-            <p className="mt-3 font-body text-base leading-relaxed text-ink">
-              {event.description}
-            </p>
+            <div className="atlas-timeline-date">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <p>{event.dateLabel}</p>
+            </div>
+            <div className="atlas-timeline-main">
+              <p>{event.timeLabel}</p>
+              <h3 id={`timeline-${event.id}`}>{event.title}</h3>
+            </div>
+            <div className="atlas-timeline-place">
+              <p>{event.venue}</p>
+              {event.addressLines ? <span>{event.addressLines.join(", ")}</span> : null}
+            </div>
+            <p className="atlas-timeline-description">{event.description}</p>
           </article>
         </li>
       ))}

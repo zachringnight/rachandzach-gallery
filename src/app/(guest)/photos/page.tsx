@@ -76,15 +76,14 @@ export default async function PhotosPage({
   const initialPage = await serializeGalleryPage(page, client);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
-      <header className="max-w-2xl">
-        <p className="text-xs uppercase tracking-wider text-muted">
-          The gallery
-        </p>
-        <h1 className="mt-1 font-display text-3xl text-ink sm:text-4xl">
-          Photos
-        </h1>
-        <p className="mt-3 text-ink/70">{siteConfig.voice.galleryIntro}</p>
+    <section className="atlas-guest-page atlas-photos-page">
+      <header className="atlas-guest-header">
+        <div>
+          <p className="atlas-kicker">The full collection</p>
+          <h1>Photos</h1>
+        </div>
+        <p>{siteConfig.voice.galleryIntro}</p>
+        <span aria-hidden="true">Every frame</span>
       </header>
 
       <GalleryShell

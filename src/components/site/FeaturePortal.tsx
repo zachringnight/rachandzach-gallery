@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 import { featureFlags, type FeatureFlagName } from "@/content/features";
 
@@ -22,15 +23,11 @@ export function FeaturePortal({ flag, href, title, body }: FeaturePortalProps) {
   return (
     <Link
       href={href}
-      className="group block rounded-card border border-wheat bg-white p-6 shadow-soft focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+      className="atlas-portal"
     >
-      <h3 className="font-display text-xl text-ink">
-        <span className="underline-offset-4 group-hover:underline">{title}</span>
-        <span aria-hidden="true" className="ml-2 text-coral">
-          &rarr;
-        </span>
-      </h3>
-      <p className="mt-2 font-body text-sm leading-relaxed text-muted">{body}</p>
+      <span className="atlas-portal-title">{title}</span>
+      <p>{body}</p>
+      <ArrowUpRight aria-hidden="true" size={21} strokeWidth={1.4} />
     </Link>
   );
 }

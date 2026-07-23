@@ -14,7 +14,6 @@
  * and `uploadDataDuringCreation`.
  */
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import * as tus from "tus-js-client";
 import {
   GUEST_PENDING_BUCKET,
@@ -296,30 +295,25 @@ export function UploadClient() {
   const collecting = phase === "collecting";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="atlas-upload-workspace">
       <UploadDropzone onFiles={addFiles} disabled={!collecting} />
 
       {collecting ? (
-        <fieldset
-          className="flex flex-col gap-3"
-          style={{ fontFamily: "var(--font-body)" }}
-        >
+        <fieldset className="atlas-upload-fields">
           <input
             type="text"
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             placeholder="Your name (optional)"
             maxLength={120}
-            className="w-full border px-4 py-3 text-base outline-none"
-            style={fieldStyle}
+            className="atlas-form-field"
           />
           <input
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email, if you want a heads-up when they're live (optional)"
-            className="w-full border px-4 py-3 text-base outline-none"
-            style={fieldStyle}
+            className="atlas-form-field"
           />
           <textarea
             value={note}
@@ -327,33 +321,31 @@ export function UploadClient() {
             placeholder="A note for Rachel and Zach (optional)"
             maxLength={2000}
             rows={3}
-            className="w-full border px-4 py-3 text-base outline-none"
-            style={fieldStyle}
+            className="atlas-form-field"
           />
         </fieldset>
       ) : null}
 
       {error ? (
-        <p role="alert" className="text-sm" style={{ color: "var(--color-coral)" }}>
+        <p role="alert" className="atlas-form-error">
           {error}
         </p>
       ) : null}
 
       <UploadQueue items={items} {...controls} />
 
-      <p className="text-sm" style={{ color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
+      <p className="atlas-upload-note">
         Every photo is reviewed by Rachel and Zach before it appears in the
         gallery.
       </p>
 
-      <div className="flex gap-3">
+      <div className="atlas-upload-actions">
         {collecting ? (
           <button
             type="button"
             onClick={() => void start()}
             disabled={items.length === 0}
-            className="px-5 py-3 text-sm font-semibold uppercase tracking-wide disabled:opacity-60"
-            style={primaryButtonStyle}
+            className="atlas-inline-action disabled:opacity-40"
           >
             Upload {items.length > 0 ? `${items.length} ` : ""}photos
           </button>
@@ -362,14 +354,13 @@ export function UploadClient() {
           <button
             type="button"
             onClick={() => void submit()}
-            className="px-5 py-3 text-sm font-semibold uppercase tracking-wide"
-            style={primaryButtonStyle}
+            className="atlas-inline-action"
           >
             Submit for review
           </button>
         ) : null}
         {phase === "submitting" ? (
-          <span className="text-sm" style={{ color: "var(--color-muted)" }}>
+          <span className="atlas-upload-note">
             Submitting...
           </span>
         ) : null}
@@ -377,17 +368,3 @@ export function UploadClient() {
     </div>
   );
 }
-
-const fieldStyle: CSSProperties = {
-  borderColor: "var(--color-sand)",
-  borderRadius: "var(--radius-card)",
-  backgroundColor: "var(--color-cream)",
-  color: "var(--color-ink)",
-};
-
-const primaryButtonStyle: CSSProperties = {
-  backgroundColor: "var(--color-ink)",
-  color: "var(--color-cream)",
-  borderRadius: "var(--radius-card)",
-  fontFamily: "var(--font-body)",
-};

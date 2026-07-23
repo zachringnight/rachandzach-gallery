@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { groupByEvent } from "@/lib/personalization/my-weekend";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
@@ -67,6 +68,7 @@ export interface MyWeekendGalleryProps {
   personSlug: string;
   personName: string;
   onChangePerson: () => void;
+  personalPageHref?: string;
 }
 
 type LoadState = "loading" | "ready" | "empty" | "error";
@@ -114,6 +116,7 @@ export function MyWeekendGallery({
   personSlug,
   personName,
   onChangePerson,
+  personalPageHref,
 }: MyWeekendGalleryProps) {
   const [state, setState] = useState<LoadState>("loading");
   const [photos, setPhotos] = useState<ClientPhoto[]>([]);
@@ -165,28 +168,39 @@ export function MyWeekendGallery({
   }, [openIndex, photos]);
 
   return (
-    <div>
-      <div className="mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="atlas-weekend-collection">
+      <div className="atlas-weekend-collection-header">
+        <div className="atlas-weekend-collection-heading">
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted">My Weekend</p>
-            <h2 className="font-display text-2xl text-ink">{personName}&rsquo;s weekend</h2>
+            <p className="atlas-kicker">My Weekend</p>
+            <h2>{personName}&rsquo;s weekend</h2>
+            {state === "ready" ? (
+              <p className="atlas-weekend-photo-count">
+                {photos.length.toLocaleString()}{" "}
+                {photos.length === 1 ? "photo" : "photos"} of your weekend
+              </p>
+            ) : null}
           </div>
-          <div className="flex gap-2">
+          <div className="atlas-weekend-collection-actions">
+            {personalPageHref ? (
+              <Link href={personalPageHref} className="atlas-secondary-action">
+                Open your private page
+              </Link>
+            ) : null}
             {photos.length > 0 ? (
               <button
                 type="button"
                 onClick={() => setSlideshowOpen(true)}
-                className="rounded-md border border-ink bg-ink px-3 py-2 text-sm font-medium text-cream hover:bg-ink/90"
+                className="atlas-inline-action"
               >
                 Play slideshow
               </button>
             ) : null}
             <button
-              type="button"
-              onClick={onChangePerson}
-              className="rounded-md border border-wheat bg-white px-3 py-2 text-sm text-ink hover:border-tan"
-            >
+                type="button"
+                onClick={onChangePerson}
+                className="atlas-secondary-action"
+              >
               Not {personName}?
             </button>
           </div>
@@ -196,7 +210,7 @@ export function MyWeekendGallery({
             comment) while photos is still empty, whether that is "still
             loading" or "this person has none" -- no separate gate needed
             here. */}
-        <div className="mt-3">
+        <div className="atlas-weekend-downloads">
           <DownloadMyWeekendButton
             personName={personName}
             personSlug={personSlug}
@@ -206,15 +220,15 @@ export function MyWeekendGallery({
       </div>
 
       {state === "loading" ? (
-        <p className="text-sm text-muted">Gathering your weekend…</p>
+        <p className="atlas-personal-state">Gathering your weekend…</p>
       ) : null}
       {state === "error" ? (
-        <p className="text-sm text-muted">
+        <p className="atlas-personal-state">
           We could not load your weekend right now. Refresh to try again.
         </p>
       ) : null}
       {state === "empty" ? (
-        <p className="text-sm text-muted">
+        <p className="atlas-personal-state">
           No photos of {personName} here yet. Check back as more of the weekend gets tagged.
         </p>
       ) : null}
@@ -225,11 +239,18 @@ export function MyWeekendGallery({
           size (see useSquareTileSize's doc comment for why this is needed at
           all). */}
       <div ref={gridRef}>
-        {groups.map((group) => (
-          <section key={group.eventSlug} className="mb-10">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
-              {group.eventName}
-            </h3>
+        {groups.map((group, groupIndex) => (
+          <section key={group.eventSlug} className="atlas-weekend-event">
+            <header className="atlas-weekend-event-heading">
+              <span>
+                {String(groupIndex + 1).padStart(2, "0")}
+              </span>
+              <h3>{group.eventName}</h3>
+              <small>
+                {group.photos.length.toLocaleString()}{" "}
+                {group.photos.length === 1 ? "photo" : "photos"}
+              </small>
+            </header>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {tileSize > 0
                 ? group.photos.map((photo) => (

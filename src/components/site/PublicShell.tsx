@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { ScrollProgress } from "@/components/site/ScrollProgress";
 
 /**
  * Shared frame for the public pages: skip link, quiet sticky header, cream
@@ -10,39 +11,17 @@ import { SiteHeader } from "@/components/site/SiteHeader";
  */
 export function PublicShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-cream font-body text-ink">
+    <div className="atlas-shell min-h-screen bg-cream font-body text-ink">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:bg-ink focus:px-4 focus:py-2 focus:text-cream"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-cream"
       >
         Skip to content
       </a>
+      <ScrollProgress />
       <SiteHeader />
       <main id="main">{children}</main>
       <SiteFooter />
-      {/* Keyframes for the site's two allowed motions. Scoped here so every
-          public page shares one definition. */}
-      <style>{`
-        @keyframes rz-reveal {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: none; }
-        }
-        @keyframes rz-drift {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        .rz-reveal { animation: rz-reveal 700ms ease-out both; }
-        .rz-marquee-track {
-          display: flex;
-          gap: 1rem;
-          width: max-content;
-          animation: rz-drift 80s linear infinite;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .rz-reveal { animation: none; }
-          .rz-marquee-track { animation: none; }
-        }
-      `}</style>
     </div>
   );
 }

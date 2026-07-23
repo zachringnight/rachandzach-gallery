@@ -21,29 +21,35 @@ export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
 
   if (people.length === 0) {
     return (
-      <p className="text-sm text-ink/70">
+      <p className="atlas-personal-state">
         No one has been tagged in photos yet. Check back soon.
       </p>
     );
   }
 
   return (
-    <div className="max-w-xl">
-      <p className="mb-4 text-ink/70">
+    <section className="atlas-person-setup" aria-labelledby="person-setup-title">
+      <div className="atlas-person-setup-copy">
+        <p className="atlas-kicker">Tell us who you are</p>
+        <h2 id="person-setup-title">Your own way through the weekend.</h2>
+      </div>
+      <p className="atlas-person-setup-intro">
         Pick your name to see your weekend, grouped by event. Your choice stays on this device
         only. We never send it anywhere.
       </p>
-      <PersonPicker people={people} selected={pending} onSelect={setPending} />
-      <button
-        type="button"
-        disabled={!pending}
-        onClick={() => {
-          if (pending) onSelect(pending);
-        }}
-        className="mt-4 rounded-md bg-ink px-4 py-2 text-sm font-medium text-cream disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Show my weekend
-      </button>
-    </div>
+      <div className="atlas-person-setup-picker">
+        <PersonPicker people={people} selected={pending} onSelect={setPending} />
+        <button
+          type="button"
+          disabled={!pending}
+          onClick={() => {
+            if (pending) onSelect(pending);
+          }}
+          className="atlas-inline-action disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Show my weekend
+        </button>
+      </div>
+    </section>
   );
 }

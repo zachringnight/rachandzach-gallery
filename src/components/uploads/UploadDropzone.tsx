@@ -40,31 +40,22 @@ export function UploadDropzone({ onFiles, disabled }: UploadDropzoneProps) {
         setDragging(false);
         handleFiles(event.dataTransfer.files);
       }}
-      className="flex flex-col items-center justify-center gap-3 border-2 border-dashed px-6 py-12 text-center transition-opacity"
+      className="atlas-upload-dropzone"
+      data-dragging={dragging ? "true" : "false"}
       style={{
-        borderColor: dragging ? "var(--color-coral)" : "var(--color-sand)",
-        backgroundColor: dragging ? "var(--color-wheat)" : "var(--color-cream)",
-        borderRadius: "var(--radius-card)",
         opacity: disabled ? 0.6 : 1,
-        fontFamily: "var(--font-body)",
       }}
     >
-      <p className="text-base" style={{ color: "var(--color-ink)" }}>
-        Drag your photos here
-      </p>
-      <p className="text-sm" style={{ color: "var(--color-muted)" }}>
+      <span aria-hidden="true" className="atlas-dropzone-index">+</span>
+      <p>Drag your photos here</p>
+      <p>
         Full-resolution JPEG, PNG, WebP, or HEIC. Up to 50 photos, 50 MB each.
       </p>
       <button
         type="button"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        className="mt-2 px-4 py-2 text-sm font-semibold uppercase tracking-wide disabled:opacity-60"
-        style={{
-          backgroundColor: "var(--color-ink)",
-          color: "var(--color-cream)",
-          borderRadius: "var(--radius-card)",
-        }}
+        className="atlas-inline-action disabled:opacity-60"
       >
         Choose photos
       </button>

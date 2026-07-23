@@ -19,18 +19,23 @@ export const metadata: Metadata = {
 
 export default function FavoritesPage() {
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-8 pb-16 sm:px-6">
-      <header className="max-w-2xl">
-        <p className="text-xs uppercase tracking-wider text-muted">Your collection</p>
-        <h1 className="mt-1 font-display text-3xl text-ink sm:text-4xl">Favorites</h1>
-        <p className="mt-3 text-ink/70">
+    <section className="atlas-guest-page">
+      <header className="atlas-guest-header">
+        <div>
+          <p className="atlas-kicker">Your collection</p>
+          <h1>Favorites</h1>
+        </div>
+        <p>
           Every photo you have hearted, all in one place. Favorites are saved on this device
           and follow you: tell us who you are on My Weekend and they sync to your name. Play
           them as a slideshow, download the whole set as one file, or export a shortlist to
           help plan a printed album.
         </p>
+        <span aria-hidden="true">Keep what you love</span>
       </header>
-      <FavoritesGallery />
+      <div className="atlas-guest-body">
+        <FavoritesGallery />
+      </div>
     </section>
   );
 }

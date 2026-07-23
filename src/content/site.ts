@@ -86,8 +86,10 @@ export const siteConfig: SiteConfig = {
   navigation: [
     { label: "Home", href: "/", enabled: true },
     { label: "The Weekend", href: "/weekend", enabled: true },
+    { label: "Rach Runs NYC", href: "/nyc", enabled: true },
     { label: "Photos", href: "/photos", enabled: true },
     { label: "My Weekend", href: "/my-weekend", enabled: true },
+    { label: "Favorites", href: "/favorites", enabled: true },
     { label: "Add Yours", href: "/add-yours", enabled: true },
     { label: "Playlists", href: "/playlists", enabled: false, flag: "playlists" },
     { label: "The Marathon", href: "/marathon", enabled: false, flag: "marathon" },

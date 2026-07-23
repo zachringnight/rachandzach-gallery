@@ -1,0 +1,72 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { cache } from "react";
+
+import { PersonGalleryClient } from "@/components/personalization/PersonGalleryClient";
+import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
+import { getGalleryFacets } from "@/lib/gallery/query";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+export const dynamic = "force-dynamic";
+
+const confirmedPerson = cache(async (personSlug: string) => {
+  const client = createAdminClient();
+  const source = createSupabaseGalleryDataSource(client);
+  const facets = await getGalleryFacets(source);
+  return (
+    facets.people.find((person) => person.slug === personSlug) ?? null
+  );
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ personSlug: string }>;
+}): Promise<Metadata> {
+  const { personSlug } = await params;
+  const person = await confirmedPerson(personSlug);
+  return {
+    title: person ? `${person.displayName}'s Weekend | Rach & Zach` : "Your Weekend | Rach & Zach",
+    description: "A private collection of your photos from Rachel and Zach's wedding weekend.",
+    robots: { index: false, follow: false },
+  };
+}
+
+/**
+ * A private, human-readable guest keepsake at /{confirmed-person-slug}.
+ * Static routes win before this dynamic segment, and an unknown or
+ * non-confirmed identity is a plain 404. The route remains inside the guest
+ * layout, so every visit must pass the shared-password gate.
+ */
+export default async function PersonGalleryPage({
+  params,
+}: {
+  params: Promise<{ personSlug: string }>;
+}) {
+  const { personSlug } = await params;
+  const person = await confirmedPerson(personSlug);
+  if (!person) notFound();
+
+  return (
+    <section className="atlas-guest-page atlas-person-route">
+      <header className="atlas-guest-header">
+        <div>
+          <p className="atlas-kicker">A page made for you</p>
+          <h1>{person.displayName}</h1>
+        </div>
+        <p>
+          Every confirmed photo that includes you, gathered across the whole
+          weekend in one private place.
+        </p>
+        <span aria-hidden="true">You were part of it</span>
+      </header>
+
+      <div className="atlas-guest-body">
+        <PersonGalleryClient
+          personSlug={person.slug}
+          personName={person.displayName}
+        />
+      </div>
+    </section>
+  );
+}

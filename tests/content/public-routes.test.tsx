@@ -177,6 +177,7 @@ describe("robots and sitemap", () => {
     const paths = entries.map((entry) => new URL(entry.url).pathname);
     expect(paths).toContain("/");
     expect(paths).toContain("/weekend");
+    expect(paths).toContain("/nyc");
     for (const path of paths) {
       for (const route of PROTECTED_ROUTES) {
         expect(path === route || path.startsWith(`${route}/`)).toBe(false);

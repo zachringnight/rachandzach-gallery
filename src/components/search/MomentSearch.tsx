@@ -188,8 +188,8 @@ export function MomentSearch({ events }: MomentSearchProps) {
   }
 
   return (
-    <div>
-      <p className="mb-3 text-ink/70">
+    <div className="atlas-moment-search">
+      <p className="atlas-moment-search-intro">
         Search the gallery for a scene, not a name: &ldquo;sunset kiss,&rdquo; &ldquo;champagne
         toast,&rdquo; &ldquo;people dancing.&rdquo;
       </p>
@@ -198,7 +198,7 @@ export function MomentSearch({ events }: MomentSearchProps) {
           formEvent.preventDefault();
           void run(query, event);
         }}
-        className="flex flex-col gap-3 sm:flex-row"
+        className="atlas-moment-search-form"
       >
         <label className="sr-only" htmlFor="moment-search-input">
           Describe a moment
@@ -211,18 +211,18 @@ export function MomentSearch({ events }: MomentSearchProps) {
           minLength={MOMENT_SEARCH_MIN_QUERY_LENGTH}
           maxLength={MOMENT_SEARCH_MAX_QUERY_LENGTH}
           placeholder="Describe a moment…"
-          className="flex-1 rounded-md border border-wheat bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink"
+          className="atlas-form-field"
         />
         <button
           type="submit"
           disabled={query.trim().length < MOMENT_SEARCH_MIN_QUERY_LENGTH}
-          className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-cream disabled:cursor-not-allowed disabled:opacity-40"
+          className="atlas-inline-action disabled:cursor-not-allowed disabled:opacity-40"
         >
           Search
         </button>
       </form>
 
-      <div className="mt-3">
+      <div className="atlas-moment-search-examples">
         <SearchExamples
           onPick={(example) => {
             setQuery(example);
@@ -231,27 +231,27 @@ export function MomentSearch({ events }: MomentSearchProps) {
         />
       </div>
 
-      <div className="mt-3">
+      <div className="atlas-moment-search-events">
         <EventPicker events={events} selected={event} onSelect={setEvent} />
       </div>
 
-      {state === "loading" ? <p className="mt-6 text-sm text-muted">Searching…</p> : null}
+      {state === "loading" ? <p className="atlas-search-state">Searching…</p> : null}
       {state === "error" ? (
-        <p className="mt-6 text-sm text-muted">
+        <p className="atlas-search-state">
           Search is unavailable right now. Try again shortly.
         </p>
       ) : null}
       {state === "ready" && results.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">No matches yet. Try a different description.</p>
+        <p className="atlas-search-state">No matches yet. Try a different description.</p>
       ) : null}
       {state === "ready" && usedFallback && results.length > 0 ? (
-        <p className="mt-6 text-xs text-ink/50">
+        <p className="atlas-search-state atlas-search-state-subtle">
           Showing keyword matches while visual search is unavailable.
         </p>
       ) : null}
 
       {results.length > 0 ? (
-        <div ref={gridRef} className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+        <div ref={gridRef} className="atlas-search-results grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
           {tileSize > 0
             ? results.map((result) => (
                 <div key={result.photo.id} className="aspect-square">

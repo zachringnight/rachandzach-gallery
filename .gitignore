@@ -39,3 +39,5 @@ models/
 # Playwright MCP tool cache (DOM/console dumps from ad hoc browser
 # automation sessions); pure tool exhaust, never source, never commit.
 .playwright-mcp/
+# Internal Remotion timing-board renders; source lives in motion-study/.
+.motion-output/

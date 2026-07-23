@@ -20,13 +20,12 @@ export function AccessForm({ nextPath, errorMessage }: AccessFormProps) {
       method="post"
       action="/api/access/login"
       onSubmit={() => setSubmitting(true)}
-      className="mt-6 flex flex-col gap-4"
+      className="atlas-access-form"
     >
       <input type="hidden" name="next" value={nextPath} />
       <label
         htmlFor="gallery-password"
-        className="text-sm font-medium"
-        style={{ fontFamily: "var(--font-body)" }}
+        className="atlas-access-label"
       >
         Password
         <input
@@ -36,24 +35,17 @@ export function AccessForm({ nextPath, errorMessage }: AccessFormProps) {
           required
           autoFocus
           autoComplete="current-password"
-          className="mt-2 w-full border px-4 py-3 text-base outline-none"
-          style={{
-            borderColor: "var(--color-sand)",
-            borderRadius: "var(--radius-card)",
-            backgroundColor: "var(--color-cream)",
-            color: "var(--color-ink)",
-          }}
+          className="atlas-access-input"
         />
       </label>
       {errorMessage ? (
         <p
           role="alert"
-          className="text-sm"
+          className="atlas-access-error"
           // Ink, not coral: coral on cream is 2.54:1 and fails WCAG AA for
           // text (flagged by the packet 12 accessibility scan). Coral stays
           // decorative-only; error text reads in ink with the coral border
           // carrying the error affordance.
-          style={{ color: "var(--color-ink)", fontFamily: "var(--font-body)" }}
         >
           {errorMessage}
         </p>
@@ -61,13 +53,7 @@ export function AccessForm({ nextPath, errorMessage }: AccessFormProps) {
       <button
         type="submit"
         disabled={submitting}
-        className="px-4 py-3 text-sm font-semibold uppercase tracking-wide disabled:opacity-60"
-        style={{
-          backgroundColor: "var(--color-ink)",
-          color: "var(--color-cream)",
-          borderRadius: "var(--radius-card)",
-          fontFamily: "var(--font-body)",
-        }}
+        className="atlas-access-submit"
       >
         {submitting ? "Checking..." : "Come on in"}
       </button>

@@ -15,11 +15,11 @@ export interface EventPickerProps {
 export function EventPicker({ events, selected, onSelect }: EventPickerProps) {
   if (events.length === 0) return null;
   return (
-    <section aria-label="Filter by event">
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
+    <section aria-label="Filter by event" className="atlas-picker">
+      <h2>
         Events
       </h2>
-      <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-col sm:overflow-visible">
+      <div className="atlas-picker-options">
         <Chip
           label="All events"
           active={selected === null}
@@ -55,15 +55,12 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex shrink-0 items-center justify-between gap-3 whitespace-nowrap rounded-full border px-3 py-2 text-left text-sm sm:w-full sm:rounded-md ${
-        active
-          ? "border-ink bg-ink text-cream"
-          : "border-wheat bg-white text-ink hover:border-tan"
-      }`}
+      className="atlas-picker-chip"
+      data-active={active ? "true" : "false"}
     >
       <span className="truncate">{label}</span>
       {typeof count === "number" ? (
-        <span className={active ? "text-cream/70" : "text-ink/50"}>{count}</span>
+        <span>{count}</span>
       ) : null}
     </button>
   );

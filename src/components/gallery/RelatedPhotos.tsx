@@ -35,6 +35,8 @@ export function RelatedPhotos({ photos, onOpen }: RelatedPhotosProps) {
                 <img
                   src={src}
                   alt={photo.eventName}
+                  width={photo.width}
+                  height={photo.height}
                   className="h-full w-full object-cover"
                   loading="lazy"
                 />

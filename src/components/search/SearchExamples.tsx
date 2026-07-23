@@ -23,13 +23,13 @@ const EXAMPLES = [
 
 export function SearchExamples({ onPick }: SearchExamplesProps) {
   return (
-    <div className="flex flex-wrap gap-2" aria-label="Example searches">
+    <div className="atlas-search-examples" aria-label="Example searches">
       {EXAMPLES.map((example) => (
         <button
           key={example}
           type="button"
           onClick={() => onPick(example)}
-          className="rounded-full border border-wheat bg-white px-3 py-1.5 text-xs text-ink/70 hover:border-tan hover:text-ink"
+          className="atlas-picker-chip"
         >
           {example}
         </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Heart } from "lucide-react";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { favoriteStore } from "@/lib/favorites/store";
 import { ensureFavoritesSync } from "@/lib/favorites/sync";
@@ -9,6 +10,7 @@ import { Slideshow, type SlideshowPhoto } from "@/components/slideshow/Slideshow
 import { DownloadSelectionButton } from "@/components/downloads/DownloadSelectionButton";
 import { SavePhotosButton } from "@/components/downloads/SavePhotosButton";
 import { AlbumShortlistExport } from "@/components/downloads/AlbumShortlistExport";
+import { PhotoImage } from "@/components/gallery/PhotoImage";
 
 /**
  * Mirrors src/lib/gallery/query.ts's MAX_IDS_LOOKUP (100). Not imported
@@ -90,13 +92,6 @@ function toSlideshowPhoto(photo: ClientPhoto): SlideshowPhoto {
   };
 }
 
-function bestTileUrl(photo: ClientPhoto, targetWidth: number): string | null {
-  if (photo.previews.length === 0) return null;
-  const sorted = [...photo.previews].sort((a, b) => a.width - b.width);
-  const fit = sorted.find((preview) => preview.width >= targetWidth);
-  return (fit ?? sorted[sorted.length - 1]).url;
-}
-
 /**
  * The /favorites page body: loads the guest's device-local favorites into
  * full photo records, offers a slideshow, a ZIP of the whole set, and an
@@ -155,13 +150,13 @@ export function FavoritesGallery() {
   }, [hasFavorites, favoriteIdsKey]);
 
   if (hasFavorites && photos === null && !error) {
-    return <p className="mt-8 text-sm text-muted">Loading your favorites…</p>;
+    return <p className="atlas-personal-state">Loading your favorites…</p>;
   }
 
   if (hasFavorites && error) {
     return (
-      <div role="alert" className="mt-8 rounded-md border border-coral/40 bg-white p-6 text-sm">
-        <p className="text-ink">{error}</p>
+      <div role="alert" className="atlas-favorites-error">
+        <p>{error}</p>
       </div>
     );
   }
@@ -170,22 +165,34 @@ export function FavoritesGallery() {
 
   if (items.length === 0) {
     return (
-      <p className="mt-8 text-sm text-muted">
-        You have not favorited any photos yet. Play a slideshow from My Weekend and tap the
-        heart on the ones you love.
-      </p>
+      <section className="atlas-favorites-empty">
+        <Heart aria-hidden="true" size={54} strokeWidth={1} />
+        <div>
+          <p className="atlas-kicker">A collection in the making</p>
+          <h2>Keep the frames you love close.</h2>
+          <p>
+            You have not favorited any photos yet. Play a slideshow from My Weekend and tap the
+            heart on the ones you love.
+          </p>
+        </div>
+      </section>
     );
   }
 
   const photoIds = items.map((photo) => photo.id);
 
   return (
-    <div className="mt-8">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="atlas-favorites-collection">
+      <header className="atlas-favorites-collection-header">
+        <div>
+          <p className="atlas-kicker">Your keepsake</p>
+          <h2>{items.length.toLocaleString()} favorite {items.length === 1 ? "photo" : "photos"}</h2>
+        </div>
+        <div className="atlas-favorites-actions">
         <button
           type="button"
           onClick={() => setSlideshowIndex(0)}
-          className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-cream transition hover:bg-ink/90"
+          className="atlas-inline-action"
         >
           Play slideshow
         </button>
@@ -199,14 +206,14 @@ export function FavoritesGallery() {
           }))}
           filenamePrefix="favorites-shortlist"
         />
-      </div>
+        </div>
+      </header>
 
-      <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+      <ul className="atlas-favorites-grid">
         {items.map((photo, index) => {
           const label = photo.people.map((person) => person.displayName).join(", ");
-          const src = bestTileUrl(photo, 400);
           return (
-            <li key={photo.id} className="relative">
+            <li key={photo.id} className="atlas-favorite-tile">
               <button
                 type="button"
                 onClick={() => setSlideshowIndex(index)}
@@ -215,23 +222,22 @@ export function FavoritesGallery() {
                     ? `Open photo from ${photo.eventName} with ${label}`
                     : `Open photo from ${photo.eventName}`
                 }
-                className="group block aspect-square w-full overflow-hidden rounded-sm bg-wheat/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="atlas-favorite-open"
               >
-                {src ? (
-                  <img
-                    src={src}
-                    alt={label ? `${label} at ${photo.eventName}` : photo.eventName}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover transition group-hover:scale-105"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center text-xs text-muted">
-                    Preview unavailable
-                  </span>
-                )}
+                <PhotoImage
+                  photo={photo}
+                  alt={label ? `${label} at ${photo.eventName}` : photo.eventName}
+                  tier="card"
+                  targetWidth={400}
+                  className="h-full w-full"
+                  imageClassName="h-full w-full object-cover"
+                />
               </button>
-              <FavoriteButton photoId={photo.id} label={label || photo.eventName} />
+              <FavoriteButton
+                photoId={photo.id}
+                label={label || photo.eventName}
+                className="atlas-photo-favorite"
+              />
             </li>
           );
         })}
