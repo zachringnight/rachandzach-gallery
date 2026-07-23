@@ -89,10 +89,17 @@ function initialQueryFromUrl(): string {
   return new URLSearchParams(window.location.search).get("q") ?? "";
 }
 
-function useSquareTileSize(): [React.RefObject<HTMLDivElement | null>, number] {
+function useSquareTileSize(
+  active = true,
+): [React.RefObject<HTMLDivElement | null>, number] {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tileSize, setTileSize] = useState(0);
   useIsoLayoutEffect(() => {
+    // Search results mount only after the async request resolves. Re-run this
+    // setup when that deferred grid appears; the mount-only version returned
+    // early while containerRef was null and could leave a populated result set
+    // permanently invisible.
+    if (!active) return;
     const element = containerRef.current;
     if (!element) return;
     const measure = () => {
@@ -105,7 +112,7 @@ function useSquareTileSize(): [React.RefObject<HTMLDivElement | null>, number] {
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [active]);
   return [containerRef, tileSize];
 }
 
@@ -181,7 +188,7 @@ export function MomentSearch({ events }: MomentSearchProps) {
     [results, openPhotoId],
   );
   const openPhoto = openIndex >= 0 ? results[openIndex].photo : null;
-  const [gridRef, tileSize] = useSquareTileSize();
+  const [gridRef, tileSize] = useSquareTileSize(results.length > 0);
 
   if (!featureFlags.momentSearch) {
     return null;
