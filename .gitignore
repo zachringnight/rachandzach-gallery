@@ -41,3 +41,4 @@ models/
 .playwright-mcp/
 # Internal Remotion timing-board renders; source lives in motion-study/.
 .motion-output/
+.vercel
