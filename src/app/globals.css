@@ -948,7 +948,7 @@ button {
 }
 
 .atlas-introduction-statement span {
-  color: var(--rz-tan);
+  color: var(--rz-tan-text);
   font-style: italic;
   font-weight: 340;
 }
@@ -1018,6 +1018,12 @@ button {
   min-width: 0;
   flex-direction: column;
   border-right: 1px solid var(--rz-wheat);
+}
+
+.atlas-moment-tablist {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
 }
 
 .atlas-moment-tab {
@@ -1311,7 +1317,7 @@ button {
   width: min(100%, var(--atlas-max));
   margin: 0 auto 1rem;
   padding-inline: var(--atlas-gutter);
-  color: var(--rz-muted);
+  color: var(--rz-muted-on-sand);
 }
 
 .rz-marquee-track {
@@ -1463,6 +1469,8 @@ button {
 
 .atlas-growing-footnote a {
   color: var(--rz-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
 }
 
 .atlas-footer {
@@ -1501,7 +1509,7 @@ button {
 }
 
 .atlas-footer-love {
-  color: var(--rz-muted);
+  color: var(--rz-muted-on-sand);
   font-family: var(--rz-font-display);
   font-size: 1rem;
   font-style: italic;
@@ -1527,7 +1535,7 @@ button {
 }
 
 .atlas-footer-nav a span {
-  color: var(--rz-muted);
+  color: var(--rz-muted-on-sand);
   font-size: 0.58rem;
 }
 
@@ -1536,7 +1544,7 @@ button {
   flex-direction: column;
   justify-content: flex-end;
   gap: 0.65rem;
-  color: var(--rz-muted);
+  color: var(--rz-muted-on-sand);
   font-size: 0.65rem;
   line-height: 1.6;
 }
@@ -1551,11 +1559,9 @@ button {
 
 @keyframes atlas-copy-arrive {
   from {
-    opacity: 0;
     transform: translateY(18px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -1973,7 +1979,7 @@ button {
   right: var(--atlas-gutter);
   display: grid;
   justify-items: end;
-  color: var(--rz-tan);
+  color: var(--rz-tan-text);
 }
 
 .atlas-page-hero-index span {
@@ -2106,6 +2112,10 @@ button {
   background: var(--rz-sand);
 }
 
+.atlas-travel-section .atlas-kicker {
+  color: var(--rz-muted-on-sand);
+}
+
 .atlas-info-copy {
   columns: 2;
   column-gap: clamp(2rem, 5vw, 5rem);
@@ -2225,7 +2235,7 @@ button {
   z-index: 0;
   top: 1.5rem;
   right: 0;
-  color: color-mix(in srgb, var(--rz-tan) 10%, transparent);
+  color: var(--rz-tan-text);
   font-family: var(--rz-font-display);
   font-size: clamp(4rem, 12vw, 12rem);
   font-style: italic;
@@ -4814,7 +4824,7 @@ button {
 }
 
 .atlas-nyc-story-label > span {
-  color: var(--rz-tan);
+  color: var(--rz-tan-text);
   font-family: var(--rz-font-display);
   font-size: clamp(2.5rem, 5vw, 5rem);
   font-weight: 330;
