@@ -13,7 +13,10 @@
  * Accessible text pairings on cream (#F6F0E4):
  * - ink   #282521 -> 13.4:1 (body and headings)
  * - muted #6B645A ->  5.1:1 (secondary text, passes WCAG AA for normal text)
- * - coral #D38377 (2.5:1) and tan #AA8D66 are decorative only at text sizes.
+ * Accessible text pairings on sand (#E8DBC2):
+ * - muted-on-sand #655E54 -> 4.7:1
+ * - tan-text      #705D46 -> 4.6:1
+ * Coral #D38377 (2.5:1) and tan #AA8D66 remain decorative-only colors.
  */
 :root {
   /* Raw sources */
@@ -26,6 +29,9 @@
   --rz-white: #ffffff;
   /* Muted ink derived from --rz-ink, tuned for >= 4.5:1 on --rz-cream. */
   --rz-muted: #6b645a;
+  /* Contextual editorial tones that remain AA-compliant on warm surfaces. */
+  --rz-muted-on-sand: #655e54;
+  --rz-tan-text: #705d46;
 
   /*
    * Font variables are attached to <html> by next/font (see

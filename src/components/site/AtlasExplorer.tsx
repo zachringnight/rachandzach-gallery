@@ -47,53 +47,55 @@ export function AtlasExplorer({ moments }: { moments: AtlasMoment[] }) {
       </div>
 
       <div className="atlas-explorer-grid">
-        <div
-          className="atlas-moment-tabs"
-          role="tablist"
-          aria-label="Explore the weekend by moment"
-          onKeyDown={(event) => {
-            if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-              event.preventDefault();
-              selectRelative(1);
-            }
-            if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-              event.preventDefault();
-              selectRelative(-1);
-            }
-            if (event.key === "Home") {
-              event.preventDefault();
-              setActiveIndex(0);
-            }
-            if (event.key === "End") {
-              event.preventDefault();
-              setActiveIndex(moments.length - 1);
-            }
-          }}
-        >
-          {moments.map((moment, index) => {
-            const active = index === activeIndex;
-            return (
-              <button
-                key={moment.id}
-                id={`atlas-tab-${moment.id}`}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                aria-controls={`atlas-panel-${moment.id}`}
-                tabIndex={active ? 0 : -1}
-                className="atlas-moment-tab"
-                data-active={active ? "true" : "false"}
-                onClick={() => setActiveIndex(index)}
-              >
-                <span className="atlas-moment-number">{moment.number}</span>
-                <span className="atlas-moment-label">
-                  <strong>{moment.title}</strong>
-                  <small>{moment.kicker}</small>
-                </span>
-                <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.5} />
-              </button>
-            );
-          })}
+        <div className="atlas-moment-tabs">
+          <div
+            className="atlas-moment-tablist"
+            role="tablist"
+            aria-label="Explore the weekend by moment"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                event.preventDefault();
+                selectRelative(1);
+              }
+              if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                event.preventDefault();
+                selectRelative(-1);
+              }
+              if (event.key === "Home") {
+                event.preventDefault();
+                setActiveIndex(0);
+              }
+              if (event.key === "End") {
+                event.preventDefault();
+                setActiveIndex(moments.length - 1);
+              }
+            }}
+          >
+            {moments.map((moment, index) => {
+              const active = index === activeIndex;
+              return (
+                <button
+                  key={moment.id}
+                  id={`atlas-tab-${moment.id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-controls={`atlas-panel-${moment.id}`}
+                  tabIndex={active ? 0 : -1}
+                  className="atlas-moment-tab"
+                  data-active={active ? "true" : "false"}
+                  onClick={() => setActiveIndex(index)}
+                >
+                  <span className="atlas-moment-number">{moment.number}</span>
+                  <span className="atlas-moment-label">
+                    <strong>{moment.title}</strong>
+                    <small>{moment.kicker}</small>
+                  </span>
+                  <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.5} />
+                </button>
+              );
+            })}
+          </div>
 
           <button
             type="button"

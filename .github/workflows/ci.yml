@@ -1,16 +1,14 @@
 name: CI
 
-# NOTE: this repository has no Git remote yet (see docs/0719_Launch_Checklist_v1.md,
-# "Create the GitHub remote"). This workflow file is authored ahead of that
-# approval and has never executed; it activates the moment the repo is pushed
-# to GitHub with Actions enabled. Nothing here deploys, publishes, or sends
-# anything -- it only runs the local verify suite (packet 12, task step
+# This workflow verifies source changes only. Nothing here deploys, publishes,
+# or sends anything -- it only runs the local verify suite (packet 12, task step
 # "Add npm run verify to execute typecheck, lint, unit tests, build, and the
 # bounded Playwright suite").
 #
 # Branch policy mirrors scripts/vercel-ignore-build.mjs, which Vercel's
 # "ignoreCommand" already enforces for deploys: build main, staging, and
-# preview/*; skip dependabot/*, codex/*, claude/*, wip/*, and everything else.
+# preview/*, plus the explicitly approved wedding-overhaul continuation branch;
+# skip every other dependabot/*, codex/*, claude/*, wip/*, and unlisted branch.
 # Keeping CI's trigger list and the Vercel build allowlist in lockstep means a
 # branch that Vercel would deploy always has a green (or red) CI run to point
 # at first.
@@ -24,6 +22,7 @@ name: CI
       - main
       - staging
       - "preview/**"
+      - codex/wedding-premium-overhaul
   workflow_dispatch: {}
 
 permissions:
@@ -39,15 +38,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          # Runtime floor per the plan manifest is Node 20.9; "20" resolves to
-          # the latest 20.x LTS patch, which satisfies the floor with the
-          # widest native-addon (sharp, @node-rs/argon2) prebuild coverage.
-          node-version: "20"
+          # The installed Supabase realtime client relies on Node's native
+          # WebSocket implementation. Node 24 is the current supported LTS
+          # line and also matches the repository's @types/node generation.
+          node-version: "24"
           cache: "npm"
 
       - name: Install dependencies
@@ -62,34 +61,3 @@ jobs:
 
       - name: Run verify (typecheck, lint, unit tests, build, bounded Playwright suite)
         run: npm run verify
-        env:
-          # --- Synthetic, non-production values only ---
-          # The app fails closed without real credentials by design
-          # (docs/0719_Privacy_Operations_v1.md); nothing below can
-          # authenticate against production Supabase or the real guest
-          # password, and none of it is a secret worth protecting. It exists
-          # solely so `next build` can boot during the verify step. Real
-          # production values live only in Zach's local .env.cloud
-          # (gitignored) and, later, Vercel's own environment variable UI --
-          # never in this file, never in git history.
-          #
-          # These are the SAME canonical synthetic values as
-          # tests/e2e/support/env.ts (SYNTHETIC_GALLERY_PASSWORD_HASH /
-          # SYNTHETIC_GALLERY_SESSION_SECRET / SYNTHETIC_SUPABASE_*), copied
-          # here rather than imported because this step runs before any
-          # TypeScript is compiled. The Playwright portion of `npm run
-          # verify` overrides these anyway -- playwright.config.ts's
-          # webServer sets its own env from that module for the `next start`
-          # child process it spawns -- so keeping the two in sync is a
-          # consistency nicety, not a functional requirement. If that module
-          # ever rotates these values, update here to match.
-          GALLERY_PASSWORD_HASH: "$argon2id$v=19$m=19456,t=2,p=1$ZlWMad6EStM4sNnxWDeu9g$c507JzlRlyB6y87+8nP8dTo2+VGZuU5IQvTyjnOvc1g"
-          GALLERY_SESSION_SECRET: "2f5d4b704e008d71d178b75581ea1c1d6ef4e4ca604f46940bdaddb4301c0d06"
-          NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54329"
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "synthetic-anon-key-e2e-only"
-          SUPABASE_URL: "http://127.0.0.1:54329"
-          SUPABASE_SERVICE_ROLE_KEY: "synthetic-service-role-key-e2e-only"
-          # Not part of tests/e2e/support/env.ts (no live Postgres driver is
-          # installed; scripts that touch SUPABASE_DB_URL degrade loudly
-          # without one). Mirrors .env.example's local-stack default shape.
-          SUPABASE_DB_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres"

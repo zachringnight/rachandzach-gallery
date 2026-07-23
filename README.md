@@ -2,7 +2,13 @@
 
 A private, password-gated wedding gallery: browse and download the full photo catalog, find yourself by event or person, search moments in plain language, submit your own photos for approval, and relive the weekend. Built with Next.js and Supabase. Guests and admin both authenticate; nothing here is public except the marketing pages.
 
-**Status: NOT DEPLOYED. Build and data are complete and verified.** The full photo catalog is synced to the cloud project and reconciled clean; `npm run verify` is fully green. No production domain, no live Vercel project, no Git remote yet. See `docs/HANDOFF_CURRENT.md` for the current authoritative state and the exact commands for every remaining step, `docs/0719_Launch_Checklist_v1.md` for the full checklist, and `docs/0719_Content_Needed_v1.md` for everything still waiting on a decision from Zach.
+**Status: LIVE.** The premium gallery is deployed on Vercel at
+[rachandzach.com](https://rachandzach.com), backed by this private GitHub
+repository and the reconciled 1,721-photo Supabase catalog. Start with
+`docs/ONLINE_HANDOFF.md` for the current production, branch, DNS, environment,
+and continuation state. Older planning documents, including the explicitly
+historical `docs/HANDOFF_CURRENT.md`, remain useful history, but their
+pre-launch status language is superseded by that live handoff.
 
 ## Stack
 
@@ -43,9 +49,12 @@ Development:
 
 Verification (packet 12):
 - `npm run verify` -- the full local gate: typecheck, lint, unit tests, a production build with a synthetic environment, then the bounded e2e suite (`playwright test tests/e2e --project=chromium`)
-- `npm run verify:catalog` -- reconciles the read-only clean-master manifest against the local catalog (and, with `-- --db-env-file <file>`, against a real database)
-- `npm run verify:originals` -- sampled SHA-256 integrity check of local source files against the catalog (and, with `-- --remote --project-ref <ref> --allowlist <ref> --env-file <file>`, against real cloud storage metadata)
+- `npm run verify:catalog` -- reconciles the read-only clean-master manifest against the local catalog; an optional `-- --db-env-file <file>` may target a loopback Supabase stack only
+- `npm run verify:originals` -- sampled SHA-256 integrity check of local source files against the catalog; its optional metadata check is also loopback-only and intentionally rejects cloud credentials
 - `npm run verify:egress` -- storage/egress cost estimator, takes current plan rates as input rather than hardcoding prices
+
+The reproducible live Supabase and deployed-domain checks are documented in
+`docs/ONLINE_HANDOFF.md`; the two media commands above are deliberately local.
 
 Import and sync (read-only against the source; writes are opt-in and explicit):
 - `npm run gallery:import` -- builds the catalog from the read-only wedding master (`scripts/build-gallery-v2.mjs`)
