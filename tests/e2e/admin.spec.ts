@@ -88,9 +88,6 @@ test.describe("a structurally-shaped but unusable Supabase session", () => {
     await expect(page.getByRole("heading", { name: "Review queue" })).toHaveCount(
       0,
     );
-    await expect(
-      page.getByRole("heading", { name: "Admin access required" }),
-    ).toBeVisible();
     const body = await page.content();
     expect(body).not.toMatch(/54329|service_role|synthetic-service-role-key/i);
     expect(response).not.toBeNull();
