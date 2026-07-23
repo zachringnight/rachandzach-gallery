@@ -43,10 +43,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          # Runtime floor per the plan manifest is Node 20.9; "20" resolves to
-          # the latest 20.x LTS patch, which satisfies the floor with the
-          # widest native-addon (sharp, @node-rs/argon2) prebuild coverage.
-          node-version: "20"
+          # The installed Supabase realtime client relies on Node's native
+          # WebSocket implementation. Node 24 is the current supported LTS
+          # line and also matches the repository's @types/node generation.
+          node-version: "24"
           cache: "npm"
 
       - name: Install dependencies
