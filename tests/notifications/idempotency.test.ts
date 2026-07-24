@@ -120,12 +120,24 @@ describe("notifyNewBatch idempotency", () => {
       UNIQUE,
     );
     const { calls, transport } = createRecordingTransport();
+    let concurrentInserts = 0;
+    let releaseInserts = () => {};
+    const bothInsertsReady = new Promise<void>((resolve) => {
+      releaseInserts = resolve;
+    });
+    db.insertHook = async (table) => {
+      if (table !== "rachandzach_notification_log") return;
+      concurrentInserts += 1;
+      if (concurrentInserts === 2) releaseInserts();
+      await bothInsertsReady;
+    };
 
     const [a, b] = await Promise.all([
       notifyNewBatch(BATCH_ID, { client: db.client, transport }),
       notifyNewBatch(BATCH_ID, { client: db.client, transport }),
     ]);
 
+    expect(concurrentInserts).toBe(2);
     expect(calls).toHaveLength(1);
     // Both callers observe a successful, sent outcome -- whichever won the
     // race sent it; the loser reports that same outcome back.

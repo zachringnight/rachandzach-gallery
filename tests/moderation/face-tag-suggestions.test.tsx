@@ -4,7 +4,7 @@
  * default, and the pre-checked-at-high-confidence seeding feeding the
  * existing confirmed-tag decision flow (MetadataEditor's peopleSlugs).
  */
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -19,7 +19,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const JO = { slug: "jo-cohn", name: "Jo Cohn", similarity: 0.75, confident: true };
 const SAM = { slug: "sam-day", name: "Sam Day", similarity: 0.52, confident: false };
@@ -105,15 +108,18 @@ describe("BatchReviewer wiring", () => {
     },
   ];
 
-  function renderReviewer(faceSuggestions?: ItemFaceSuggestions[]) {
+  function renderReviewer(
+    faceSuggestions?: ItemFaceSuggestions[],
+    options: { items?: ReviewItem[]; batchStatus?: string } = {},
+  ) {
     return render(
       <BatchReviewer
         batchId="11111111-1111-4111-8111-111111111111"
         displayName="A guest"
         email={null}
         note={null}
-        batchStatus="pending"
-        items={items}
+        batchStatus={options.batchStatus ?? "pending"}
+        items={options.items ?? items}
         events={[]}
         people={[
           { slug: "jo-cohn", name: "Jo Cohn" },
@@ -151,5 +157,134 @@ describe("BatchReviewer wiring", () => {
     await user.click(screen.getByRole("button", { name: "Sam Day" }));
     const sam = screen.getByRole("checkbox", { name: /Sam Day/ }) as HTMLInputElement;
     expect(sam.checked).toBe(true);
+  });
+
+  it.each(["submitted", "under_review"])(
+    "allows an approved item in an active %s batch to retry without making it rejectable",
+    async (batchStatus) => {
+      const user = userEvent.setup();
+      const retryItems: ReviewItem[] = [
+        {
+          ...items[0],
+          itemId: "approved-item",
+          originalName: "retry-approved.jpg",
+          status: "approved",
+        },
+        {
+          ...items[0],
+          itemId: "rejected-item",
+          originalName: "already-rejected.jpg",
+          status: "rejected",
+        },
+      ];
+      const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            results: [{ itemId: "approved-item", ok: true }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      );
+      renderReviewer(undefined, {
+        items: retryItems,
+        batchStatus,
+      });
+
+      const approved = screen.getByRole("checkbox", {
+        name: /retry-approved\.jpg/i,
+      }) as HTMLInputElement;
+      const rejected = screen.getByRole("checkbox", {
+        name: /already-rejected\.jpg/i,
+      }) as HTMLInputElement;
+      expect(approved.disabled).toBe(false);
+      expect(rejected.disabled).toBe(true);
+
+      await user.click(approved);
+      expect(
+        (
+          screen.getByRole("button", {
+            name: "Reject (0)",
+          }) as HTMLButtonElement
+        ).disabled,
+      ).toBe(true);
+      await user.click(screen.getByRole("button", { name: "Approve (1)" }));
+
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+      const [, request] = fetchMock.mock.calls[0];
+      expect(JSON.parse(String(request?.body))).toMatchObject({
+        itemIds: ["approved-item"],
+      });
+    },
+  );
+
+  it.each(["approved", "partially_approved", "rejected"])(
+    "keeps approved items disabled in terminal %s batches",
+    (batchStatus) => {
+      renderReviewer(undefined, {
+        items: [
+          {
+            ...items[0],
+            itemId: "approved-item",
+            originalName: "already-terminal.jpg",
+            status: "approved",
+          },
+        ],
+        batchStatus,
+      });
+
+      const approved = screen.getByRole("checkbox", {
+        name: /already-terminal\.jpg/i,
+      }) as HTMLInputElement;
+      expect(approved.disabled).toBe(true);
+    },
+  );
+
+  it("filters an approved retry out of a mixed Reject action", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          results: [{ itemId: "pending-item", ok: true }],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      ),
+    );
+    renderReviewer(undefined, {
+      items: [
+        {
+          ...items[0],
+          itemId: "approved-item",
+          originalName: "retry-approved.jpg",
+          status: "approved",
+        },
+        {
+          ...items[0],
+          itemId: "pending-item",
+          originalName: "still-pending.jpg",
+          status: "pending",
+        },
+      ],
+      batchStatus: "submitted",
+    });
+
+    await user.click(
+      screen.getByRole("checkbox", { name: /retry-approved\.jpg/i }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: /still-pending\.jpg/i }),
+    );
+    await user.click(screen.getByRole("button", { name: "Reject (1)" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    const [url, request] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain("/reject");
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      itemIds: ["pending-item"],
+    });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Approve (1)" }),
+      ).toBeDefined(),
+    );
   });
 });

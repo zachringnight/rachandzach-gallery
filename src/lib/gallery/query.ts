@@ -118,6 +118,10 @@ export interface GalleryPhotoSource {
   orientation: GalleryOrientation;
   people: GalleryPersonLink[];
   keywords: string[];
+  approvedCaption?: {
+    text: string;
+    byline: string | null;
+  } | null;
   previews: GalleryPreviewObject[];
 }
 
@@ -171,6 +175,10 @@ export interface GalleryPhotoView {
   /** Confirmed people only. */
   people: GalleryPersonView[];
   keywords: string[];
+  approvedCaption: {
+    text: string;
+    byline: string | null;
+  } | null;
   /** Preview descriptors incl. object paths; sign + strip before client I/O. */
   previews: GalleryPreviewView[];
 }
@@ -366,6 +374,8 @@ function matchesSearch(photo: GalleryPhotoSource, rawQuery: string): boolean {
         person.slug,
       ]),
       ...photo.keywords,
+      photo.approvedCaption?.text ?? "",
+      photo.approvedCaption?.byline ?? "",
     ].join(" "),
   );
   return searchableText(rawQuery)
@@ -567,6 +577,12 @@ function toView(photo: GalleryPhotoSource): GalleryPhotoView {
       displayName: p.displayName,
     })),
     keywords: dedupeKeywordsAgainstPeople(photo.keywords, people),
+    approvedCaption: photo.approvedCaption?.text.trim()
+      ? {
+          text: photo.approvedCaption.text.trim(),
+          byline: photo.approvedCaption.byline?.trim() || null,
+        }
+      : null,
     previews: photo.previews.map((preview) => ({
       objectPath: preview.objectPath,
       bucket: preview.bucket,

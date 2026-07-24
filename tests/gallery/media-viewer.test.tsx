@@ -117,6 +117,43 @@ describe("photo surfaces", () => {
     expect(container.querySelector(".atlas-lightbox-caption")).toBeNull();
   });
 
+  it("renders an approved uploader caption in the below-image notes area", () => {
+    const captionedPhoto: ClientPhoto = {
+      ...photo("captioned"),
+      approvedCaption: {
+        text: "We caught this from the back row.",
+        byline: "Jamie",
+      },
+    };
+    const { container } = render(
+      <Lightbox photo={captionedPhoto} onClose={vi.fn()} />,
+    );
+
+    const stage = container.querySelector(".atlas-lightbox-stage");
+    const notes = container.querySelector(".atlas-lightbox-notes");
+    const approvedCaption = container.querySelector(
+      ".atlas-lightbox-uploader-caption",
+    );
+
+    expect(stage).not.toBeNull();
+    expect(notes).not.toBeNull();
+    expect(approvedCaption).not.toBeNull();
+    expect(notes!.contains(approvedCaption)).toBe(true);
+    expect(stage!.contains(approvedCaption)).toBe(false);
+    expect(screen.getByText("We caught this from the back row.")).toBeTruthy();
+    expect(screen.getByText("Shared by Jamie")).toBeTruthy();
+  });
+
+  it("does not render uploader-caption markup without an approved caption", () => {
+    const { container } = render(
+      <Lightbox photo={{ ...photo("private-note"), approvedCaption: null }} onClose={vi.fn()} />,
+    );
+
+    expect(
+      container.querySelector(".atlas-lightbox-uploader-caption"),
+    ).toBeNull();
+  });
+
   it("pages on a horizontal touch swipe and ignores vertical or mouse drags", () => {
     const onPrev = vi.fn();
     const onNext = vi.fn();

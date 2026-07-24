@@ -7,9 +7,9 @@
  * (kind, status, created_at, provider id) so the admin can see what was
  * actually sent.
  *
- * Approve/reject act on whatever is selected, so "select all" + Approve is
- * the batch-approve gesture and a single checkbox + Approve is the per-photo
- * gesture; there is no separate code path for the two.
+ * Approve acts on pending items plus approved items whose active batch still
+ * needs publication reconciliation. Reject is always narrowed to the pending
+ * subset so an approval retry can never be flipped by the reject action.
  */
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -94,6 +94,18 @@ const NOTIFICATION_KIND_LABEL: Record<string, string> = {
   guest_rejected: "Guest decline receipt",
 };
 
+function isApprovableStatus(
+  itemStatus: string | undefined,
+  batchStatus: string,
+): boolean {
+  const batchIsActive =
+    batchStatus === "submitted" || batchStatus === "under_review";
+  return (
+    itemStatus === "pending" ||
+    (batchIsActive && itemStatus === "approved")
+  );
+}
+
 export function BatchReviewer({
   batchId,
   displayName,
@@ -107,7 +119,14 @@ export function BatchReviewer({
   faceSuggestions,
 }: BatchReviewerProps) {
   const router = useRouter();
-  const pendingItems = useMemo(() => items.filter((item) => item.status === "pending"), [items]);
+  const approvableItems = useMemo(
+    () => items.filter((item) => isApprovableStatus(item.status, batchStatus)),
+    [batchStatus, items],
+  );
+  const itemStatusById = useMemo(
+    () => new Map(items.map((item) => [item.itemId, item.status])),
+    [items],
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [metadata, setMetadata] = useState<MetadataValue>(() => ({
     eventSlug: null,
@@ -119,6 +138,12 @@ export function BatchReviewer({
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<ItemResult[] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const selectedApprovableCount = Array.from(selected).filter((itemId) =>
+    isApprovableStatus(itemStatusById.get(itemId), batchStatus),
+  ).length;
+  const selectedPendingCount = Array.from(selected).filter(
+    (itemId) => itemStatusById.get(itemId) === "pending",
+  ).length;
 
   function toggle(itemId: string) {
     setSelected((prev) => {
@@ -129,8 +154,8 @@ export function BatchReviewer({
     });
   }
 
-  function selectAllPending() {
-    setSelected(new Set(pendingItems.map((item) => item.itemId)));
+  function selectAllApprovable() {
+    setSelected(new Set(approvableItems.map((item) => item.itemId)));
   }
 
   function toggleSuggestedPerson(slug: string) {
@@ -147,8 +172,17 @@ export function BatchReviewer({
   }
 
   async function submit(action: "approve" | "reject") {
-    if (selected.size === 0) {
-      setErrorMessage("Select at least one photo first.");
+    const itemIds = Array.from(selected).filter((itemId) =>
+      action === "approve"
+        ? isApprovableStatus(itemStatusById.get(itemId), batchStatus)
+        : itemStatusById.get(itemId) === "pending",
+    );
+    if (itemIds.length === 0) {
+      setErrorMessage(
+        action === "approve"
+          ? "Select at least one reviewable photo first."
+          : "Select at least one pending photo to reject.",
+      );
       return;
     }
     setBusy(true);
@@ -158,14 +192,14 @@ export function BatchReviewer({
       const body =
         action === "approve"
           ? {
-              itemIds: Array.from(selected),
+              itemIds,
               eventSlug: metadata.eventSlug,
               peopleSlugs: metadata.peopleSlugs,
               keywords: metadata.keywords,
               noteApproved: metadata.noteApproved,
             }
           : {
-              itemIds: Array.from(selected),
+              itemIds,
               rejectionReason: rejectReason.trim() || null,
             };
       const response = await fetch(`/api/admin/batches/${batchId}/${action}`, {
@@ -178,7 +212,11 @@ export function BatchReviewer({
         throw new Error(payload.error ?? `Request failed (${response.status}).`);
       }
       setResults(payload.results ?? null);
-      setSelected(new Set());
+      setSelected((previous) => {
+        const next = new Set(previous);
+        for (const itemId of itemIds) next.delete(itemId);
+        return next;
+      });
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Something went wrong.");
@@ -204,12 +242,12 @@ export function BatchReviewer({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={selectAllPending}
-            disabled={pendingItems.length === 0}
+            onClick={selectAllApprovable}
+            disabled={approvableItems.length === 0}
             className="px-3 py-1.5 text-sm"
             style={{ borderRadius: "var(--radius-card)", border: "1px solid var(--color-sand)" }}
           >
-            Select all pending ({pendingItems.length})
+            Select all reviewable ({approvableItems.length})
           </button>
           <button
             type="button"
@@ -254,6 +292,7 @@ export function BatchReviewer({
                 item={item}
                 checked={selected.has(item.itemId)}
                 onToggle={() => toggle(item.itemId)}
+                selectable={isApprovableStatus(item.status, batchStatus)}
               />
             ))}
           </div>
@@ -280,7 +319,7 @@ export function BatchReviewer({
               <button
                 type="button"
                 onClick={() => void submit("approve")}
-                disabled={busy || selected.size === 0}
+                disabled={busy || selectedApprovableCount === 0}
                 className="px-4 py-2 text-sm font-semibold uppercase tracking-wide"
                 style={{
                   borderRadius: "var(--radius-card)",
@@ -288,12 +327,12 @@ export function BatchReviewer({
                   color: "var(--color-cream)",
                 }}
               >
-                {busy ? "Working..." : `Approve (${selected.size})`}
+                {busy ? "Working..." : `Approve (${selectedApprovableCount})`}
               </button>
               <button
                 type="button"
                 onClick={() => void submit("reject")}
-                disabled={busy || selected.size === 0}
+                disabled={busy || selectedPendingCount === 0}
                 className="px-4 py-2 text-sm font-semibold uppercase tracking-wide"
                 style={{
                   borderRadius: "var(--radius-card)",
@@ -301,7 +340,7 @@ export function BatchReviewer({
                   color: "var(--color-coral)",
                 }}
               >
-                Reject ({selected.size})
+                Reject ({selectedPendingCount})
               </button>
             </div>
           </div>
@@ -361,15 +400,17 @@ function ItemCard({
   item,
   checked,
   onToggle,
+  selectable,
 }: {
   item: ReviewItem;
   checked: boolean;
   onToggle: () => void;
+  selectable: boolean;
 }) {
   const isHeic = item.mediaType === "image/heic";
   return (
     <label
-      className="flex cursor-pointer flex-col gap-2 border p-2 text-xs"
+      className={`flex flex-col gap-2 border p-2 text-xs ${selectable ? "cursor-pointer" : "cursor-default"}`}
       style={{
         borderColor: checked ? "var(--color-coral)" : "var(--color-sand)",
         borderRadius: "var(--radius-card)",
@@ -381,7 +422,7 @@ function ItemCard({
           type="checkbox"
           checked={checked}
           onChange={onToggle}
-          disabled={item.status !== "pending"}
+          disabled={!selectable}
         />
         <span style={{ color: "var(--color-muted)" }}>{item.status}</span>
       </div>

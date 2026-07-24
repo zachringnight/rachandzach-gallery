@@ -19,6 +19,7 @@ import { createFakeDb, TEST_ACTOR } from "./fake-supabase";
 
 const ITEM_ID = "11111111-1111-4111-8111-111111111111";
 const BATCH_ID = "22222222-2222-4222-8222-222222222222";
+const FILE_SHA256 = "b".repeat(64);
 
 function item(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -31,6 +32,7 @@ function item(overrides: Partial<Record<string, unknown>> = {}) {
     sha256: null,
     status: "pending",
     rejection_reason: null,
+    note_approved: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
@@ -49,6 +51,17 @@ function batch(overrides: Partial<Record<string, unknown>> = {}) {
     reviewed_at: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+function photo(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: "44444444-4444-4444-8444-444444444444",
+    file_sha256: FILE_SHA256,
+    source: "guest",
+    status: "published",
+    processing_complete: true,
     ...overrides,
   };
 }
@@ -173,8 +186,46 @@ describe("transitionUploadItem: legal transitions", () => {
     );
     expect(audits).toHaveLength(1);
     expect(audits[0].row.action).toBe("approve_item");
-    expect(audits[0].row.before).toEqual({ status: "pending", rejection_reason: null });
-    expect(audits[0].row.after).toEqual({ status: "approved", rejection_reason: null });
+    expect(audits[0].row.before).toEqual({
+      status: "pending",
+      rejection_reason: null,
+      note_approved: false,
+    });
+    expect(audits[0].row.after).toEqual({
+      status: "approved",
+      rejection_reason: null,
+      note_approved: false,
+    });
+  });
+
+  it("persists and audits an explicit uploader-note approval", async () => {
+    const db = createFakeDb({ rachandzach_upload_items: [item()] });
+    const result = await transitionUploadItem(
+      ITEM_ID,
+      approveDecision({ noteApproved: true }),
+      TEST_ACTOR,
+      db.client,
+    );
+
+    expect(result.note_approved).toBe(true);
+    expect(db.tables.get("rachandzach_upload_items")![0].note_approved).toBe(
+      true,
+    );
+
+    const audits = db.inserts.filter(
+      (entry) => entry.table === "rachandzach_moderation_actions",
+    );
+    expect(audits).toHaveLength(1);
+    expect(audits[0].row.before).toEqual({
+      status: "pending",
+      rejection_reason: null,
+      note_approved: false,
+    });
+    expect(audits[0].row.after).toEqual({
+      status: "approved",
+      rejection_reason: null,
+      note_approved: true,
+    });
   });
 
   it("rejects a pending item with a reason and writes exactly one audit row", async () => {
@@ -263,6 +314,31 @@ describe("transitionUploadItem: retries", () => {
     ).toHaveLength(1);
   });
 
+  it("does not change the persisted note decision on a terminal retry", async () => {
+    const db = createFakeDb({
+      rachandzach_upload_items: [
+        item({ status: "approved", note_approved: true }),
+      ],
+    });
+
+    const result = await transitionUploadItem(
+      ITEM_ID,
+      approveDecision({ noteApproved: false }),
+      TEST_ACTOR,
+      db.client,
+    );
+
+    expect(result.note_approved).toBe(true);
+    expect(db.tables.get("rachandzach_upload_items")![0].note_approved).toBe(
+      true,
+    );
+    expect(
+      db.inserts.filter(
+        (entry) => entry.table === "rachandzach_moderation_actions",
+      ),
+    ).toHaveLength(0);
+  });
+
   it("restore then re-approve produces two audit rows and a final approved state", async () => {
     const db = createFakeDb({ rachandzach_upload_items: [item({ status: "approved" })] });
 
@@ -284,6 +360,31 @@ describe("transitionUploadItem: retries", () => {
       "restore_item",
       "approve_item",
     ]);
+  });
+
+  it("restore clears the note decision and records both values in the audit", async () => {
+    const db = createFakeDb({
+      rachandzach_upload_items: [
+        item({ status: "approved", note_approved: true }),
+      ],
+    });
+
+    const restored = await restoreUploadItem(ITEM_ID, TEST_ACTOR, db.client);
+    expect(restored.note_approved).toBe(false);
+
+    const [audit] = db.inserts.filter(
+      (entry) => entry.table === "rachandzach_moderation_actions",
+    );
+    expect(audit.row.before).toEqual({
+      status: "approved",
+      rejection_reason: null,
+      note_approved: true,
+    });
+    expect(audit.row.after).toEqual({
+      status: "pending",
+      rejection_reason: null,
+      note_approved: false,
+    });
   });
 
   it("restoring an already-pending item is a no-op", async () => {
@@ -311,6 +412,37 @@ describe("transitionUploadItem: two simultaneous admin requests", () => {
       db.inserts.filter((entry) => entry.table === "rachandzach_moderation_actions"),
     ).toHaveLength(1);
     expect(db.tables.get("rachandzach_upload_items")![0].status).toBe("approved");
+  });
+
+  it("concurrent approve calls with different note flags return the persisted winner", async () => {
+    const db = createFakeDb({ rachandzach_upload_items: [item()] });
+
+    const [first, second] = await Promise.all([
+      transitionUploadItem(
+        ITEM_ID,
+        approveDecision({ noteApproved: true }),
+        TEST_ACTOR,
+        db.client,
+      ),
+      transitionUploadItem(
+        ITEM_ID,
+        approveDecision({ noteApproved: false }),
+        TEST_ACTOR,
+        db.client,
+      ),
+    ]);
+
+    const stored = db.tables.get("rachandzach_upload_items")![0];
+    expect(first.note_approved).toBe(stored.note_approved);
+    expect(second.note_approved).toBe(stored.note_approved);
+
+    const [audit] = db.inserts.filter(
+      (entry) => entry.table === "rachandzach_moderation_actions",
+    );
+    expect(audit.row.after).toMatchObject({
+      status: "approved",
+      note_approved: stored.note_approved,
+    });
   });
 
   it("two concurrent CONFLICTING decisions leave exactly one winner and surface a real conflict to the loser", async () => {
@@ -351,9 +483,10 @@ describe("recomputeBatchStatus: partial approval", () => {
     const db = createFakeDb({
       rachandzach_upload_batches: [batch()],
       rachandzach_upload_items: [
-        item({ status: "pending" }),
+        item({ status: "pending", sha256: FILE_SHA256 }),
         item({ id: otherItemId, status: "pending" }),
       ],
+      rachandzach_photos: [photo()],
     });
 
     // Still one pending item: not decidable yet.
@@ -384,7 +517,10 @@ describe("recomputeBatchStatus: partial approval", () => {
   it("recomputing an already-decided batch is idempotent (no duplicate audit row)", async () => {
     const db = createFakeDb({
       rachandzach_upload_batches: [batch()],
-      rachandzach_upload_items: [item({ status: "approved" })],
+      rachandzach_upload_items: [
+        item({ status: "approved", sha256: FILE_SHA256 }),
+      ],
+      rachandzach_photos: [photo()],
     });
 
     const first = await recomputeBatchStatus(BATCH_ID, TEST_ACTOR, db.client);
@@ -406,5 +542,49 @@ describe("recomputeBatchStatus: partial approval", () => {
     });
     const decided = await recomputeBatchStatus(BATCH_ID, TEST_ACTOR, db.client);
     expect(decided!.status).toBe("rejected");
+  });
+
+  it.each([
+    ["missing photo", []],
+    ["incomplete photo", [photo({ processing_complete: false })]],
+    ["pending photo", [photo({ status: "pending" })]],
+    ["rejected photo", [photo({ status: "rejected" })]],
+    ["non-guest photo", [photo({ source: "master" })]],
+  ])(
+    "keeps an approved item nonterminal when it has a %s",
+    async (_label, photos) => {
+      const db = createFakeDb({
+        rachandzach_upload_batches: [batch()],
+        rachandzach_upload_items: [
+          item({ status: "approved", sha256: FILE_SHA256 }),
+        ],
+        rachandzach_photos: photos,
+      });
+
+      expect(
+        await recomputeBatchStatus(BATCH_ID, TEST_ACTOR, db.client),
+      ).toBeNull();
+      expect(db.tables.get("rachandzach_upload_batches")?.[0].status).toBe(
+        "under_review",
+      );
+      expect(
+        db.inserts.filter(
+          (entry) => entry.table === "rachandzach_moderation_actions",
+        ),
+      ).toHaveLength(0);
+    },
+  );
+
+  it("accepts a completed hidden guest photo as an authoritative terminal state", async () => {
+    const db = createFakeDb({
+      rachandzach_upload_batches: [batch()],
+      rachandzach_upload_items: [
+        item({ status: "approved", sha256: FILE_SHA256 }),
+      ],
+      rachandzach_photos: [photo({ status: "hidden" })],
+    });
+
+    const decided = await recomputeBatchStatus(BATCH_ID, TEST_ACTOR, db.client);
+    expect(decided?.status).toBe("approved");
   });
 });

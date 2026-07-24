@@ -2,12 +2,12 @@
  * POST /api/admin/batches/[batchId]/approve (packet 10).
  *
  * Approves one or more items within a batch (BatchReviewer's accept /
- * select-all actions). Order matters for safety: processApprovedPhoto runs
- * BEFORE transitionUploadItem for each item, so an item is only ever marked
- * "approved" once its photo and previews genuinely exist -- a HEIC decode
- * failure or any other processing error leaves that item "pending" with a
- * per-item error in the response, never silently approved. Other items in
- * the same request are unaffected by one item's failure.
+ * select-all actions). Order matters for safety: processApprovedPhoto first
+ * stages a non-visible, caption-free photo after every storage object exists.
+ * transitionUploadItem then conditionally persists the winning decision, and
+ * reconcileProcessedPhoto is the only step allowed to publish the row or copy
+ * the persisted note decision. A processing/transition failure therefore
+ * cannot expose an undecided upload or a request-local caption choice.
  *
  * Node runtime, generous maxDuration: HEIC decode of a large photo can take
  * real time (see docs/plans/.../spikes/heic-decode.md).
@@ -28,6 +28,7 @@ import {
   UnprocessableItemStateError,
   UnsupportedImageFormatError,
   processApprovedPhoto,
+  reconcileProcessedPhoto,
 } from "@/lib/moderation/process-approved-photo";
 import { notifyUploadDecision } from "@/lib/notifications/resend";
 
@@ -48,12 +49,13 @@ function parseBody(raw: unknown): ApproveBody | null {
   if (
     !Array.isArray(body.itemIds) ||
     body.itemIds.length === 0 ||
+    body.itemIds.length > 50 ||
     body.itemIds.some((id) => typeof id !== "string" || !isUuid(id))
   ) {
     return null;
   }
   return {
-    itemIds: body.itemIds as string[],
+    itemIds: Array.from(new Set(body.itemIds as string[])),
     eventSlug:
       typeof body.eventSlug === "string" && body.eventSlug.trim().length > 0
         ? body.eventSlug
@@ -80,6 +82,10 @@ function describeError(error: unknown): string {
     return error.message;
   }
   return "Could not approve this photo.";
+}
+
+function isPublicationComplete(status: string): boolean {
+  return status === "published" || status === "hidden";
 }
 
 export async function POST(
@@ -110,7 +116,7 @@ export async function POST(
   const body = parseBody(raw);
   if (!body) {
     return NextResponse.json(
-      { error: "itemIds must be a non-empty array of upload item UUIDs." },
+      { error: "itemIds must contain 1 to 50 upload item UUIDs." },
       { status: 422 },
     );
   }
@@ -124,17 +130,20 @@ export async function POST(
   }> = [];
 
   for (const itemId of body.itemIds) {
+    let photoId: string | undefined;
     try {
-      // Photo + previews must exist before the item can be marked approved.
-      const { photoId } = await processApprovedPhoto(
+      // Storage + derivatives land first, but the catalog row stays pending.
+      const processed = await processApprovedPhoto(
         itemId,
         {
           eventSlug: body.eventSlug,
           peopleSlugs: body.peopleSlugs,
           keywords: body.keywords,
+          expectedBatchId: batchId,
         },
         db,
       );
+      photoId = processed.photoId;
       await transitionUploadItem(
         itemId,
         {
@@ -149,12 +158,42 @@ export async function POST(
         actor,
         db,
       );
+      // Re-read the persisted transition winner before publishing/captioning.
+      const finalized = await reconcileProcessedPhoto(
+        itemId,
+        photoId,
+        { expectedBatchId: batchId },
+        db,
+      );
+      if (!isPublicationComplete(finalized.status)) {
+        throw new ModerationPersistenceError(
+          "The catalog photo did not finish publication.",
+        );
+      }
       results.push({ itemId, ok: true, photoId });
     } catch (error) {
+      if (photoId) {
+        try {
+          // A rejected/removed winner may quarantine this batch's staged row.
+          // An approved winner stays approved/retryable; this failure path
+          // never rolls a durable moderation decision backward.
+          await reconcileProcessedPhoto(
+            itemId,
+            photoId,
+            { expectedBatchId: batchId, publishApproved: false },
+            db,
+          );
+        } catch {
+          // Staging always writes a non-visible, caption-free row. A failed
+          // best-effort reconciliation therefore remains fail closed.
+        }
+      }
       results.push({ itemId, ok: false, error: describeError(error) });
     }
   }
 
+  // Always converge against the latest persisted item/photo state, even when
+  // this request carried stale selections and some per-item actions failed.
   const batch = await recomputeBatchStatus(batchId, actor, db);
   if (
     batch &&

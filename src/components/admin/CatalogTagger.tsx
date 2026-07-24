@@ -24,6 +24,7 @@ import type {
 } from "@/lib/admin/catalog";
 import { ADMIN_CATALOG_MAX_SELECTION } from "@/lib/admin/catalog";
 import { PhotoImage } from "@/components/gallery/PhotoImage";
+import { CopyCurrentViewButton } from "@/components/ui/CopyCurrentViewButton";
 
 export interface CatalogOption {
   slug: string;
@@ -510,6 +511,7 @@ export function CatalogTagger({
                 <Images aria-hidden="true" size={15} strokeWidth={1.6} />
                 Select loaded
               </button>
+              <CopyCurrentViewButton />
               <button
                 type="button"
                 onClick={() => void load(filters)}

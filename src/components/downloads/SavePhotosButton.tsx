@@ -1,7 +1,9 @@
 "use client";
 
+import { Share2 } from "lucide-react";
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import type { OriginalDownload } from "@/lib/downloads/contracts";
+import { CloudSaveControls } from "./CloudSaveControls";
 import { canShareFiles, chunkForShare, isAbortError } from "./share-sheet";
 import {
   fetchSelectionDownloads,
@@ -17,6 +19,10 @@ export interface SavePhotosButtonProps {
    *  below) since, unlike DownloadSelectionButton, this component never
    *  swaps its top-level element for a different one between phases. */
   className?: string;
+  /** Public browser OAuth identifier. Defaults to NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID. */
+  googleDriveClientId?: string;
+  /** Public Dropbox Saver app key. Defaults to NEXT_PUBLIC_DROPBOX_APP_KEY. */
+  dropboxAppKey?: string;
 }
 
 type Status =
@@ -67,8 +73,8 @@ function pluralize(count: number, singular: string, plural: string): string {
  * get signed originals, then downloads each blob client-side and hands the
  * results to navigator.share({ files }) so iOS's native sheet offers Save
  * Images (iCloud Photos) / Save to Files (iCloud Drive) in one tap. The
- * Google Drive / Dropbox OAuth buttons from the same round-two doc are a
- * separate slice waiting on client IDs; this component never renders them.
+ * Google Drive and Dropbox render alongside native sharing only when their
+ * public developer identifiers are configured.
  *
  * Feature-detected via canShareFiles() (navigator.canShare AND a files
  * probe both pass), not just canShare's existence -- some browsers
@@ -83,7 +89,13 @@ function pluralize(count: number, singular: string, plural: string): string {
  * share sheet rejects navigator.share() with an AbortError; that stops the
  * remaining chunks gracefully (a "cancelled" status, not an error).
  */
-export function SavePhotosButton({ photoIds, label = "Save photos", className }: SavePhotosButtonProps) {
+export function SavePhotosButton({
+  photoIds,
+  label = "Save photos",
+  className,
+  googleDriveClientId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID,
+  dropboxAppKey = process.env.NEXT_PUBLIC_DROPBOX_APP_KEY,
+}: SavePhotosButtonProps) {
   const supported = useCanShareFiles();
   const [status, setStatus] = useState<Status>({ phase: "idle" });
   const abortRef = useRef<AbortController | null>(null);
@@ -215,8 +227,10 @@ export function SavePhotosButton({ photoIds, label = "Save photos", className }:
     abortRef.current?.abort();
   }, []);
 
-  // Feature-detection gate: no disabled button, no explainer, just nothing.
-  if (!supported) return null;
+  const hasCloudProvider = Boolean(googleDriveClientId || dropboxAppKey);
+
+  // Feature/config gate: no disabled placeholders when no save path exists.
+  if (!supported && !hasCloudProvider) return null;
 
   const busy = status.phase === "requesting" || status.phase === "fetching" || status.phase === "sharing";
   const disabled = photoIds.length === 0 || busy || status.phase === "continue";
@@ -243,33 +257,36 @@ export function SavePhotosButton({ photoIds, label = "Save photos", className }:
 
   return (
     <div className={className ?? WRAPPER_CLASS}>
-      <button
-        type="button"
-        className={BUTTON_CLASS}
-        aria-busy={busy}
-        disabled={disabled}
-        onClick={() => void handleStart()}
-      >
-        {label}
-      </button>
+      {supported ? (
+        <button
+          type="button"
+          className={BUTTON_CLASS}
+          aria-busy={busy}
+          disabled={disabled}
+          onClick={() => void handleStart()}
+        >
+          <Share2 aria-hidden="true" size={15} strokeWidth={1.6} />
+          {label}
+        </button>
+      ) : null}
 
-      {status.phase === "error" ? (
+      {supported && status.phase === "error" ? (
         <div role="alert" className="rounded-md border border-coral/40 bg-white p-3 text-sm">
           <p className="text-ink">{status.message}</p>
         </div>
-      ) : statusText ? (
+      ) : supported && statusText ? (
         <p role="status" aria-live="polite" className="text-sm text-muted">
           {statusText}
         </p>
       ) : null}
 
-      {status.phase === "fetching" ? (
+      {supported && status.phase === "fetching" ? (
         <button type="button" className={BUTTON_CLASS} onClick={handleCancelFetch}>
           Cancel
         </button>
       ) : null}
 
-      {status.phase === "continue" ? (
+      {supported && status.phase === "continue" ? (
         <div className="flex gap-2">
           <button type="button" className={PRIMARY_BUTTON_CLASS} onClick={handleContinue}>
             Continue
@@ -279,6 +296,12 @@ export function SavePhotosButton({ photoIds, label = "Save photos", className }:
           </button>
         </div>
       ) : null}
+
+      <CloudSaveControls
+        photoIds={photoIds}
+        googleClientId={googleDriveClientId}
+        dropboxAppKey={dropboxAppKey}
+      />
     </div>
   );
 }

@@ -3561,7 +3561,8 @@ button {
 
 .atlas-selection-actions > button,
 .atlas-selection-download,
-.atlas-selection-save > button {
+.atlas-selection-save > button,
+.atlas-selection-save .atlas-cloud-save-actions > button {
   display: inline-flex;
   min-height: 2.5rem;
   align-items: center;
@@ -3579,7 +3580,8 @@ button {
 
 .atlas-selection-actions > button:hover,
 .atlas-selection-download:hover,
-.atlas-selection-save > button:hover {
+.atlas-selection-save > button:hover,
+.atlas-selection-save .atlas-cloud-save-actions > button:hover {
   background: var(--rz-cream);
   color: var(--rz-ink);
 }
@@ -3592,14 +3594,17 @@ button {
 .atlas-selection-save {
   display: inline-flex;
   align-items: center;
+  gap: 0;
 }
 
-.atlas-selection-save > button {
+.atlas-selection-save > button,
+.atlas-selection-save .atlas-cloud-save-actions > button {
   border-radius: 0;
 }
 
 .atlas-selection-save > p,
-.atlas-selection-save > div {
+.atlas-selection-save > div:not(.atlas-cloud-save-controls),
+.atlas-selection-save .atlas-cloud-save-status {
   position: absolute;
   right: 1rem;
   bottom: calc(100% + 0.55rem);
@@ -3611,6 +3616,36 @@ button {
   font-size: 0.72rem;
   letter-spacing: normal;
   text-transform: none;
+}
+
+.atlas-cloud-save-controls,
+.atlas-cloud-save-actions {
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.atlas-cloud-save-controls {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.atlas-cloud-save-actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.atlas-cloud-save-status {
+  margin: 0;
+}
+
+.atlas-selection-save > .atlas-cloud-save-controls {
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+.atlas-selection-save .atlas-cloud-save-actions {
+  gap: 0;
 }
 
 .atlas-lightbox {
@@ -3782,6 +3817,32 @@ button {
   overflow-y: auto;
   padding-top: 0.75rem;
   border-top: 1px solid color-mix(in srgb, var(--rz-cream) 16%, transparent);
+}
+
+.atlas-lightbox-uploader-caption {
+  grid-column: 1 / -1;
+  max-width: 52rem;
+  margin: 0;
+  padding: 0.35rem 0 0.8rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--rz-cream) 12%, transparent);
+}
+
+.atlas-lightbox-uploader-caption p {
+  margin: 0;
+  color: var(--rz-cream);
+  font-family: var(--rz-font-display);
+  font-size: 1.2rem;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.atlas-lightbox-uploader-caption footer {
+  margin-top: 0.45rem;
+  color: color-mix(in srgb, var(--rz-cream) 62%, transparent);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .atlas-keyword-list {

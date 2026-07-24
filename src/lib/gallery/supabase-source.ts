@@ -34,6 +34,8 @@ const SELECT = `
   original_filename,
   width,
   height,
+  uploader_caption,
+  uploader_caption_byline,
   event:rachandzach_events ( slug, name, sort_order ),
   people:rachandzach_photo_people (
     confidence,
@@ -76,6 +78,8 @@ interface RawPhotoRow {
   original_filename: string;
   width: number | null;
   height: number | null;
+  uploader_caption: string | null;
+  uploader_caption_byline: string | null;
   event: RawEvent | null;
   people: RawPersonLink[] | null;
   keywords: { keyword: string }[] | null;
@@ -125,6 +129,12 @@ function mapRow(row: RawPhotoRow): GalleryPhotoSource {
     orientation: orientationOf(width, height),
     people,
     keywords: (row.keywords ?? []).map((k) => k.keyword),
+    approvedCaption: row.uploader_caption
+      ? {
+          text: row.uploader_caption,
+          byline: row.uploader_caption_byline,
+        }
+      : null,
     previews,
   };
 }

@@ -18,6 +18,7 @@ import { SavePhotosButton } from "@/components/downloads/SavePhotosButton";
 import { MomentSearch } from "@/components/search/MomentSearch";
 import { featureFlags } from "@/content/features";
 import { favoriteStore } from "@/lib/favorites/store";
+import { fetchWithRetry } from "@/lib/http/fetch-with-retry";
 
 export interface GalleryShellProps {
   initialPage: ClientGalleryPage;
@@ -120,7 +121,7 @@ export function GalleryShell({
       requestBusyRef.current = true;
       setState("loading");
       try {
-        const res = await fetch(apiUrl(next), { cache: "no-store" });
+        const res = await fetchWithRetry(apiUrl(next), { cache: "no-store" });
         if (res.status === 401) {
           if (seq === requestSeq.current) {
             requestBusyRef.current = false;
@@ -153,7 +154,7 @@ export function GalleryShell({
     requestBusyRef.current = true;
     setState("loading");
     try {
-      const res = await fetch(apiUrl(filters, { cursor }), {
+      const res = await fetchWithRetry(apiUrl(filters, { cursor }), {
         cache: "no-store",
       });
       if (res.status === 401) {
@@ -456,7 +457,7 @@ async function renewSignedUrls(
   for (let i = 0; i < ids.length; i += 100) {
     const chunk = ids.slice(i, i + 100);
     try {
-      const res = await fetch(apiUrl(filters, { ids: chunk }), {
+      const res = await fetchWithRetry(apiUrl(filters, { ids: chunk }), {
         cache: "no-store",
       });
       if (!res.ok) return;

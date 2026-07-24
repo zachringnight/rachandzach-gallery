@@ -293,14 +293,68 @@ describe("requireAdmin", () => {
 });
 
 describe("security headers", () => {
-  it("omits unsafe-eval in production CSP and includes it in dev", () => {
-    const prod = securityHeaders({ dev: false })["Content-Security-Policy"];
-    const dev = securityHeaders({ dev: true })["Content-Security-Policy"];
+  it("omits provider origins until that provider is configured", () => {
+    const prod = securityHeaders({
+      dev: false,
+      googleDriveEnabled: false,
+      dropboxEnabled: false,
+    })["Content-Security-Policy"];
+    const dev = securityHeaders({
+      dev: true,
+      googleDriveEnabled: false,
+      dropboxEnabled: false,
+    })["Content-Security-Policy"];
     expect(prod).not.toContain("'unsafe-eval'");
     expect(dev).toContain("'unsafe-eval'");
     expect(prod).toContain("frame-ancestors 'none'");
     expect(prod).toContain("object-src 'none'");
     expect(prod).toContain("form-action 'self'");
+    expect(prod).not.toContain("https://accounts.google.com");
+    expect(prod).not.toContain("https://www.googleapis.com");
+    expect(prod).not.toContain("https://www.dropbox.com");
+    expect(prod).not.toContain("https://api.dropboxapi.com");
+    expect(prod).toContain("frame-src 'none'");
+    expect(
+      securityHeaders({
+        dev: false,
+        googleDriveEnabled: false,
+        dropboxEnabled: false,
+      })["Cross-Origin-Opener-Policy"],
+    ).toBe("same-origin");
+  });
+
+  it("opens only Google origins when Drive is configured", () => {
+    const headers = securityHeaders({
+      dev: false,
+      googleDriveEnabled: true,
+      dropboxEnabled: false,
+    });
+    const csp = headers["Content-Security-Policy"];
+    expect(csp).toContain("https://accounts.google.com/gsi/client");
+    expect(csp).toContain("https://accounts.google.com/gsi/");
+    expect(csp).toContain("https://www.googleapis.com");
+    expect(csp).not.toContain("https://www.dropbox.com");
+    expect(csp).not.toContain("https://api.dropboxapi.com");
+    expect(headers["Cross-Origin-Opener-Policy"]).toBe(
+      "same-origin-allow-popups",
+    );
+  });
+
+  it("pins Dropbox script access to Saver's exact path", () => {
+    const headers = securityHeaders({
+      dev: false,
+      googleDriveEnabled: false,
+      dropboxEnabled: true,
+    });
+    const csp = headers["Content-Security-Policy"];
+    expect(csp).toContain(
+      "script-src 'self' 'unsafe-inline' https://www.dropbox.com/static/api/2/dropins.js",
+    );
+    expect(csp).toContain("https://api.dropboxapi.com");
+    expect(csp).not.toContain("https://accounts.google.com");
+    expect(headers["Cross-Origin-Opener-Policy"]).toBe(
+      "same-origin-allow-popups",
+    );
   });
 
   it("next.config.ts serves the same header set for every route", async () => {

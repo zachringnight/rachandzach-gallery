@@ -11,6 +11,7 @@ import type {
 } from "@/lib/gallery/client-types";
 import { EventPicker } from "@/components/gallery/EventPicker";
 import { PersonPicker } from "@/components/gallery/PersonPicker";
+import { CopyCurrentViewButton } from "@/components/ui/CopyCurrentViewButton";
 
 export interface FilterBarProps {
   facets: ClientGalleryFacets;
@@ -123,6 +124,8 @@ export function FilterBar({
         </p>
 
         <div className="atlas-filter-summary-actions">
+          <CopyCurrentViewButton className="atlas-filter-action" />
+
           {onStartSelection ? (
             <button
               type="button"

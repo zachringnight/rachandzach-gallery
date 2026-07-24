@@ -10,6 +10,12 @@
 
 /** Supabase project host pattern for signed storage URLs, auth, and TUS uploads. */
 const SUPABASE_HOSTS = "https://*.supabase.co";
+const GOOGLE_IDENTITY = "https://accounts.google.com";
+const GOOGLE_APIS = "https://www.googleapis.com";
+const DROPBOX = "https://www.dropbox.com";
+const DROPBOX_API = "https://api.dropboxapi.com";
+const DROPBOX_SAVER_SCRIPT =
+  "https://www.dropbox.com/static/api/2/dropins.js";
 
 export interface SecurityHeaderOptions {
   /**
@@ -18,14 +24,42 @@ export interface SecurityHeaderOptions {
    * strict policy automatically.
    */
   dev?: boolean;
+  /** Defaults to whether the public browser client id is configured. */
+  googleDriveEnabled?: boolean;
+  /** Defaults to whether the public Dropbox Saver app key is configured. */
+  dropboxEnabled?: boolean;
 }
 
 export function contentSecurityPolicy(
   options?: SecurityHeaderOptions,
 ): string {
   const dev = options?.dev ?? process.env.NODE_ENV !== "production";
-  const scriptSrc = ["'self'", "'unsafe-inline'", ...(dev ? ["'unsafe-eval'"] : [])];
-  const connectSrc = ["'self'", SUPABASE_HOSTS, ...(dev ? ["ws:", "wss:"] : [])];
+  const googleDriveEnabled =
+    options?.googleDriveEnabled ??
+    Boolean(process.env.NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID);
+  const dropboxEnabled =
+    options?.dropboxEnabled ??
+    Boolean(process.env.NEXT_PUBLIC_DROPBOX_APP_KEY);
+  const scriptSrc = [
+    "'self'",
+    "'unsafe-inline'",
+    ...(googleDriveEnabled ? [`${GOOGLE_IDENTITY}/gsi/client`] : []),
+    ...(dropboxEnabled ? [DROPBOX_SAVER_SCRIPT] : []),
+    ...(dev ? ["'unsafe-eval'"] : []),
+  ];
+  const connectSrc = [
+    "'self'",
+    SUPABASE_HOSTS,
+    ...(googleDriveEnabled
+      ? [`${GOOGLE_IDENTITY}/gsi/`, GOOGLE_APIS]
+      : []),
+    ...(dropboxEnabled ? [DROPBOX_API] : []),
+    ...(dev ? ["ws:", "wss:"] : []),
+  ];
+  const frameSrc = [
+    ...(googleDriveEnabled ? [`${GOOGLE_IDENTITY}/gsi/`] : []),
+    ...(dropboxEnabled ? [DROPBOX] : []),
+  ];
   const directives = [
     "default-src 'self'",
     "base-uri 'self'",
@@ -38,6 +72,7 @@ export function contentSecurityPolicy(
     `script-src ${scriptSrc.join(" ")}`,
     "style-src 'self' 'unsafe-inline'",
     `connect-src ${connectSrc.join(" ")}`,
+    `frame-src ${frameSrc.length > 0 ? frameSrc.join(" ") : "'none'"}`,
     "worker-src 'self' blob:",
   ];
   return directives.join("; ");
@@ -46,13 +81,22 @@ export function contentSecurityPolicy(
 export function securityHeaders(
   options?: SecurityHeaderOptions,
 ): Record<string, string> {
+  const googleDriveEnabled =
+    options?.googleDriveEnabled ??
+    Boolean(process.env.NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID);
+  const dropboxEnabled =
+    options?.dropboxEnabled ??
+    Boolean(process.env.NEXT_PUBLIC_DROPBOX_APP_KEY);
   return {
     "Content-Security-Policy": contentSecurityPolicy(options),
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
-    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Opener-Policy":
+      googleDriveEnabled || dropboxEnabled
+        ? "same-origin-allow-popups"
+        : "same-origin",
   };
 }
 

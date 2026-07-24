@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { addGuestSession } from "./support/session";
 
 /**
@@ -25,30 +25,58 @@ import { addGuestSession } from "./support/session";
 
 test.use({ colorScheme: "light" });
 
+async function prepareVisualCapture(page: Page): Promise<void> {
+  await page.locator("[data-reveal]").evaluateAll((elements) => {
+    for (const element of elements) {
+      (element as HTMLElement).dataset.reveal = "in";
+    }
+  });
+  await page.locator("img").evaluateAll(async (images) => {
+    for (const image of images) {
+      (image as HTMLImageElement).loading = "eager";
+    }
+    await Promise.all(
+      images.map((image) => (image as HTMLImageElement).decode().catch(() => undefined)),
+    );
+  });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
+}
+
 test.describe("public pages", () => {
   test("home", async ({ page }) => {
     await page.goto("/");
+    await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("home.png", {
       fullPage: true,
       animations: "disabled",
+      timeout: 15_000,
     });
   });
 
   test("weekend", async ({ page }) => {
     await page.goto("/weekend");
+    await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("weekend.png", {
       fullPage: true,
       animations: "disabled",
+      timeout: 15_000,
     });
   });
 
   test("login (enter)", async ({ page }) => {
     await page.goto("/enter");
+    await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("enter.png", { animations: "disabled" });
   });
 
   test("login, invalid-password error state", async ({ page }) => {
     await page.goto("/enter?error=invalid");
+    await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("enter-error-invalid.png", {
       animations: "disabled",
     });
@@ -56,6 +84,7 @@ test.describe("public pages", () => {
 
   test("404", async ({ page }) => {
     await page.goto("/this-page-does-not-exist");
+    await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("not-found.png", {
       fullPage: true,
       animations: "disabled",
@@ -70,6 +99,7 @@ test.describe("guest pages (no server data required)", () => {
 
   test("add-yours (empty upload form)", async ({ page }) => {
     await page.goto("/add-yours");
+    await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("add-yours.png", {
       fullPage: true,
       animations: "disabled",
@@ -82,6 +112,7 @@ test.describe("guest pages (no server data required)", () => {
     // fixed upstream before this baseline was captured, so this is the
     // correct, stable empty state, not the crash.
     await page.goto("/favorites");
+    await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("favorites-empty.png", {
       fullPage: true,
       animations: "disabled",

@@ -219,6 +219,12 @@ function toMomentPhotoView(photo: GalleryPhotoSource): GalleryPhotoView {
     capturedAt: photo.capturedAt,
     people,
     keywords: dedupeKeywordsAgainstPeople(photo.keywords, people),
+    approvedCaption: photo.approvedCaption?.text.trim()
+      ? {
+          text: photo.approvedCaption.text.trim(),
+          byline: photo.approvedCaption.byline?.trim() || null,
+        }
+      : null,
     previews: photo.previews.map((preview) => ({
       objectPath: preview.objectPath,
       bucket: preview.bucket,

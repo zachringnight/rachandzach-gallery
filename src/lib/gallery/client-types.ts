@@ -30,6 +30,11 @@ export interface ClientPhoto {
   people: { slug: string; displayName: string }[];
   /** Free-text tags, already deduped against this photo's confirmed people. */
   keywords: string[];
+  /** An uploader note copied into the catalog only after admin approval. */
+  approvedCaption?: {
+    text: string;
+    byline: string | null;
+  } | null;
   /** Ordered small -> large; empty if none could be signed. */
   previews: ClientPreview[];
 }

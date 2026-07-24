@@ -287,6 +287,15 @@ export function Lightbox({
       </div>
 
       <div className="atlas-lightbox-notes">
+        {photo.approvedCaption ? (
+          <blockquote className="atlas-lightbox-uploader-caption">
+            <p>{photo.approvedCaption.text}</p>
+            {photo.approvedCaption.byline ? (
+              <footer>Shared by {photo.approvedCaption.byline}</footer>
+            ) : null}
+          </blockquote>
+        ) : null}
+
         {photo.keywords.length > 0 ? (
           <ul aria-label="Keywords" className="atlas-keyword-list">
             {photo.keywords.map((keyword) => (

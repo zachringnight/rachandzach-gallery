@@ -35,6 +35,7 @@ afterEach(cleanup);
 /** The digest next/navigation's notFound() throws; confirmed against the
  * installed Next version (node_modules/next/dist/client/components/not-found.js). */
 const NOT_FOUND_DIGEST = "NEXT_HTTP_ERROR_FALLBACK;404";
+const MARATHON_REDIRECT_DIGEST = "NEXT_REDIRECT;replace;/nyc;308;";
 
 function expectNotFound(run: () => unknown) {
   let caught: unknown;
@@ -45,6 +46,17 @@ function expectNotFound(run: () => unknown) {
   }
   expect(caught, "expected the page to call notFound()").toBeInstanceOf(Error);
   expect((caught as { digest?: unknown }).digest).toBe(NOT_FOUND_DIGEST);
+}
+
+function expectPermanentRedirect(run: () => unknown, digest: string) {
+  let caught: unknown;
+  try {
+    run();
+  } catch (error) {
+    caught = error;
+  }
+  expect(caught, "expected the page to redirect").toBeInstanceOf(Error);
+  expect((caught as { digest?: unknown }).digest).toBe(digest);
 }
 
 const fakePlaylist: PlaylistConfig = {
@@ -120,13 +132,13 @@ describe("disabled modules render nothing (no placeholder card)", () => {
   });
 });
 
-describe("flagged routes return not found while their flags are off", () => {
+describe("module route behavior", () => {
   it("/playlists", () => {
     expectNotFound(() => PlaylistsPage());
   });
 
   it("/marathon", () => {
-    expectNotFound(() => MarathonPage());
+    expectPermanentRedirect(() => MarathonPage(), MARATHON_REDIRECT_DIGEST);
   });
 });
 
