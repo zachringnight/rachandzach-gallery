@@ -169,6 +169,89 @@ describe("Google Drive uploads", () => {
     expect(wait).toHaveBeenCalledTimes(1);
   });
 
+  it("restarts from zero when Drive reports that no bytes were committed", async () => {
+    const wait = vi.fn().mockResolvedValue(undefined);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(new Blob(["photo"], { type: "image/jpeg" }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 200,
+          headers: { location: "https://upload.example.test/session-1" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 308,
+          headers: { range: "bytes=0-2" },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(new Response(null, { status: 308 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    await uploadOriginalToGoogleDrive(
+      ITEM,
+      "short-lived-token",
+      fetchMock as unknown as typeof fetch,
+      { wait },
+    );
+
+    const partialRetry = fetchMock.mock.calls[3][1] as RequestInit;
+    expect(partialRetry.headers).toMatchObject({
+      "content-range": "bytes 3-4/5",
+    });
+    const restartedUpload = fetchMock.mock.calls[5][1] as RequestInit;
+    expect(restartedUpload.headers).toMatchObject({
+      "content-range": "bytes 0-4/5",
+    });
+    expect((restartedUpload.body as Blob).size).toBe(5);
+    expect(wait).toHaveBeenCalledTimes(2);
+  });
+
+  it("also honors a zero offset after a network-error recovery probe", async () => {
+    const wait = vi.fn().mockResolvedValue(undefined);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(new Blob(["photo"], { type: "image/jpeg" }), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 200,
+          headers: { location: "https://upload.example.test/session-1" },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 308,
+          headers: { range: "bytes=0-2" },
+        }),
+      )
+      .mockRejectedValueOnce(new TypeError("upload network error"))
+      .mockResolvedValueOnce(new Response(null, { status: 308 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    await uploadOriginalToGoogleDrive(
+      ITEM,
+      "short-lived-token",
+      fetchMock as unknown as typeof fetch,
+      { wait },
+    );
+
+    const restartedUpload = fetchMock.mock.calls[5][1] as RequestInit;
+    expect(restartedUpload.headers).toMatchObject({
+      "content-range": "bytes 0-4/5",
+    });
+    expect((restartedUpload.body as Blob).size).toBe(5);
+  });
+
   it("accepts a completed session after the final response is lost", async () => {
     const fetchMock = vi
       .fn()

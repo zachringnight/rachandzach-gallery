@@ -28,7 +28,11 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { STORAGE_BUCKETS, type PhotoRow } from "@/lib/supabase/schema";
+import {
+  STORAGE_BUCKETS,
+  type PhotoRow,
+  type UploadItemRow,
+} from "@/lib/supabase/schema";
 import { GUEST_PENDING_BUCKET } from "@/lib/uploads/contracts";
 import { sniffImage } from "@/lib/uploads/validate-upload";
 import { ModerationPersistenceError } from "./audit";
@@ -297,6 +301,36 @@ function assertReusableCrossBatchPhoto(photo: PhotoRow): void {
       "The matching catalog photo is not yet reusable from another batch.",
     );
   }
+}
+
+function assertPhotoMatchesProcessedItem(
+  item: UploadItemRow,
+  photo: PhotoRow,
+): void {
+  if (!item.sha256 || item.sha256 !== photo.file_sha256) {
+    throw new UnprocessableItemStateError(
+      "The catalog photo does not match this upload item's verified content.",
+    );
+  }
+}
+
+async function hasOtherApprovedItemForPhoto(
+  client: Db,
+  item: UploadItemRow,
+  photo: PhotoRow,
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("rachandzach_upload_items")
+    .select("id")
+    .eq("sha256", photo.file_sha256)
+    .eq("status", "approved");
+  if (error) {
+    throw new ModerationPersistenceError(
+      "Could not verify shared catalog photo ownership.",
+    );
+  }
+
+  return (data ?? []).some((candidate) => candidate.id !== item.id);
 }
 
 /**
@@ -647,6 +681,7 @@ export async function reconcileProcessedPhoto(
       `Catalog photo ${photoId} was not found.`,
     );
   }
+  assertPhotoMatchesProcessedItem(item, photo);
 
   // Duplicate content from a different batch belongs to the first catalog
   // row. Approval of this item must not rewrite that row's provenance/caption.
@@ -701,6 +736,17 @@ export async function reconcileProcessedPhoto(
     item.status === "rejected" ||
     item.status === "removed"
   ) {
+    // Multiple upload items may legitimately deduplicate onto one catalog row.
+    // A stale failure/rejection for one item cannot quarantine content whose
+    // identical server-verified hash is still approved by another item.
+    if (await hasOtherApprovedItemForPhoto(client, item, photo)) {
+      return {
+        photoId: photo.id,
+        owned: true,
+        status: photo.status,
+        itemStatus: item.status,
+      };
+    }
     patch = {
       status: item.status === "pending" ? "pending" : "rejected",
       uploader_caption: null,

@@ -295,7 +295,7 @@ function uploadedByteOffset(response: Response): number {
 
 type DriveSessionStatus =
   | { complete: true }
-  | { complete: false; offset: number; retryable: boolean };
+  | { complete: false; offset: number | null };
 
 async function inspectDriveSession(
   uploadUrl: string,
@@ -317,11 +317,10 @@ async function inspectDriveSession(
     return {
       complete: false,
       offset: uploadedByteOffset(response),
-      retryable: true,
     };
   }
   if (retryableDriveStatus(response.status)) {
-    return { complete: false, offset: 0, retryable: true };
+    return { complete: false, offset: null };
   }
   throw new Error(
     await responseMessage(response, "Google Drive upload session expired."),
@@ -409,7 +408,7 @@ export async function uploadOriginalToGoogleDrive(
             signal,
           );
           if (status.complete) return;
-          offset = status.offset;
+          if (status.offset !== null) offset = status.offset;
         }
       } else if (retryableDriveStatus(uploaded.status)) {
         const status = await inspectDriveSession(
@@ -420,7 +419,7 @@ export async function uploadOriginalToGoogleDrive(
           signal,
         );
         if (status.complete) return;
-        offset = status.offset || offset;
+        if (status.offset !== null) offset = status.offset;
       } else {
         throw new Error(
           await responseMessage(
@@ -441,7 +440,7 @@ export async function uploadOriginalToGoogleDrive(
           signal,
         );
         if (status.complete) return;
-        offset = status.offset || offset;
+        if (status.offset !== null) offset = status.offset;
       } catch (statusError) {
         if (isAbort(statusError, signal)) throw statusError;
         lastError = statusError;

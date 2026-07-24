@@ -18,7 +18,10 @@ import {
   reconcileProcessedPhoto,
   type ProcessApprovedPhotoMetadata,
 } from "@/lib/moderation/process-approved-photo";
-import { transitionUploadItem } from "@/lib/moderation/state-machine";
+import {
+  recomputeBatchStatus,
+  transitionUploadItem,
+} from "@/lib/moderation/state-machine";
 import { createFakeDb, TEST_ACTOR } from "./fake-supabase";
 
 const FIXTURES_DIR = join(
@@ -38,6 +41,7 @@ const OBJECT_PATH = `pending/${BATCH_ID}/${ITEM_ID}/nonce`;
 const OTHER_ITEM_ID = "66666666-6666-4666-8666-666666666666";
 const OTHER_BATCH_ID = "77777777-7777-4777-8777-777777777777";
 const OTHER_OBJECT_PATH = `pending/${OTHER_BATCH_ID}/${OTHER_ITEM_ID}/nonce`;
+const SAME_BATCH_OTHER_OBJECT_PATH = `pending/${BATCH_ID}/${OTHER_ITEM_ID}/nonce`;
 
 const NO_METADATA: ProcessApprovedPhotoMetadata = {
   eventSlug: null,
@@ -554,6 +558,121 @@ describe("processApprovedPhoto: approved uploader captions", () => {
     );
     expect(photo.uploader_caption_byline).toBeNull();
     expect(JSON.stringify(photo)).not.toContain("Jamie");
+  });
+
+  it("preserves a published same-batch duplicate when its sibling's stale approve loses to reject", async () => {
+    const original = readFixture("synthetic-1-tiny.jpg");
+    const db = buildDb(
+      {},
+      {
+        note: "The approved sibling keeps this shared photo visible.",
+        display_name: "Private Guest",
+      },
+    );
+    db.tables.get("rachandzach_upload_items")!.push(
+      seedItem({
+        id: OTHER_ITEM_ID,
+        object_path: SAME_BATCH_OTHER_OBJECT_PATH,
+        original_name: "same-batch-duplicate.jpg",
+      }),
+    );
+    putOriginal(db, original);
+    putOriginal(db, original, SAME_BATCH_OTHER_OBJECT_PATH);
+
+    const first = await processApprovedPhoto(ITEM_ID, NO_METADATA, db.client);
+    await approveAndReconcile(db, first.photoId, true);
+
+    const duplicate = await processApprovedPhoto(
+      OTHER_ITEM_ID,
+      { ...NO_METADATA, expectedBatchId: BATCH_ID },
+      db.client,
+    );
+    expect(duplicate).toEqual({ photoId: first.photoId, created: false });
+    expect(db.tables.get("rachandzach_photos") ?? []).toHaveLength(1);
+
+    const pendingReconciliation = await reconcileProcessedPhoto(
+      OTHER_ITEM_ID,
+      duplicate.photoId,
+      { expectedBatchId: BATCH_ID, publishApproved: false },
+      db.client,
+    );
+    expect(pendingReconciliation).toMatchObject({
+      status: "published",
+      itemStatus: "pending",
+    });
+
+    await transitionUploadItem(
+      OTHER_ITEM_ID,
+      {
+        itemId: OTHER_ITEM_ID,
+        action: "reject",
+        eventSlug: null,
+        peopleSlugs: [],
+        keywords: [],
+        noteApproved: false,
+        rejectionReason: "Rejected duplicate",
+      },
+      TEST_ACTOR,
+      db.client,
+    );
+    await expect(
+      transitionUploadItem(
+        OTHER_ITEM_ID,
+        approveDecision(true, OTHER_ITEM_ID),
+        TEST_ACTOR,
+        db.client,
+      ),
+    ).rejects.toThrow(/Cannot move an upload item from "rejected"/);
+
+    const rejectedReconciliation = await reconcileProcessedPhoto(
+      OTHER_ITEM_ID,
+      duplicate.photoId,
+      { expectedBatchId: BATCH_ID, publishApproved: false },
+      db.client,
+    );
+    const rejectedRetry = await reconcileProcessedPhoto(
+      OTHER_ITEM_ID,
+      duplicate.photoId,
+      { expectedBatchId: BATCH_ID, publishApproved: false },
+      db.client,
+    );
+    expect(rejectedReconciliation).toMatchObject({
+      status: "published",
+      itemStatus: "rejected",
+    });
+    expect(rejectedRetry).toEqual(rejectedReconciliation);
+
+    const approvedRetry = await reconcileProcessedPhoto(
+      ITEM_ID,
+      first.photoId,
+      { expectedBatchId: BATCH_ID },
+      db.client,
+    );
+    expect(approvedRetry.status).toBe("published");
+
+    const [photo] = db.tables.get("rachandzach_photos") ?? [];
+    expect(photo.status).toBe("published");
+    expect(photo.uploader_caption).toBe(
+      "The approved sibling keeps this shared photo visible.",
+    );
+    expect(photo.approved_at).toEqual(expect.any(String));
+
+    const itemRows = db.tables.get("rachandzach_upload_items") ?? [];
+    expect(
+      itemRows.map(({ id, status, sha256 }) => ({ id, status, sha256 })),
+    ).toEqual([
+      { id: ITEM_ID, status: "approved", sha256: photo.file_sha256 },
+      { id: OTHER_ITEM_ID, status: "rejected", sha256: photo.file_sha256 },
+    ]);
+
+    const batch = await recomputeBatchStatus(BATCH_ID, TEST_ACTOR, db.client);
+    const batchRetry = await recomputeBatchStatus(
+      BATCH_ID,
+      TEST_ACTOR,
+      db.client,
+    );
+    expect(batch?.status).toBe("partially_approved");
+    expect(batchRetry?.status).toBe("partially_approved");
   });
 
   it("keeps a staged photo non-visible and caption-free when rejection wins", async () => {
