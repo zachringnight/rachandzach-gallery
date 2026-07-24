@@ -3,10 +3,12 @@
 import {
   Calendar,
   Check,
+  Grid3X3,
   Images,
   Minus,
   Plus,
   RefreshCw,
+  Rows3,
   Search,
   Tags,
   UserRound,
@@ -31,10 +33,12 @@ export interface CatalogOption {
 export interface CatalogTaggerProps {
   initialPage: AdminCatalogPage;
   initialFilters: AdminCatalogFilters;
+  initialView?: CatalogViewMode;
   events: CatalogOption[];
   people: CatalogOption[];
 }
 
+export type CatalogViewMode = "grid" | "table";
 type PersonOperation = "add" | "remove";
 type KeywordOperation = "add" | "remove";
 type Notice =
@@ -65,6 +69,22 @@ function catalogUrl(
   return `/api/admin/catalog?${params.toString()}`;
 }
 
+function catalogPageUrl(
+  filters: AdminCatalogFilters,
+  view: CatalogViewMode,
+): string {
+  const params = new URLSearchParams();
+  if (filters.query) params.set("q", filters.query);
+  if (filters.needs !== "all") params.set("needs", filters.needs);
+  if (filters.event) params.set("event", filters.event);
+  if (filters.person) params.set("person", filters.person);
+  if (filters.source) params.set("source", filters.source);
+  if (filters.sort !== "weekend") params.set("sort", filters.sort);
+  if (view !== "grid") params.set("view", view);
+  const query = params.toString();
+  return query ? `/admin/catalog?${query}` : "/admin/catalog";
+}
+
 function completenessLabel(photo: AdminCatalogPhoto): string {
   if (photo.completeness === "complete") return "Ready";
   if (photo.completeness === "missing-event") return "Needs event";
@@ -83,12 +103,14 @@ function photoLabel(photo: AdminCatalogPhoto): string {
 export function CatalogTagger({
   initialPage,
   initialFilters,
+  initialView = "grid",
   events,
   people,
 }: CatalogTaggerProps) {
   const [filters, setFilters] =
     useState<AdminCatalogFilters>(initialFilters);
   const [queryDraft, setQueryDraft] = useState(initialFilters.query);
+  const [viewMode, setViewMode] = useState<CatalogViewMode>(initialView);
   const [page, setPage] = useState(initialPage);
   const [selected, setSelected] = useState<ReadonlySet<string>>(
     () => new Set<string>(),
@@ -166,9 +188,10 @@ export function CatalogTagger({
     (patch: Partial<AdminCatalogFilters>) => {
       const next = { ...filters, ...patch };
       setFilters(next);
+      window.history.replaceState({}, "", catalogPageUrl(next, viewMode));
       void load(next);
     },
-    [filters, load],
+    [filters, load, viewMode],
   );
 
   const togglePhoto = useCallback(
@@ -320,6 +343,7 @@ export function CatalogTagger({
           event.preventDefault();
           const next = { ...filters, query: queryDraft.trim() };
           setFilters(next);
+          window.history.replaceState({}, "", catalogPageUrl(next, viewMode));
           void load(next);
         }}
       >
@@ -444,6 +468,44 @@ export function CatalogTagger({
                 : "Select frames to edit together"}
             </p>
             <div>
+              <div
+                className="atlas-catalog-view-switch"
+                role="group"
+                aria-label="Catalog view"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("grid");
+                    window.history.replaceState(
+                      {},
+                      "",
+                      catalogPageUrl(filters, "grid"),
+                    );
+                  }}
+                  aria-label="Contact sheet view"
+                  aria-pressed={viewMode === "grid"}
+                  title="Contact sheet view"
+                >
+                  <Grid3X3 aria-hidden="true" size={15} strokeWidth={1.6} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("table");
+                    window.history.replaceState(
+                      {},
+                      "",
+                      catalogPageUrl(filters, "table"),
+                    );
+                  }}
+                  aria-label="Table view"
+                  aria-pressed={viewMode === "table"}
+                  title="Table view"
+                >
+                  <Rows3 aria-hidden="true" size={16} strokeWidth={1.6} />
+                </button>
+              </div>
               <button type="button" onClick={selectLoaded}>
                 <Images aria-hidden="true" size={15} strokeWidth={1.6} />
                 Select loaded
@@ -460,98 +522,106 @@ export function CatalogTagger({
           </div>
 
           {page.photos.length > 0 ? (
-            <ol className="atlas-catalog-grid">
-              {page.photos.map((photo, index) => {
-                const isSelected = selected.has(photo.id);
-                return (
-                  <li
-                    key={photo.id}
-                    className="atlas-catalog-card"
-                    data-selected={isSelected ? "true" : "false"}
-                  >
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={isSelected}
-                      aria-label={`${isSelected ? "Deselect" : "Select"} ${photoLabel(photo)}`}
-                      onClick={() => togglePhoto(photo.id)}
-                      className="atlas-catalog-image"
+            viewMode === "grid" ? (
+              <ol className="atlas-catalog-grid">
+                {page.photos.map((photo, index) => {
+                  const isSelected = selected.has(photo.id);
+                  return (
+                    <li
+                      key={photo.id}
+                      className="atlas-catalog-card"
+                      data-selected={isSelected ? "true" : "false"}
                     >
-                      <PhotoImage
-                        photo={photo}
-                        alt={photoLabel(photo)}
-                        tier="card"
-                        targetWidth={420}
-                        className="h-full w-full"
-                        imageClassName="h-full w-full object-cover"
-                      />
-                      <span className="atlas-catalog-check">
-                        <Check
-                          aria-hidden="true"
-                          size={16}
-                          strokeWidth={2}
-                        />
-                      </span>
-                    </button>
-
-                    <div className="atlas-catalog-card-copy">
-                      <div>
-                        <span>{String(index + 1).padStart(2, "0")}</span>
-                        <strong>{photo.eventName || "Unassigned event"}</strong>
-                      </div>
-                      <p title={photo.originalFilename}>
-                        {photo.originalFilename}
-                      </p>
-                      <dl>
-                        <div>
-                          <dt>
-                            <UserRound
-                              aria-label="People"
-                              size={13}
-                              strokeWidth={1.6}
-                            />
-                          </dt>
-                          <dd>
-                            {photo.people.length > 0
-                              ? photo.people
-                                  .slice(0, 2)
-                                  .map((person) => person.displayName)
-                                  .join(", ")
-                              : "No people"}
-                            {photo.people.length > 2
-                              ? ` +${photo.people.length - 2}`
-                              : ""}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>
-                            <Tags
-                              aria-label="Keywords"
-                              size={13}
-                              strokeWidth={1.6}
-                            />
-                          </dt>
-                          <dd>
-                            {photo.keywords.length > 0
-                              ? photo.keywords.slice(0, 2).join(", ")
-                              : "No keywords"}
-                            {photo.keywords.length > 2
-                              ? ` +${photo.keywords.length - 2}`
-                              : ""}
-                          </dd>
-                        </div>
-                      </dl>
-                      <span
-                        className="atlas-catalog-state"
-                        data-state={photo.completeness}
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={isSelected}
+                        aria-label={`${isSelected ? "Deselect" : "Select"} ${photoLabel(photo)}`}
+                        onClick={() => togglePhoto(photo.id)}
+                        className="atlas-catalog-image"
                       >
-                        {completenessLabel(photo)}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+                        <PhotoImage
+                          photo={photo}
+                          alt={photoLabel(photo)}
+                          tier="card"
+                          targetWidth={420}
+                          className="h-full w-full"
+                          imageClassName="h-full w-full object-cover"
+                        />
+                        <span className="atlas-catalog-check">
+                          <Check
+                            aria-hidden="true"
+                            size={16}
+                            strokeWidth={2}
+                          />
+                        </span>
+                      </button>
+
+                      <div className="atlas-catalog-card-copy">
+                        <div>
+                          <span>{String(index + 1).padStart(2, "0")}</span>
+                          <strong>{photo.eventName || "Unassigned event"}</strong>
+                        </div>
+                        <p title={photo.originalFilename}>
+                          {photo.originalFilename}
+                        </p>
+                        <dl>
+                          <div>
+                            <dt>
+                              <UserRound
+                                aria-label="People"
+                                size={13}
+                                strokeWidth={1.6}
+                              />
+                            </dt>
+                            <dd>
+                              {photo.people.length > 0
+                                ? photo.people
+                                    .slice(0, 2)
+                                    .map((person) => person.displayName)
+                                    .join(", ")
+                                : "No people"}
+                              {photo.people.length > 2
+                                ? ` +${photo.people.length - 2}`
+                                : ""}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>
+                              <Tags
+                                aria-label="Keywords"
+                                size={13}
+                                strokeWidth={1.6}
+                              />
+                            </dt>
+                            <dd>
+                              {photo.keywords.length > 0
+                                ? photo.keywords.slice(0, 2).join(", ")
+                                : "No keywords"}
+                              {photo.keywords.length > 2
+                                ? ` +${photo.keywords.length - 2}`
+                                : ""}
+                            </dd>
+                          </div>
+                        </dl>
+                        <span
+                          className="atlas-catalog-state"
+                          data-state={photo.completeness}
+                        >
+                          {completenessLabel(photo)}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            ) : (
+              <CatalogTable
+                photos={page.photos}
+                selected={selected}
+                onToggle={togglePhoto}
+              />
+            )
           ) : (
             <div className="atlas-catalog-empty">
               <p>No photos match this desk.</p>
@@ -568,6 +638,11 @@ export function CatalogTagger({
                     sort: "weekend",
                   };
                   setFilters(next);
+                  window.history.replaceState(
+                    {},
+                    "",
+                    catalogPageUrl(next, viewMode),
+                  );
                   void load(next);
                 }}
               >
@@ -716,5 +791,101 @@ export function CatalogTagger({
         </aside>
       </div>
     </section>
+  );
+}
+
+function CatalogTable({
+  photos,
+  selected,
+  onToggle,
+}: {
+  photos: AdminCatalogPhoto[];
+  selected: ReadonlySet<string>;
+  onToggle: (photoId: string) => void;
+}) {
+  return (
+    <div className="atlas-catalog-table-wrap">
+      <table className="atlas-catalog-table">
+        <caption className="sr-only">
+          Loaded catalog photos and metadata
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">
+              <span className="sr-only">Select</span>
+            </th>
+            <th scope="col">Photo</th>
+            <th scope="col">Event</th>
+            <th scope="col">People</th>
+            <th scope="col">Keywords</th>
+            <th scope="col">Source</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {photos.map((photo) => {
+            const isSelected = selected.has(photo.id);
+            return (
+              <tr
+                key={photo.id}
+                data-selected={isSelected ? "true" : "false"}
+              >
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggle(photo.id)}
+                    aria-label={`${isSelected ? "Deselect" : "Select"} ${photoLabel(photo)}`}
+                  />
+                </td>
+                <td>
+                  <div className="atlas-catalog-table-photo">
+                    <PhotoImage
+                      photo={photo}
+                      alt=""
+                      tier="thumbnail"
+                      className="atlas-catalog-table-thumb"
+                      imageClassName="h-full w-full object-cover"
+                    />
+                    <div>
+                      <strong title={photo.originalFilename}>
+                        {photo.originalFilename}
+                      </strong>
+                      <span>
+                        {photo.orientation} / {photo.width} x {photo.height}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td>{photo.eventName || "Unassigned"}</td>
+                <td>
+                  {photo.people.length > 0
+                    ? photo.people
+                        .map((person) => person.displayName)
+                        .join(", ")
+                    : "No people"}
+                </td>
+                <td>
+                  {photo.keywords.length > 0
+                    ? photo.keywords.join(", ")
+                    : "No keywords"}
+                </td>
+                <td>
+                  {photo.source === "guest" ? "Guest" : "Photographer"}
+                </td>
+                <td>
+                  <span
+                    className="atlas-catalog-state"
+                    data-state={photo.completeness}
+                  >
+                    {completenessLabel(photo)}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

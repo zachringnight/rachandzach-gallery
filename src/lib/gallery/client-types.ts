@@ -54,6 +54,7 @@ export interface ClientPhotoDetail {
 
 /** The URL query contract, mirrored on both server and client. */
 export interface GalleryFilterState {
+  q: string;
   person: string | null;
   event: string | null;
   orientation: ClientOrientation | null;
@@ -62,6 +63,7 @@ export interface GalleryFilterState {
 }
 
 export const EMPTY_FILTER_STATE: GalleryFilterState = {
+  q: "",
   person: null,
   event: null,
   orientation: null,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import {
   CatalogTagger,
+  type CatalogViewMode,
   type CatalogOption,
 } from "@/components/admin/CatalogTagger";
 import {
@@ -20,6 +21,10 @@ export const metadata: Metadata = {
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function AdminCatalogPage({
   searchParams,
 }: {
@@ -28,6 +33,8 @@ export default async function AdminCatalogPage({
   await requireAdmin();
   const params = await searchParams;
   const filters = parseAdminCatalogFilters(params);
+  const initialView: CatalogViewMode =
+    first(params.view) === "table" ? "table" : "grid";
   const db = createAdminClient();
   const [initialPage, eventResult, peopleResult] = await Promise.all([
     loadAdminCatalogPage(filters, null, db),
@@ -57,6 +64,7 @@ export default async function AdminCatalogPage({
     <CatalogTagger
       initialPage={initialPage}
       initialFilters={filters}
+      initialView={initialView}
       events={events}
       people={people}
     />

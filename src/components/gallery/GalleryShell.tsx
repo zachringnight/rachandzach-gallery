@@ -34,6 +34,7 @@ type LoadState = "idle" | "loading" | "error-session" | "error-network";
 
 function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
   const params = new URLSearchParams();
+  if (filters.q) params.set("q", filters.q);
   if (filters.person) params.set("person", filters.person);
   if (filters.event) params.set("event", filters.event);
   if (filters.orientation) params.set("orientation", filters.orientation);
@@ -53,6 +54,7 @@ function apiUrl(
     for (const id of extra.ids) params.append("ids", id);
     return `/api/gallery?${params.toString()}`;
   }
+  if (filters.q) params.set("q", filters.q);
   if (filters.person) params.set("person", filters.person);
   if (filters.event) params.set("event", filters.event);
   if (filters.orientation) params.set("orientation", filters.orientation);
@@ -69,6 +71,7 @@ function filtersFromSearch(search: string): GalleryFilterState {
   const source = params.get("source");
   const sort = params.get("sort");
   return {
+    q: params.get("q")?.trim().replace(/\s+/g, " ") ?? "",
     person: params.get("person"),
     event: params.get("event"),
     orientation:
@@ -108,15 +111,21 @@ export function GalleryShell({
 
   // Guards against stale responses when filters change mid-flight.
   const requestSeq = useRef(0);
+  const requestBusyRef = useRef(false);
+  const filtersRef = useRef(filters);
 
   const runQuery = useCallback(
     async (next: GalleryFilterState) => {
       const seq = ++requestSeq.current;
+      requestBusyRef.current = true;
       setState("loading");
       try {
         const res = await fetch(apiUrl(next), { cache: "no-store" });
         if (res.status === 401) {
-          if (seq === requestSeq.current) setState("error-session");
+          if (seq === requestSeq.current) {
+            requestBusyRef.current = false;
+            setState("error-session");
+          }
           return;
         }
         if (!res.ok) throw new Error(`status ${res.status}`);
@@ -126,24 +135,32 @@ export function GalleryShell({
         setCursor(body.nextCursor);
         setTotal(body.total);
         setExpiresAt(body.signedUrlExpiresAt);
+        requestBusyRef.current = false;
         setState("idle");
       } catch {
-        if (seq === requestSeq.current) setState("error-network");
+        if (seq === requestSeq.current) {
+          requestBusyRef.current = false;
+          setState("error-network");
+        }
       }
     },
     [],
   );
 
   const loadMore = useCallback(async () => {
-    if (!cursor || state === "loading") return;
+    if (!cursor || requestBusyRef.current) return;
     const seq = requestSeq.current;
+    requestBusyRef.current = true;
     setState("loading");
     try {
       const res = await fetch(apiUrl(filters, { cursor }), {
         cache: "no-store",
       });
       if (res.status === 401) {
-        setState("error-session");
+        if (seq === requestSeq.current) {
+          requestBusyRef.current = false;
+          setState("error-session");
+        }
         return;
       }
       if (!res.ok) throw new Error(`status ${res.status}`);
@@ -156,31 +173,33 @@ export function GalleryShell({
       setCursor(body.nextCursor);
       setTotal(body.total);
       setExpiresAt(body.signedUrlExpiresAt);
+      requestBusyRef.current = false;
       setState("idle");
     } catch {
-      setState("error-network");
+      if (seq === requestSeq.current) {
+        requestBusyRef.current = false;
+        setState("error-network");
+      }
     }
-  }, [cursor, filters, state]);
+  }, [cursor, filters]);
 
   const applyFilters = useCallback(
     (patch: Partial<GalleryFilterState>) => {
-      setFilters((prev) => {
-        const next = { ...prev, ...patch };
-        window.history.replaceState({}, "", pageUrl(next, activePhotoId));
-        void runQuery(next);
-        return next;
-      });
+      const next = { ...filtersRef.current, ...patch };
+      filtersRef.current = next;
+      setFilters(next);
+      window.history.replaceState({}, "", pageUrl(next, activePhotoId));
+      void runQuery(next);
     },
     [activePhotoId, runQuery],
   );
 
   const resetFilters = useCallback(() => {
-    setFilters(() => {
-      const next = { ...EMPTY_FILTER_STATE };
-      window.history.replaceState({}, "", pageUrl(next, activePhotoId));
-      void runQuery(next);
-      return next;
-    });
+    const next = { ...EMPTY_FILTER_STATE };
+    filtersRef.current = next;
+    setFilters(next);
+    window.history.replaceState({}, "", pageUrl(next, activePhotoId));
+    void runQuery(next);
   }, [activePhotoId, runQuery]);
 
   // Lightbox open/close with browser history.
@@ -215,16 +234,19 @@ export function GalleryShell({
       const params = new URLSearchParams(search);
       const nextFilters = filtersFromSearch(search);
       setActivePhotoId(params.get("photo"));
-      setFilters((prev) => {
-        const changed =
-          prev.person !== nextFilters.person ||
-          prev.event !== nextFilters.event ||
-          prev.orientation !== nextFilters.orientation ||
-          prev.source !== nextFilters.source ||
-          prev.sort !== nextFilters.sort;
-        if (changed) void runQuery(nextFilters);
-        return changed ? nextFilters : prev;
-      });
+      const previous = filtersRef.current;
+      const changed =
+        previous.q !== nextFilters.q ||
+        previous.person !== nextFilters.person ||
+        previous.event !== nextFilters.event ||
+        previous.orientation !== nextFilters.orientation ||
+        previous.source !== nextFilters.source ||
+        previous.sort !== nextFilters.sort;
+      if (changed) {
+        filtersRef.current = nextFilters;
+        setFilters(nextFilters);
+        void runQuery(nextFilters);
+      }
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -363,6 +385,16 @@ export function GalleryShell({
         <Lightbox
           photo={activePhoto}
           onClose={closePhoto}
+          position={activeIndex + 1}
+          total={total}
+          previousPhoto={
+            activeIndex > 0 ? photos[activeIndex - 1] : undefined
+          }
+          nextPhoto={
+            activeIndex >= 0 && activeIndex < photos.length - 1
+              ? photos[activeIndex + 1]
+              : undefined
+          }
           onPrev={
             activeIndex > 0
               ? () => selectPhoto(photos[activeIndex - 1].id)

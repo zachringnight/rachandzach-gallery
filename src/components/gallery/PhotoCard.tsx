@@ -114,11 +114,6 @@ export function PhotoCard({
           className="h-full w-full"
           imageClassName="h-full w-full object-cover"
         />
-
-        <span className="atlas-photo-caption">
-          <span>{photo.eventName}</span>
-          {label ? <strong>{label}</strong> : null}
-        </span>
       </button>
 
       {selectionSlot ?? (
@@ -149,9 +144,10 @@ export function PhotoCard({
       <DownloadOriginalButton
         photoId={photo.id}
         className="atlas-photo-download"
+        ariaLabel={`Download ${subject}`}
+        title="Download original"
       >
         <Download aria-hidden="true" size={15} strokeWidth={1.7} />
-        <span>Download</span>
       </DownloadOriginalButton>
     </div>
   );

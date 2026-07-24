@@ -177,6 +177,34 @@ describe("CatalogTagger", () => {
     expect(screen.getByText("Select frames to edit together")).toBeDefined();
   });
 
+  it("switches to a dense table without changing bounded selection behavior", () => {
+    render(
+      <CatalogTagger
+        initialPage={page()}
+        initialFilters={{
+          query: "",
+          needs: "all",
+          event: null,
+          person: null,
+          source: null,
+          sort: "weekend",
+        }}
+        events={[{ slug: "ceremony", name: "Ceremony" }]}
+        people={[{ slug: "rachel", name: "Rachel" }]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Table view" }));
+    expect(screen.getByRole("table")).toBeDefined();
+    expect(window.location.pathname).toBe("/admin/catalog");
+    expect(window.location.search).toBe("?view=table");
+
+    fireEvent.click(
+      screen.getAllByRole("checkbox", { name: /Select Ceremony/ })[0],
+    );
+    expect(screen.getByText("1 selected")).toBeDefined();
+  });
+
   it("keeps a bulk edit inside the server selection bound", () => {
     const photos = Array.from(
       { length: ADMIN_CATALOG_MAX_SELECTION + 1 },

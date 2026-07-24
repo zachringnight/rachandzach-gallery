@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
 import {
   GalleryQueryError,
+  MAX_GALLERY_SEARCH_LENGTH,
   getGalleryFacets,
   getGalleryPage,
   parseGalleryQuery,
@@ -27,10 +28,15 @@ function first(value: string | string[] | undefined): string | null {
 }
 
 function filterStateFromParams(params: SearchParams): GalleryFilterState {
+  const rawQuery = first(params.q)?.trim().replace(/\s+/g, " ") ?? "";
   const orientation = first(params.orientation);
   const source = first(params.source);
   const sort = first(params.sort);
   return {
+    q:
+      rawQuery.length <= MAX_GALLERY_SEARCH_LENGTH
+        ? rawQuery
+        : "",
     person: first(params.person),
     event: first(params.event),
     orientation:
