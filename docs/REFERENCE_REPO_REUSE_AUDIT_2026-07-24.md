@@ -160,13 +160,15 @@ workflow needs them.
 - `docs/audit/wc-ugc.md`
 - `docs/audit/nwsl.md`
 
-## Merge-state note
+## Merge-state follow-up
 
-Wedding `origin/main` is currently
-`00ecb288111c00776fc7da6b67b4d91ddbba555e`, the merge of PR 1. The previous
-premium-overhaul and admin-catalog commits are all ancestors of that merge.
-There are no other branches, stashes, or worktrees carrying unique tracked
-work.
+At audit time, wedding `origin/main` was
+`00ecb288111c00776fc7da6b67b4d91ddbba555e`, the merge of PR 1, and the changes
+described as "adopted in this pass" were uncommitted working-tree changes.
 
-The changes described as "adopted in this pass" are new working-tree changes
-and are not merged until they are reviewed and committed.
+Those changes and their review fixes later shipped in
+[PR 2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged as
+`4455ba95d15259ef210ebd64f8283bc80fe005da`. The former
+`codex/wedding-premium-overhaul` branch has no commits outside `main`; the
+2026-07-25 closeout review also found no stash or additional worktree carrying
+unique tracked work.

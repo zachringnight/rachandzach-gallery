@@ -46,7 +46,6 @@ describe("vercel-ignore-build guard", () => {
     it.each([
       ["main"],
       ["staging"],
-      ["codex/wedding-premium-overhaul"],
       ["preview/launch-candidate"],
       ["preview/wip-promoted"],
       ["preview/nested/branch"],
@@ -61,6 +60,7 @@ describe("vercel-ignore-build guard", () => {
     it.each([
       ["dependabot/npm_and_yarn/next-16.2.10"],
       ["codex/experiment-1"],
+      ["codex/wedding-premium-overhaul"],
       ["codex/wedding-premium-overhaul-followup"],
       ["claude/wave-1-agent"],
       ["wip/half-finished-idea"],
