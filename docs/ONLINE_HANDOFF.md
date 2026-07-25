@@ -13,9 +13,9 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Production commit | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
+| Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
-| Vercel deployment | `dpl_L8qRvELA4WR1zhnRia1Yv7sr42Sq`, target `production`, status `READY` |
+| Vercel | `main` auto-deploys to target `production`; current status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
 
 Production aliases are active for:
@@ -64,7 +64,8 @@ The release was reviewed and verified at its final feature head before merge:
 - Post-merge `main` CI
   [run 30137350273](https://github.com/zachringnight/rachandzach-gallery/actions/runs/30137350273)
   passed against `4455ba95d15259ef210ebd64f8283bc80fe005da`
-- The Vercel production deployment is `READY`
+- The Vercel production deployment is `READY`; use
+  `npx vercel inspect https://rachandzach.com` for its current immutable ID
 - No Vercel error logs were returned during the 2026-07-25 handoff check
 
 Production smoke results from 2026-07-25:
