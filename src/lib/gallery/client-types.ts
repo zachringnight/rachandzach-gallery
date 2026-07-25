@@ -67,6 +67,8 @@ export interface GalleryFilterState {
   sort: "weekend" | "newest";
 }
 
+export const GALLERY_SEARCH_URL_PARAM = "gallery_q";
+
 export const EMPTY_FILTER_STATE: GalleryFilterState = {
   q: "",
   person: null,

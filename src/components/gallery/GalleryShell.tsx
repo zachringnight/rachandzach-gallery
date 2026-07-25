@@ -7,7 +7,10 @@ import type {
   ClientPhoto,
   GalleryFilterState,
 } from "@/lib/gallery/client-types";
-import { EMPTY_FILTER_STATE } from "@/lib/gallery/client-types";
+import {
+  EMPTY_FILTER_STATE,
+  GALLERY_SEARCH_URL_PARAM,
+} from "@/lib/gallery/client-types";
 import { FilterBar } from "@/components/gallery/FilterBar";
 import { SelectionBar } from "@/components/gallery/SelectionBar";
 import { useSelection } from "@/components/gallery/useSelection";
@@ -35,7 +38,7 @@ type LoadState = "idle" | "loading" | "error-session" | "error-network";
 
 function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
   const params = new URLSearchParams();
-  if (filters.q) params.set("q", filters.q);
+  if (filters.q) params.set(GALLERY_SEARCH_URL_PARAM, filters.q);
   if (filters.person) params.set("person", filters.person);
   if (filters.event) params.set("event", filters.event);
   if (filters.orientation) params.set("orientation", filters.orientation);
@@ -72,7 +75,11 @@ function filtersFromSearch(search: string): GalleryFilterState {
   const source = params.get("source");
   const sort = params.get("sort");
   return {
-    q: params.get("q")?.trim().replace(/\s+/g, " ") ?? "",
+    q:
+      params
+        .get(GALLERY_SEARCH_URL_PARAM)
+        ?.trim()
+        .replace(/\s+/g, " ") ?? "",
     person: params.get("person"),
     event: params.get("event"),
     orientation:

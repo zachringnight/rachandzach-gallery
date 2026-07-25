@@ -129,7 +129,7 @@ describe("GalleryShell filter commits", () => {
       { cache: "no-store" },
     );
     expect(window.location.pathname).toBe("/photos");
-    expect(window.location.search).toBe("?q=flowers");
+    expect(window.location.search).toBe("?gallery_q=flowers");
   });
 
   it("does not append an old page while a replacement query starts", async () => {

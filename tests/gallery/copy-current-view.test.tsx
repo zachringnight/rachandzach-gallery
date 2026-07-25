@@ -34,7 +34,7 @@ describe("CopyCurrentViewButton", () => {
     window.history.replaceState(
       {},
       "",
-      "/photos?q=first+dance&event=reception&sort=newest",
+      "/photos?gallery_q=first+dance&event=reception&sort=newest",
     );
     const writeText = installClipboard(async () => {});
 
@@ -47,7 +47,7 @@ describe("CopyCurrentViewButton", () => {
     expect(writeText).toHaveBeenCalledTimes(1);
     expect(writeText).toHaveBeenCalledWith(window.location.href);
     expect(writeText.mock.calls[0][0]).toContain(
-      "/photos?q=first+dance&event=reception&sort=newest",
+      "/photos?gallery_q=first+dance&event=reception&sort=newest",
     );
   });
 
