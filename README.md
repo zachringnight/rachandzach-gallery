@@ -36,6 +36,8 @@ Copy `.env.example` to `.env.local` and fill in real values for local developmen
 | `GALLERY_PASSWORD_HASH` | Argon2id hash of the shared guest password. Generate with `node -e "require('@node-rs/argon2').hash('the-password').then(console.log)"` -- never store the plaintext |
 | `GALLERY_SESSION_SECRET` | At least 32 random bytes: `openssl rand -hex 32` |
 | `SOURCE_PHOTO_DIR` | Read-only path to the wedding master catalog source, used only by import scripts |
+| `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` | Optional public Google Web OAuth client ID; enables Google Drive save |
+| `NEXT_PUBLIC_DROPBOX_APP_KEY` | Optional public Dropbox Saver app key; enables Dropbox save |
 
 Real production values (guest password, Supabase project keys) are staged in `.env.cloud` at the repo root, which is gitignored and never auto-loaded by Next -- see `docs/0719_Content_Needed_v1.md` for what's decided and `docs/0719_Launch_Checklist_v1.md` for how they get into Vercel.
 
@@ -70,7 +72,12 @@ See each script's own `--help` for its full flag set.
 - End-to-end: `npm run e2e` for the full cross-browser/viewport matrix, or `npx playwright test tests/e2e --project=chromium` for the bounded suite `npm run verify` runs. The e2e suite is designed to run without a live database: most specs assert on documented fail-closed behavior against an unreachable synthetic Supabase endpoint (see `tests/e2e/support/env.ts`); a smaller set of specs are explicitly out of scope until a live database exists.
 - A local Supabase stack (`supabase start && supabase db reset`) requires Docker, not available on this development machine as of this writing; the schema test layer degrades to static SQL assertions without it and says so loudly when run.
 
-Current test health: fully green. `npm run verify` exits 0 (typecheck, lint at 0 errors, 817 unit tests passed, a production build, and the bounded e2e suite at 82 passed / 28 skipped by design / 0 failed). Full breakdown: `docs/HANDOFF_CURRENT.md`, section 3; historical defect list, all now closed: `docs/0719_Launch_Checklist_v1.md`, section 1.
+Current test health: fully green at the merged feature head. `npm run verify`
+exits 0: typecheck passes; lint reports 0 errors and 13 existing warnings;
+Vitest passes 952 tests with 11 intentional live-database skips; the production
+build passes; and the bounded Chromium e2e suite passes 82 tests with 28
+documented skips and 0 failures. Current release evidence is in
+`docs/ONLINE_HANDOFF.md`.
 
 ## Project structure
 
@@ -88,11 +95,12 @@ docs/plans/2026-07-22-0719-digital-wedding-home/   The build plan: manifest, per
 
 ## Documentation
 
-- `docs/HANDOFF_CURRENT.md` -- **read this one first.** The single authoritative current-state document: what's verified, what shipped in round two, and the exact commands for every remaining deploy gate
+- `docs/ONLINE_HANDOFF.md` -- **read this one first.** Canonical production state, release evidence, next-step owners and dates, provider activation, and continuation commands
+- `docs/HANDOFF_CURRENT.md` -- historical pre-launch build, media, and reconciliation record
 - `docs/0719_Architecture_v1.md` -- system design: stack, data flow, storage buckets, table model, auth, import/sync pipeline, moderation state machine, feature flags, and current known issues
 - `docs/0719_Privacy_Operations_v1.md` -- every privacy commitment and exactly how it's enforced
 - `docs/0719_Content_Needed_v1.md` -- everything still waiting on Zach (content, approvals, decisions) plus engineering findings discovered during integration
-- `docs/0719_Launch_Checklist_v1.md` -- the single source of truth for what's left before launch: engineering defects (now closed), Zach's approvals, the deploy gate sequence (each one a separate future approval), and manual pre-launch QA
+- `docs/0719_Launch_Checklist_v1.md` -- historical pre-launch checklist; superseded operationally by `docs/ONLINE_HANDOFF.md`
 - `docs/0719_Round_Two_Features_v1.md` -- every round-two feature shipped on top of the original plan, plus what's still a fast-follow
 - `docs/0719_Supabase_Decision_v1.md`, `docs/0719_Launch_Ops_v1.md` -- earlier planning briefs; superseded in places by the actual decisions recorded in Content Needed and the Launch Checklist (noted inline where that applies)
 - `docs/plans/2026-07-22-0719-digital-wedding-home/manifest.md` -- the original build plan this repository implements
