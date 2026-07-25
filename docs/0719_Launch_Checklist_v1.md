@@ -1,6 +1,9 @@
 # 0719 + co. Launch Checklist v1
 
-**Status: v1, packet 12 (2026-07-22). NOT DEPLOYED.** Nothing in this document has been executed by writing it; every checkbox below is unchecked unless marked CLOSED with a date. This is the single place that collects every remaining action before a human calls this launched: engineering fixes first, then Zach's approvals, then the deploy gates, then manual pre-launch QA. Section 1's engineering defects and Gate 3's media sync are now all closed; see `docs/HANDOFF_CURRENT.md` for the current authoritative state and the exact commands for every gate still open.
+**Status: HISTORICAL PRE-LAUNCH CHECKLIST (captured 2026-07-22).** The site is
+now live. This file preserves the original gates and closeout evidence; it is
+not a current task list. Use `docs/ONLINE_HANDOFF.md` for production truth,
+remaining actions, owners, dates, and continuation commands.
 
 Companion docs: `docs/0719_Architecture_v1.md` (what is built), `docs/0719_Privacy_Operations_v1.md` (privacy commitments and enforcement), `docs/0719_Content_Needed_v1.md` (content and decisions, with the same engineering findings cross-listed there).
 
