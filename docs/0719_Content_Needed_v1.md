@@ -1,6 +1,10 @@
 # 0719 + co. Content Needed
 
-**Status: v1, finalized by packet 12 (2026-07-22).** Build and data are now complete and verified; see `docs/HANDOFF_CURRENT.md` for the current authoritative state and the exact remaining deploy-gate commands. This document keeps its original structure below and is updated only where an item's status changed.
+**Historical status: v1, finalized by packet 12 (2026-07-22).** This preserves
+the pre-launch content and decision snapshot. For current production state,
+remaining owners, and continuation commands, use `docs/ONLINE_HANDOFF.md`.
+This document keeps its original structure below and is updated only where an
+item's historical status changed.
 
 Everything the build still needs from Zach, compiled from the manifest end-review eyeball list and the packets. Nothing here blocks local implementation; each item blocks the specific step listed. Packet 12 updates statuses and adds anything discovered during integration.
 

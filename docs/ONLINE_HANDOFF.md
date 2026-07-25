@@ -100,7 +100,7 @@ owners, readers, and writers.
 | P1 | Codex or next engineer | 2026-07-26 | Check Vercel runtime errors and review upload/moderation failures after the first live usage window. Record the result here. |
 | P2 | Zach | Later curation session | Review the local-only face audit before applying any proposed tag changes. The report remains gitignored and no suggestion is auto-applied. |
 | P2 | Engineer | Future maintenance | Add a live-database integration harness to replace the intentional schema/catalog skips when repeatable production-like DB testing becomes worthwhile. |
-| P2 | Engineer | Future maintenance | Remove the merged `codex/wedding-premium-overhaul` exception from the CI and Vercel branch allowlists after confirming no active work still depends on it. |
+| DONE | Codex | 2026-07-25 | Removed the merged `codex/wedding-premium-overhaul` exception from the CI and Vercel branch allowlists after confirming it had no commits outside `main`. |
 | P2 | Zach plus shared-project owners | Future infrastructure decision | Decide whether the wedding app should remain in the shared Supabase project. Any isolation or RLS cleanup requires a cross-app migration plan. |
 
 Google Drive and Dropbox are the only remaining implementation-input gap in
@@ -179,10 +179,10 @@ npm ci
 npm run verify
 ```
 
-`main`, `staging`, `preview/**`, and the old explicitly allowlisted
-continuation branch run CI/Vercel builds. Ordinary `codex/*` branches are
-skipped by those remote build guards. Use a `preview/<task-name>` branch when a
-new protected Vercel preview and GitHub CI run are required.
+`main`, `staging`, and `preview/**` run CI/Vercel builds. Ordinary `codex/*`
+branches are skipped by those remote build guards. Use a
+`preview/<task-name>` branch when a new protected Vercel preview and GitHub CI
+run are required.
 
 For production checks:
 

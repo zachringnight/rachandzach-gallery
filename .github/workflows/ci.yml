@@ -7,8 +7,8 @@ name: CI
 #
 # Branch policy mirrors scripts/vercel-ignore-build.mjs, which Vercel's
 # "ignoreCommand" already enforces for deploys: build main, staging, and
-# preview/*, plus the explicitly approved wedding-overhaul continuation branch;
-# skip every other dependabot/*, codex/*, claude/*, wip/*, and unlisted branch.
+# preview/*; skip every dependabot/*, codex/*, claude/*, wip/*, and unlisted
+# branch.
 # Keeping CI's trigger list and the Vercel build allowlist in lockstep means a
 # branch that Vercel would deploy always has a green (or red) CI run to point
 # at first.
@@ -22,7 +22,6 @@ name: CI
       - main
       - staging
       - "preview/**"
-      - codex/wedding-premium-overhaul
   workflow_dispatch: {}
 
 permissions:

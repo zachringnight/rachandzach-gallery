@@ -10,7 +10,7 @@
  *   exit 0  -> build is SKIPPED
  *
  * Policy:
- *   Build: main, staging, codex/wedding-premium-overhaul, and preview/*
+ *   Build: main, staging, and preview/*
  *   Skip:  every other dependabot/, codex/, claude/, wip/, or unlisted branch
  *   Skip:  missing or empty ref (logged so the Vercel build log explains why)
  */
@@ -20,11 +20,7 @@ import { pathToFileURL } from "node:url";
 const EXIT_BUILD = 1;
 const EXIT_SKIP = 0;
 
-const BUILD_BRANCHES = new Set([
-  "main",
-  "staging",
-  "codex/wedding-premium-overhaul",
-]);
+const BUILD_BRANCHES = new Set(["main", "staging"]);
 const BUILD_PREFIXES = ["preview/"];
 const SKIP_PREFIXES = ["dependabot/", "codex/", "claude/", "wip/"];
 
@@ -69,7 +65,7 @@ export function decide(rawRef) {
 
   return {
     exitCode: EXIT_SKIP,
-    reason: `Branch "${ref}" is not on the build allowlist (main, staging, codex/wedding-premium-overhaul, preview/*); skipping build.`,
+    reason: `Branch "${ref}" is not on the build allowlist (main, staging, preview/*); skipping build.`,
   };
 }
 
