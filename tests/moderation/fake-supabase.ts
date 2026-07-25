@@ -48,6 +48,14 @@ export interface FakeDbHandle {
   inserts: Array<{ table: string; row: Row }>;
   /** Ordered log of insert/upload calls, for asserting "X happened before Y". */
   ops: string[];
+  insertHook: (table: string, row: Row) => void | Promise<void>;
+  insertErrorHook: (
+    table: string,
+    row: Row,
+  ) =>
+    | { code: string; message: string }
+    | null
+    | Promise<{ code: string; message: string } | null>;
   uploadHook: (bucket: string, path: string) => void | Promise<void>;
 }
 
@@ -93,6 +101,8 @@ export function createFakeDb(
     storage,
     inserts,
     ops,
+    insertHook: () => {},
+    insertErrorHook: () => null,
     uploadHook: () => {},
   };
 
@@ -103,7 +113,16 @@ export function createFakeDb(
     let insertRow: Row | null = null;
 
     function currentRows(): Row[] {
-      return tables.get(table) ?? [];
+      const existing = tables.get(table);
+      if (existing) return existing;
+
+      // Keep one canonical array per table. Insert hooks can yield to model
+      // genuine concurrent requests; without registering the empty array
+      // before that yield, both requests could claim separate arrays and
+      // bypass the fake's unique-constraint check.
+      const rows: Row[] = [];
+      tables.set(table, rows);
+      return rows;
     }
 
     function findUniqueConflict(rows: Row[], candidate: Row): Row | null {
@@ -117,12 +136,17 @@ export function createFakeDb(
       return null;
     }
 
-    function resolveOne(): {
+    async function resolveOne(): Promise<{
       data: Row | null;
       error: { code: string; message: string } | null;
-    } {
+    }> {
       const rows = currentRows();
       if (mode === "insert" && insertRow) {
+        await handle.insertHook(table, insertRow);
+        const injectedError = await handle.insertErrorHook(table, insertRow);
+        if (injectedError) {
+          return { data: null, error: injectedError };
+        }
         const conflict = findUniqueConflict(rows, insertRow);
         if (conflict) {
           return {
@@ -168,20 +192,19 @@ export function createFakeDb(
         return api;
       },
       single: async () => {
-        const result = resolveOne();
+        const result = await resolveOne();
         if (!result.data && !result.error) {
           return { data: null, error: { message: "not found", code: "PGRST116" } };
         }
         return result;
       },
-      maybeSingle: async () => resolveOne(),
+      maybeSingle: async () => await resolveOne(),
       then(onFulfilled: (v: unknown) => unknown, onRejected?: (e: unknown) => unknown) {
         // Bare `await client.from(table)....` with no terminal call: used
         // for a plain select-list, a plain insert, or a plain update (no
         // `.select()` requested back).
         if (mode === "insert" && insertRow) {
-          const result = resolveOne();
-          return Promise.resolve(result).then(onFulfilled, onRejected);
+          return resolveOne().then(onFulfilled, onRejected);
         }
         if (mode === "update") {
           const rows = currentRows();

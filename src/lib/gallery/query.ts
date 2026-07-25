@@ -46,6 +46,7 @@ export const GALLERY_SOURCES: readonly GallerySource[] = [
 export const DEFAULT_GALLERY_LIMIT = 60;
 export const MAX_GALLERY_LIMIT = 100;
 export const MAX_IDS_LOOKUP = 100;
+export const MAX_GALLERY_SEARCH_LENGTH = 120;
 export const DEFAULT_GALLERY_SORT: GallerySort = "weekend";
 
 /** The only photo status a guest may ever see. */
@@ -60,6 +61,7 @@ export interface GalleryQueryInput {
    * Status isolation still applies; unknown and non-approved ids are dropped.
    */
   ids?: string[] | null;
+  q?: string | null;
   person?: string | null;
   event?: string | null;
   orientation?: GalleryOrientation | null;
@@ -116,6 +118,10 @@ export interface GalleryPhotoSource {
   orientation: GalleryOrientation;
   people: GalleryPersonLink[];
   keywords: string[];
+  approvedCaption?: {
+    text: string;
+    byline: string | null;
+  } | null;
   previews: GalleryPreviewObject[];
 }
 
@@ -169,6 +175,10 @@ export interface GalleryPhotoView {
   /** Confirmed people only. */
   people: GalleryPersonView[];
   keywords: string[];
+  approvedCaption: {
+    text: string;
+    byline: string | null;
+  } | null;
   /** Preview descriptors incl. object paths; sign + strip before client I/O. */
   previews: GalleryPreviewView[];
 }
@@ -200,6 +210,7 @@ interface NormalizedQuery {
   cursor: string | null;
   limit: number;
   ids: string[] | null;
+  q: string;
   person: string | null;
   event: string | null;
   orientation: GalleryOrientation | null;
@@ -260,11 +271,26 @@ function normalizeIds(raw: string[] | null | undefined): string[] | null {
   return raw;
 }
 
+function normalizeSearch(raw: string | null | undefined): string {
+  if (raw === null || raw === undefined) return "";
+  if (typeof raw !== "string") {
+    throw new GalleryQueryError("q must be a string.");
+  }
+  const normalized = raw.trim().replace(/\s+/g, " ");
+  if (normalized.length > MAX_GALLERY_SEARCH_LENGTH) {
+    throw new GalleryQueryError(
+      `q accepts at most ${MAX_GALLERY_SEARCH_LENGTH} characters.`,
+    );
+  }
+  return normalized;
+}
+
 export function normalizeGalleryQuery(input: GalleryQueryInput): NormalizedQuery {
   return {
     cursor: input.cursor ?? null,
     limit: normalizeLimit(input.limit),
     ids: normalizeIds(input.ids),
+    q: normalizeSearch(input.q),
     person: normalizeSlug(input.person, "person"),
     event: normalizeSlug(input.event, "event"),
     orientation: normalizeEnum(
@@ -303,6 +329,7 @@ export function parseGalleryQuery(
     cursor: get("cursor") ?? null,
     limit: rawLimit === undefined ? null : Number.parseInt(rawLimit, 10),
     ids: ids && ids.length > 0 ? ids : null,
+    q: get("q") ?? null,
     person: get("person") ?? null,
     event: get("event") ?? null,
     orientation: (get("orientation") as GalleryOrientation | undefined) ?? null,
@@ -328,10 +355,40 @@ function confirmedPeople(photo: GalleryPhotoSource): GalleryPersonLink[] {
   return photo.people.filter((p) => p.confidence === "confirmed");
 }
 
+function searchableText(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("en-US");
+}
+
+function matchesSearch(photo: GalleryPhotoSource, rawQuery: string): boolean {
+  if (!rawQuery) return true;
+  const haystack = searchableText(
+    [
+      photo.eventName,
+      photo.eventSlug,
+      photo.originalFilename,
+      ...confirmedPeople(photo).flatMap((person) => [
+        person.displayName,
+        person.slug,
+      ]),
+      ...photo.keywords,
+      photo.approvedCaption?.text ?? "",
+      photo.approvedCaption?.byline ?? "",
+    ].join(" "),
+  );
+  return searchableText(rawQuery)
+    .split(" ")
+    .filter(Boolean)
+    .every((token) => haystack.includes(token));
+}
+
 function matchesFilters(
   photo: GalleryPhotoSource,
   query: NormalizedQuery,
 ): boolean {
+  if (!matchesSearch(photo, query.q)) return false;
   if (query.event && photo.eventSlug !== query.event) return false;
   if (query.orientation && photo.orientation !== query.orientation) return false;
   if (query.source && photo.source !== query.source) return false;
@@ -520,6 +577,12 @@ function toView(photo: GalleryPhotoSource): GalleryPhotoView {
       displayName: p.displayName,
     })),
     keywords: dedupeKeywordsAgainstPeople(photo.keywords, people),
+    approvedCaption: photo.approvedCaption?.text.trim()
+      ? {
+          text: photo.approvedCaption.text.trim(),
+          byline: photo.approvedCaption.byline?.trim() || null,
+        }
+      : null,
     previews: photo.previews.map((preview) => ({
       objectPath: preview.objectPath,
       bucket: preview.bucket,

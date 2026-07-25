@@ -1,6 +1,7 @@
 node_modules
 .next
 out
+*.tsbuildinfo
 .env
 .env*.local
 .env.cloud
@@ -42,3 +43,5 @@ models/
 # Internal Remotion timing-board renders; source lives in motion-study/.
 .motion-output/
 .vercel
+# Supabase CLI link/cache metadata is machine-local and regenerated.
+supabase/.temp/

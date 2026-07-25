@@ -3,12 +3,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
 import {
   GalleryQueryError,
+  MAX_GALLERY_SEARCH_LENGTH,
   getGalleryFacets,
   getGalleryPage,
   parseGalleryQuery,
 } from "@/lib/gallery/query";
 import { serializeGalleryPage } from "@/lib/gallery/serialize";
-import type { GalleryFilterState } from "@/lib/gallery/client-types";
+import {
+  GALLERY_SEARCH_URL_PARAM,
+  type GalleryFilterState,
+} from "@/lib/gallery/client-types";
 import { GalleryShell } from "@/components/gallery/GalleryShell";
 import { siteConfig } from "@/content/site";
 
@@ -27,10 +31,16 @@ function first(value: string | string[] | undefined): string | null {
 }
 
 function filterStateFromParams(params: SearchParams): GalleryFilterState {
+  const rawQuery =
+    first(params[GALLERY_SEARCH_URL_PARAM])?.trim().replace(/\s+/g, " ") ?? "";
   const orientation = first(params.orientation);
   const source = first(params.source);
   const sort = first(params.sort);
   return {
+    q:
+      rawQuery.length <= MAX_GALLERY_SEARCH_LENGTH
+        ? rawQuery
+        : "",
     person: first(params.person),
     event: first(params.event),
     orientation:
@@ -53,7 +63,10 @@ export default async function PhotosPage({
   const client = createAdminClient();
   const source = createSupabaseGalleryDataSource(client);
 
-  const input = parseGalleryQuery(params);
+  const input = parseGalleryQuery({
+    ...params,
+    q: params[GALLERY_SEARCH_URL_PARAM],
+  });
   let page;
   let facets;
   try {

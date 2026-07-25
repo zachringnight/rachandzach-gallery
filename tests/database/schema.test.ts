@@ -58,6 +58,16 @@ const photoMemoriesMigrationPath = path.join(
   "migrations",
   "202607220006_photo_memories.sql",
 );
+const approvedUploadCaptionsMigrationPath = path.join(
+  supabaseDir,
+  "migrations",
+  "20260724123508_rachandzach_approved_upload_captions.sql",
+);
+const photoProcessingGateMigrationPath = path.join(
+  supabaseDir,
+  "migrations",
+  "20260724124851_rachandzach_photo_processing_gate.sql",
+);
 const configPath = path.join(supabaseDir, "config.toml");
 const seedPath = path.join(supabaseDir, "seed.sql");
 const envExamplePath = path.join(repoRoot, ".env.example");
@@ -117,6 +127,42 @@ describe("static: supabase files exist", () => {
     for (const p of [configPath, coreMigrationPath, storageMigrationPath, seedPath]) {
       expect(existsSync(p), `expected file to exist: ${p}`).toBe(true);
     }
+  });
+});
+
+describe("static: approved uploader captions migration", () => {
+  const sql = () => mustRead(approvedUploadCaptionsMigrationPath);
+
+  it("persists the per-item decision and bounds catalog caption fields", () => {
+    const text = sql();
+    expect(text).toContain(
+      "add column note_approved boolean not null default false",
+    );
+    expect(text).toContain("add column uploader_caption text");
+    expect(text).toContain(
+      "char_length(uploader_caption) between 1 and 2000",
+    );
+    expect(text).toContain("add column uploader_caption_byline text");
+    expect(text).toContain(
+      "char_length(uploader_caption_byline) between 1 and 120",
+    );
+    expect(text).toContain(
+      "rachandzach_photos_caption_byline_requires_caption",
+    );
+    expect(text).not.toMatch(/\bemail\b\s+(text|varchar)/i);
+  });
+});
+
+describe("static: guest photo processing gate migration", () => {
+  const sql = () => mustRead(photoProcessingGateMigrationPath);
+
+  it("defaults existing photos to complete without changing access grants", () => {
+    const text = sql();
+    expect(text).toContain(
+      "add column processing_complete boolean not null default true",
+    );
+    expect(text).toContain("gallery publication requires all preview");
+    expect(stripSqlComments(text)).not.toMatch(/\b(grant|revoke)\b/i);
   });
 });
 

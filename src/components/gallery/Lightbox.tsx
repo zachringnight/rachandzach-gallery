@@ -18,6 +18,10 @@ export interface LightboxProps {
   onClose: () => void;
   onPrev?: () => void;
   onNext?: () => void;
+  previousPhoto?: ClientPhoto;
+  nextPhoto?: ClientPhoto;
+  position?: number;
+  total?: number;
   /** Optional slot for related photos etc., rendered under the caption. */
   footer?: React.ReactNode;
 }
@@ -44,12 +48,21 @@ export function Lightbox({
   onClose,
   onPrev,
   onNext,
+  previousPhoto,
+  nextPhoto,
+  position,
+  total,
   footer,
 }: LightboxProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const downloadRef = useRef<HTMLAnchorElement | null>(null);
   const previouslyFocused = useRef<Element | null>(null);
-  const touchStartX = useRef<number | null>(null);
+  const swipeStart = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const caption = photo.people.map((person) => person.displayName).join(", ");
   const accessibleLabel = caption
@@ -113,7 +126,7 @@ export function Lightbox({
 
   useEffect(() => {
     previouslyFocused.current = document.activeElement;
-    dialogRef.current?.focus();
+    closeButtonRef.current?.focus();
     document.addEventListener("keydown", handleKeyDown);
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
@@ -126,6 +139,38 @@ export function Lightbox({
     };
   }, [handleKeyDown]);
 
+  useEffect(() => {
+    const preloaders = [previousPhoto, nextPhoto]
+      .flatMap((candidate) => {
+        const preview = candidate?.previews.reduce<
+          ClientPhoto["previews"][number] | null
+        >(
+          (largest, preview) =>
+            largest === null || preview.width > largest.width
+              ? preview
+              : largest,
+          null,
+        );
+        return preview ? [preview] : [];
+      })
+      .map((preview) => {
+        const image = new window.Image();
+        image.decoding = "async";
+        image.src = preview.url;
+        return image;
+      });
+
+    return () => {
+      for (const image of preloaders) image.src = "";
+    };
+  }, [nextPhoto, previousPhoto]);
+
+  const showPosition =
+    position !== undefined &&
+    total !== undefined &&
+    position > 0 &&
+    total > 0;
+
   return (
     <div
       className="atlas-lightbox"
@@ -137,17 +182,6 @@ export function Lightbox({
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
-      onTouchStart={(event) => {
-        touchStartX.current = event.touches[0]?.clientX ?? null;
-      }}
-      onTouchEnd={(event) => {
-        const start = touchStartX.current;
-        touchStartX.current = null;
-        if (start === null) return;
-        const delta = (event.changedTouches[0]?.clientX ?? start) - start;
-        if (delta > 60 && onPrev) onPrev();
-        else if (delta < -60 && onNext) onNext();
-      }}
     >
       <header className="atlas-lightbox-header">
         <div className="atlas-lightbox-title">
@@ -156,6 +190,11 @@ export function Lightbox({
         </div>
 
         <div className="atlas-lightbox-tools">
+          {showPosition ? (
+            <span className="atlas-lightbox-position" aria-live="polite">
+              {position} of {total}
+            </span>
+          ) : null}
           <FavoriteButton
             photoId={photo.id}
             label={caption || photo.eventName}
@@ -171,6 +210,7 @@ export function Lightbox({
           </DownloadOriginalButton>
           <SharePhotoButton photoId={photo.id} />
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className="atlas-lightbox-icon"
@@ -181,7 +221,35 @@ export function Lightbox({
         </div>
       </header>
 
-      <div className="atlas-lightbox-stage">
+      <div
+        className="atlas-lightbox-stage"
+        onPointerDown={(event) => {
+          if (event.pointerType === "mouse" || (!onPrev && !onNext)) return;
+          swipeStart.current = {
+            pointerId: event.pointerId,
+            x: event.clientX,
+            y: event.clientY,
+          };
+        }}
+        onPointerUp={(event) => {
+          const start = swipeStart.current;
+          swipeStart.current = null;
+          if (!start || start.pointerId !== event.pointerId) return;
+          const deltaX = event.clientX - start.x;
+          const deltaY = event.clientY - start.y;
+          if (
+            Math.abs(deltaX) < 48 ||
+            Math.abs(deltaX) < Math.abs(deltaY) * 1.2
+          ) {
+            return;
+          }
+          if (deltaX > 0 && onPrev) onPrev();
+          else if (deltaX < 0 && onNext) onNext();
+        }}
+        onPointerCancel={() => {
+          swipeStart.current = null;
+        }}
+      >
         {onPrev ? (
           <button
             type="button"
@@ -204,13 +272,6 @@ export function Lightbox({
             className="atlas-lightbox-image"
             imageClassName="object-contain"
           />
-
-          <figcaption className="atlas-lightbox-caption">
-            <span>{photo.eventName}</span>
-            <span>
-              {photo.orientation} · {photo.source === "guest" ? "Shared by a guest" : "Photographer"}
-            </span>
-          </figcaption>
         </figure>
 
         {onNext ? (
@@ -226,6 +287,15 @@ export function Lightbox({
       </div>
 
       <div className="atlas-lightbox-notes">
+        {photo.approvedCaption ? (
+          <blockquote className="atlas-lightbox-uploader-caption">
+            <p>{photo.approvedCaption.text}</p>
+            {photo.approvedCaption.byline ? (
+              <footer>Shared by {photo.approvedCaption.byline}</footer>
+            ) : null}
+          </blockquote>
+        ) : null}
+
         {photo.keywords.length > 0 ? (
           <ul aria-label="Keywords" className="atlas-keyword-list">
             {photo.keywords.map((keyword) => (

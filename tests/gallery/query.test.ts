@@ -8,6 +8,7 @@ import {
   getGalleryPage,
   getPhotoDetail,
   GalleryQueryError,
+  MAX_GALLERY_SEARCH_LENGTH,
   MAX_GALLERY_LIMIT,
   DEFAULT_GALLERY_LIMIT,
   type GalleryDataSource,
@@ -130,6 +131,45 @@ describe("status isolation", () => {
 });
 
 describe("filters", () => {
+  it("searches event, confirmed-person, keyword, and filename metadata", async () => {
+    const byEventAndKeyword = await getGalleryPage(
+      { q: "event-03 ceremony", limit: 100 },
+      dataSource,
+    );
+    const expectedEventAndKeyword = approved.filter(
+      (photo) =>
+        photo.eventName === "Event 3" &&
+        photo.keywords.includes("ceremony"),
+    );
+    expect(byEventAndKeyword.total).toBe(expectedEventAndKeyword.length);
+    expect(
+      byEventAndKeyword.photos.every((photo) => photo.eventName === "Event 3"),
+    ).toBe(true);
+
+    const filenameTarget = approved[42];
+    const byFilename = await getGalleryPage(
+      { q: filenameTarget.originalFilename.toLocaleLowerCase("en-US") },
+      dataSource,
+    );
+    expect(byFilename.photos.map((photo) => photo.id)).toContain(
+      filenameTarget.id,
+    );
+
+    const byPerson = await getGalleryPage({ q: "person-00", limit: 100 }, dataSource);
+    expect(byPerson.total).toBeGreaterThan(0);
+    expect(
+      byPerson.photos.every((photo) =>
+        photo.people.some((person) => person.slug === "person-00"),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not expose uncertain or background people through search", async () => {
+    const page = await getGalleryPage({ q: "Ghost Guest" }, dataSource);
+    expect(page.total).toBe(0);
+    expect(page.photos).toHaveLength(0);
+  });
+
   it("filters by event and totals match", async () => {
     const slug = fixture.events[3].slug;
     const page = await getGalleryPage({ event: slug, limit: 100 }, dataSource);
@@ -419,6 +459,12 @@ describe("invalid inputs", () => {
   it("rejects malformed person/event slugs", async () => {
     await expect(
       getGalleryPage({ person: "Not A Slug" }, dataSource),
+    ).rejects.toBeInstanceOf(GalleryQueryError);
+  });
+
+  it("rejects overlong search input", async () => {
+    await expect(
+      getGalleryPage({ q: "x".repeat(MAX_GALLERY_SEARCH_LENGTH + 1) }, dataSource),
     ).rejects.toBeInstanceOf(GalleryQueryError);
   });
 

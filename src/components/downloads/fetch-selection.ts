@@ -11,6 +11,10 @@ export class SelectionPreparationError extends Error {
   }
 }
 
+export interface FetchSelectionOptions {
+  signal?: AbortSignal;
+}
+
 function chunks<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
   for (let index = 0; index < items.length; index += size) {
@@ -27,6 +31,7 @@ function chunks<T>(items: T[], size: number): T[][] {
 export async function fetchSelectionDownloads(
   photoIds: string[],
   fallbackMessage: string,
+  options: FetchSelectionOptions = {},
 ): Promise<SelectionDownload> {
   const ids = Array.from(new Set(photoIds.filter(Boolean)));
   if (ids.length === 0) {
@@ -45,6 +50,7 @@ export async function fetchSelectionDownloads(
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ photoIds: batch }),
+      signal: options.signal,
     });
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as {

@@ -61,6 +61,39 @@ afterEach(() => {
 });
 
 describe("MomentSearch", () => {
+  it("does not auto-run a gallery text-filter deep link", async () => {
+    window.history.replaceState({}, "", "/photos?gallery_q=first+dance");
+
+    render(<MomentSearch events={[]} />);
+
+    await Promise.resolve();
+    expect(
+      (
+        screen.getByRole("searchbox", {
+          name: "Describe a moment",
+        }) as HTMLInputElement
+      ).value,
+    ).toBe("");
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("still auto-runs a semantic-search deep link", async () => {
+    window.history.replaceState({}, "", "/photos?q=sunset+kiss");
+
+    render(<MomentSearch events={[]} />);
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith("/api/search?q=sunset+kiss");
+    });
+    expect(
+      (
+        screen.getByRole("searchbox", {
+          name: "Describe a moment",
+        }) as HTMLInputElement
+      ).value,
+    ).toBe("sunset kiss");
+  });
+
   it("renders result cards when the async grid mounts after the first layout effect", async () => {
     render(<MomentSearch events={[]} />);
 

@@ -1,11 +1,10 @@
 /**
  * HAND-WRITTEN INTERIM TYPES -- REGENERATE WHEN A LOCAL STACK EXISTS.
  *
- * The packet requires these types to be generated from a running local
- * Supabase instance. This machine has no container runtime today, so
- * `supabase start` cannot run and this file was written by hand to match
- * supabase/migrations/202607220001_gallery_core.sql and
- * 202607220002_storage_policies.sql EXACTLY.
+ * This file intentionally contains the wedding schema rather than every
+ * tenant in the shared Supabase project. Its shapes track the checked-in
+ * rachandzach migrations and are verified against generated linked-project
+ * types whenever the remote schema changes.
  *
  * Once Docker (or another container runtime) is available, regenerate with
  * `npm run types:generate`, which must be wired (by the package.json owner;
@@ -103,6 +102,9 @@ export type Database = {
           source: string;
           status: string;
           submitted_batch_id: string | null;
+          processing_complete: boolean;
+          uploader_caption: string | null;
+          uploader_caption_byline: string | null;
           approved_at: string | null;
           created_at: string;
           updated_at: string;
@@ -122,6 +124,9 @@ export type Database = {
           source: string;
           status?: string;
           submitted_batch_id?: string | null;
+          processing_complete?: boolean;
+          uploader_caption?: string | null;
+          uploader_caption_byline?: string | null;
           approved_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -141,6 +146,9 @@ export type Database = {
           source?: string;
           status?: string;
           submitted_batch_id?: string | null;
+          processing_complete?: boolean;
+          uploader_caption?: string | null;
+          uploader_caption_byline?: string | null;
           approved_at?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -315,6 +323,7 @@ export type Database = {
           sha256: string | null;
           status: string;
           rejection_reason: string | null;
+          note_approved: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -328,6 +337,7 @@ export type Database = {
           sha256?: string | null;
           status?: string;
           rejection_reason?: string | null;
+          note_approved?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -341,6 +351,7 @@ export type Database = {
           sha256?: string | null;
           status?: string;
           rejection_reason?: string | null;
+          note_approved?: boolean;
           created_at?: string;
           updated_at?: string;
         };

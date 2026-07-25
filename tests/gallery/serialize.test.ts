@@ -163,6 +163,7 @@ function view(overrides: Partial<GalleryPhotoView> & { id: string }): GalleryPho
       },
     ],
     ...overrides,
+    approvedCaption: overrides.approvedCaption ?? null,
   };
 }
 
@@ -207,6 +208,43 @@ describe("serializeGalleryPage: keywords field", () => {
     expect(serialized).not.toContain("previews/p3-super-secret-hash");
     expect(client.photos[0].previews[0]).not.toHaveProperty("objectPath");
     expect(client.photos[0].previews[0]).not.toHaveProperty("bucket");
+  });
+});
+
+describe("serializeGalleryPage: approved uploader captions", () => {
+  it("copies only the public caption fields onto the client photo", async () => {
+    const page: GalleryPage = {
+      photos: [
+        view({
+          id: "captioned",
+          approvedCaption: {
+            text: "The best view of the first dance.",
+            byline: "Jamie",
+          },
+        }),
+      ],
+      nextCursor: null,
+      total: 1,
+      signedUrlExpiresAt: new Date().toISOString(),
+    };
+
+    const client = await serializeGalleryPage(page, fakeSigningClient());
+    expect(client.photos[0].approvedCaption).toEqual({
+      text: "The best view of the first dance.",
+      byline: "Jamie",
+    });
+  });
+
+  it("serializes an unapproved or absent caption as null", async () => {
+    const page: GalleryPage = {
+      photos: [view({ id: "no-caption", approvedCaption: null })],
+      nextCursor: null,
+      total: 1,
+      signedUrlExpiresAt: new Date().toISOString(),
+    };
+
+    const client = await serializeGalleryPage(page, fakeSigningClient());
+    expect(client.photos[0].approvedCaption).toBeNull();
   });
 });
 

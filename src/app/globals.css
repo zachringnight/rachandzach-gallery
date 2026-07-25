@@ -2386,13 +2386,6 @@ button {
   transform: scale(1.02);
 }
 
-.atlas-photo-label {
-  right: 0.35rem !important;
-  bottom: 0.35rem !important;
-  left: 0.35rem !important;
-  border-radius: 0 !important;
-}
-
 .atlas-upload-page {
   padding-bottom: var(--rz-space-section);
 }
@@ -2947,6 +2940,120 @@ button {
   color: var(--rz-cream);
 }
 
+.atlas-filter-count {
+  display: inline-flex;
+  width: 1.15rem;
+  height: 1.15rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.54rem;
+  line-height: 1;
+}
+
+.atlas-gallery-discovery {
+  display: grid;
+  grid-template-columns: minmax(15rem, 24rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--rz-wheat);
+}
+
+.atlas-gallery-search {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding-left: 0.75rem;
+  border: 1px solid var(--rz-wheat);
+  background: color-mix(in srgb, var(--rz-cream) 86%, white);
+  color: var(--rz-muted);
+  transition:
+    border-color var(--rz-dur-fast) ease,
+    color var(--rz-dur-fast) ease;
+}
+
+.atlas-gallery-search:focus-within {
+  border-color: var(--rz-ink);
+  color: var(--rz-ink);
+}
+
+.atlas-gallery-search input {
+  width: 100%;
+  min-width: 0;
+  height: 2.65rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--rz-ink);
+  font-size: 0.78rem;
+}
+
+.atlas-gallery-search input::placeholder {
+  color: var(--rz-muted);
+  opacity: 0.82;
+}
+
+.atlas-gallery-search > button {
+  display: inline-flex;
+  width: 2.65rem;
+  height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-left: 1px solid var(--rz-wheat);
+  background: transparent;
+  color: var(--rz-muted);
+}
+
+.atlas-gallery-search > button:hover {
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+}
+
+.atlas-active-filters {
+  display: flex;
+  min-width: 0;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.atlas-active-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.atlas-active-filter {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 18rem;
+  min-height: 2.25rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--rz-ink);
+  border-radius: 0;
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+  font-size: 0.63rem;
+  font-weight: 620;
+}
+
+.atlas-active-filter > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atlas-active-filter:hover {
+  background: transparent;
+  color: var(--rz-ink);
+}
+
 .atlas-filter-groups {
   display: none;
   grid-template-columns:
@@ -3239,47 +3346,6 @@ button {
   transform: scale(1.018);
 }
 
-.atlas-photo-caption {
-  position: absolute;
-  z-index: 4;
-  right: 0.55rem;
-  bottom: 0.55rem;
-  left: 0.55rem;
-  display: grid;
-  gap: 0.12rem;
-  padding: 0.65rem 0.75rem;
-  background: color-mix(in srgb, var(--rz-cream) 92%, transparent);
-  color: var(--rz-ink);
-  opacity: 0;
-  transform: translateY(7px);
-  backdrop-filter: blur(12px);
-  transition:
-    opacity var(--rz-dur-fast) ease,
-    transform var(--rz-dur-med) var(--rz-ease-out);
-}
-
-.atlas-photo-caption span {
-  font-size: 0.53rem;
-  font-weight: 650;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.atlas-photo-caption strong {
-  overflow: hidden;
-  font-family: var(--rz-font-display);
-  font-size: 0.92rem;
-  font-weight: 470;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.atlas-photo-card:hover .atlas-photo-caption,
-.atlas-photo-card:focus-within .atlas-photo-caption {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .atlas-photo-favorite,
 .atlas-photo-select,
 .atlas-photo-download {
@@ -3327,14 +3393,10 @@ button {
   top: auto;
   right: 0.6rem;
   bottom: 0.6rem;
-  gap: 0.4rem;
-  padding: 0 0.65rem;
+  width: 2.25rem;
+  padding: 0;
   color: var(--rz-cream);
-  font-size: 0.58rem;
-  font-weight: 650;
-  letter-spacing: 0.08em;
   text-decoration: none;
-  text-transform: uppercase;
 }
 
 .atlas-photo-download:hover,
@@ -3499,7 +3561,8 @@ button {
 
 .atlas-selection-actions > button,
 .atlas-selection-download,
-.atlas-selection-save > button {
+.atlas-selection-save > button,
+.atlas-selection-save .atlas-cloud-save-actions > button {
   display: inline-flex;
   min-height: 2.5rem;
   align-items: center;
@@ -3517,7 +3580,8 @@ button {
 
 .atlas-selection-actions > button:hover,
 .atlas-selection-download:hover,
-.atlas-selection-save > button:hover {
+.atlas-selection-save > button:hover,
+.atlas-selection-save .atlas-cloud-save-actions > button:hover {
   background: var(--rz-cream);
   color: var(--rz-ink);
 }
@@ -3530,14 +3594,17 @@ button {
 .atlas-selection-save {
   display: inline-flex;
   align-items: center;
+  gap: 0;
 }
 
-.atlas-selection-save > button {
+.atlas-selection-save > button,
+.atlas-selection-save .atlas-cloud-save-actions > button {
   border-radius: 0;
 }
 
 .atlas-selection-save > p,
-.atlas-selection-save > div {
+.atlas-selection-save > div:not(.atlas-cloud-save-controls),
+.atlas-selection-save .atlas-cloud-save-status {
   position: absolute;
   right: 1rem;
   bottom: calc(100% + 0.55rem);
@@ -3549,6 +3616,36 @@ button {
   font-size: 0.72rem;
   letter-spacing: normal;
   text-transform: none;
+}
+
+.atlas-cloud-save-controls,
+.atlas-cloud-save-actions {
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.atlas-cloud-save-controls {
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.atlas-cloud-save-actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.atlas-cloud-save-status {
+  margin: 0;
+}
+
+.atlas-selection-save > .atlas-cloud-save-controls {
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+}
+
+.atlas-selection-save .atlas-cloud-save-actions {
+  gap: 0;
 }
 
 .atlas-lightbox {
@@ -3605,8 +3702,19 @@ button {
 .atlas-lightbox-tools {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.35rem;
+}
+
+.atlas-lightbox-position {
+  min-width: 4.25rem;
+  padding-inline: 0.45rem;
+  color: color-mix(in srgb, var(--rz-cream) 66%, transparent);
+  font-size: 0.58rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 620;
+  text-align: center;
 }
 
 .atlas-lightbox-icon,
@@ -3645,6 +3753,7 @@ button {
   min-height: 0;
   place-items: center;
   padding: clamp(0.75rem, 1.6vw, 1.5rem) clamp(2.8rem, 5vw, 5rem);
+  touch-action: pan-y;
 }
 
 .atlas-lightbox-figure {
@@ -3666,24 +3775,6 @@ button {
 
 .atlas-lightbox-image > img {
   object-fit: contain;
-}
-
-.atlas-lightbox-caption {
-  position: absolute;
-  right: clamp(3.2rem, 6vw, 6.5rem);
-  bottom: 1rem;
-  left: clamp(3.2rem, 6vw, 6.5rem);
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.65rem 0.8rem;
-  background: color-mix(in srgb, var(--rz-ink) 80%, transparent);
-  color: color-mix(in srgb, var(--rz-cream) 78%, transparent);
-  font-size: 0.53rem;
-  font-weight: 620;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  backdrop-filter: blur(14px);
 }
 
 .atlas-lightbox-arrow {
@@ -3726,6 +3817,32 @@ button {
   overflow-y: auto;
   padding-top: 0.75rem;
   border-top: 1px solid color-mix(in srgb, var(--rz-cream) 16%, transparent);
+}
+
+.atlas-lightbox-uploader-caption {
+  grid-column: 1 / -1;
+  max-width: 52rem;
+  margin: 0;
+  padding: 0.35rem 0 0.8rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--rz-cream) 12%, transparent);
+}
+
+.atlas-lightbox-uploader-caption p {
+  margin: 0;
+  color: var(--rz-cream);
+  font-family: var(--rz-font-display);
+  font-size: 1.2rem;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.atlas-lightbox-uploader-caption footer {
+  margin-top: 0.45rem;
+  color: color-mix(in srgb, var(--rz-cream) 62%, transparent);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .atlas-keyword-list {
@@ -4421,20 +4538,6 @@ button {
 }
 
 @media (hover: none) {
-  .atlas-photo-caption {
-    right: 0.35rem;
-    bottom: 0.35rem;
-    left: 0.35rem;
-    padding: 0.42rem 0.5rem;
-    opacity: 1;
-    transform: none;
-  }
-
-  .atlas-photo-caption strong,
-  .atlas-photo-download span {
-    display: none;
-  }
-
   .atlas-photo-favorite,
   .atlas-photo-download,
   .atlas-photo-card[data-selecting="true"] .atlas-photo-select {
@@ -4484,6 +4587,15 @@ button {
     min-height: 2.15rem;
     padding-inline: 0.55rem;
     border-left: 0;
+  }
+
+  .atlas-gallery-discovery {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .atlas-active-filter {
+    max-width: min(18rem, 78vw);
   }
 
   .atlas-filter-groups {
@@ -4550,12 +4662,6 @@ button {
 
   .atlas-lightbox-stage {
     padding-inline: 2.25rem;
-  }
-
-  .atlas-lightbox-caption {
-    right: 2.4rem;
-    left: 2.4rem;
-    display: grid;
   }
 
   .atlas-lightbox-arrow {
@@ -5438,6 +5544,25 @@ button {
   gap: 0.4rem;
 }
 
+.atlas-catalog-view-switch {
+  display: inline-flex;
+  gap: 1px !important;
+  padding: 1px;
+  background: var(--rz-wheat);
+}
+
+.atlas-catalog-view-switch button {
+  width: 2.15rem;
+  min-height: 2.15rem;
+  padding: 0;
+  background: var(--rz-white);
+}
+
+.atlas-catalog-view-switch button[aria-pressed="true"] {
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+}
+
 .atlas-catalog-sheet-actions button {
   min-height: 2.15rem;
   padding-block: 0.45rem;
@@ -5595,6 +5720,129 @@ button {
 .atlas-catalog-state[data-state="complete"] {
   border-color: color-mix(in srgb, var(--rz-tan) 70%, var(--rz-wheat));
   color: var(--rz-tan-text);
+}
+
+.atlas-catalog-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-white);
+}
+
+.atlas-catalog-table {
+  width: 100%;
+  min-width: 67rem;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+
+.atlas-catalog-table th,
+.atlas-catalog-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--rz-wheat);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.atlas-catalog-table th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+  font-size: 0.54rem;
+  font-weight: 680;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.atlas-catalog-table th:first-child,
+.atlas-catalog-table td:first-child {
+  width: 2.8rem;
+  text-align: center;
+}
+
+.atlas-catalog-table th:nth-child(2) {
+  width: 18rem;
+}
+
+.atlas-catalog-table th:nth-child(3) {
+  width: 9rem;
+}
+
+.atlas-catalog-table th:nth-child(4),
+.atlas-catalog-table th:nth-child(5) {
+  width: 13rem;
+}
+
+.atlas-catalog-table th:nth-child(6) {
+  width: 7rem;
+}
+
+.atlas-catalog-table tbody tr {
+  transition: background var(--rz-dur-fast) var(--rz-ease-out);
+}
+
+.atlas-catalog-table tbody tr:hover {
+  background: color-mix(in srgb, var(--rz-sand) 45%, var(--rz-white));
+}
+
+.atlas-catalog-table tbody tr[data-selected="true"] {
+  background: color-mix(in srgb, var(--rz-coral) 12%, var(--rz-white));
+}
+
+.atlas-catalog-table input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--rz-coral);
+}
+
+.atlas-catalog-table-photo {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.atlas-catalog-table-thumb {
+  width: 3.25rem;
+  height: 2.5rem;
+  overflow: hidden;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-sand);
+}
+
+.atlas-catalog-table-photo > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.atlas-catalog-table-photo strong {
+  overflow: hidden;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atlas-catalog-table-photo span {
+  color: var(--rz-muted);
+  font-size: 0.56rem;
+  text-transform: capitalize;
+}
+
+.atlas-catalog-table td:nth-child(4),
+.atlas-catalog-table td:nth-child(5) {
+  max-width: 13rem;
+  overflow: hidden;
+  color: var(--rz-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atlas-catalog-table .atlas-catalog-state {
+  display: inline-flex;
+  white-space: nowrap;
 }
 
 .atlas-catalog-inspector {

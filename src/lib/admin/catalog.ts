@@ -171,6 +171,8 @@ export function filterAdminCatalogPhotos(
         photo.eventName,
         photo.eventSlug,
         ...photo.keywords,
+        photo.approvedCaption?.text ?? "",
+        photo.approvedCaption?.byline ?? "",
         ...people.flatMap((person) => [person.displayName, person.slug]),
       ]
         .join("\n")

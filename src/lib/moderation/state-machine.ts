@@ -190,6 +190,30 @@ async function fetchBatch(
   return (data as UploadBatchRow | null) ?? null;
 }
 
+async function hasCompletedPublishedPhoto(
+  client: Db,
+  fileSha256: string | null,
+): Promise<boolean> {
+  // processApprovedPhoto replaces the advisory client hash with a full
+  // server-computed SHA-256 before an item can become approved.
+  if (!fileSha256 || !/^[0-9a-f]{64}$/.test(fileSha256)) return false;
+
+  const { data, error } = await client
+    .from("rachandzach_photos")
+    .select("id, status")
+    .eq("file_sha256", fileSha256)
+    .eq("source", "guest")
+    .eq("processing_complete", true)
+    .maybeSingle();
+  if (error) {
+    throw new ModerationPersistenceError(
+      "Could not verify the approved catalog photo.",
+    );
+  }
+
+  return data?.status === "published" || data?.status === "hidden";
+}
+
 interface ApplyItemTransitionOptions {
   itemId: string;
   plan: ItemTransitionPlan;
@@ -248,7 +272,11 @@ async function applyItemTransition(
     actorUserId: actor.userId,
     action: auditAction,
     before,
-    after: { status: row.status, rejection_reason: row.rejection_reason },
+    after: {
+      status: row.status,
+      rejection_reason: row.rejection_reason,
+      note_approved: row.note_approved,
+    },
   });
   return row;
 }
@@ -259,10 +287,9 @@ async function applyItemTransition(
  * Applies an approve/reject decision to a single upload item. Retry-safe: a
  * second call with the same decision once the item already sits at that
  * terminal status returns the current row without writing a duplicate audit
- * entry. Metadata (eventSlug/peopleSlugs/keywords/noteApproved) travels with
- * the decision but is applied by processApprovedPhoto, not stored on the
- * upload_items row itself (which has no such columns); this function only
- * owns the item's moderation status and its rejection_reason.
+ * entry. The note approval bit is persisted with the item and included in
+ * the audit record; processApprovedPhoto owns copying the approved note text
+ * into the published photo.
  */
 export async function transitionUploadItem(
   itemId: string,
@@ -286,6 +313,8 @@ export async function transitionUploadItem(
     status: plan.nextStatus,
     rejection_reason:
       decision.action === "reject" ? decision.rejectionReason : null,
+    note_approved:
+      decision.action === "approve" && decision.noteApproved === true,
   };
 
   return applyItemTransition({
@@ -293,7 +322,11 @@ export async function transitionUploadItem(
     plan,
     patch,
     auditAction: decision.action === "approve" ? "approve_item" : "reject_item",
-    before: { status: item.status, rejection_reason: item.rejection_reason },
+    before: {
+      status: item.status,
+      rejection_reason: item.rejection_reason,
+      note_approved: item.note_approved,
+    },
     actor,
     client,
   });
@@ -325,9 +358,17 @@ export async function restoreUploadItem(
   return applyItemTransition({
     itemId,
     plan,
-    patch: { status: "pending", rejection_reason: null },
+    patch: {
+      status: "pending",
+      rejection_reason: null,
+      note_approved: false,
+    },
     auditAction: "restore_item",
-    before: { status: item.status, rejection_reason: item.rejection_reason },
+    before: {
+      status: item.status,
+      rejection_reason: item.rejection_reason,
+      note_approved: item.note_approved,
+    },
     actor,
     client,
   });
@@ -336,10 +377,11 @@ export async function restoreUploadItem(
 /**
  * Produced interface companion: recomputes a batch's status from its items'
  * current statuses and persists the transition (approved / partially_approved
- * / rejected) once every item is terminal. Idempotent: recomputing a batch
- * already at the derived status is a no-op with no duplicate audit row. Returns
- * null when the batch is not yet decidable (an item is still pending) or when
- * the batch has no items.
+ * / rejected) once every item is terminal. Any approved item also needs a
+ * matching, fully processed guest photo in a published/hidden catalog state;
+ * this keeps an approved-but-not-yet-published item retryable without rolling
+ * its durable moderation decision backward. An all-rejected batch needs no
+ * catalog rows. Idempotent recomputation writes no duplicate audit row.
  */
 export async function recomputeBatchStatus(
   batchId: string,
@@ -348,15 +390,29 @@ export async function recomputeBatchStatus(
 ): Promise<UploadBatchRow | null> {
   const { data: items, error } = await client
     .from("rachandzach_upload_items")
-    .select("status")
+    .select("id, status, sha256")
     .eq("batch_id", batchId);
   if (error) {
     throw new ModerationPersistenceError("Could not read the batch items.");
   }
 
-  const statuses = (items ?? []).map((row) => row.status as UploadItemStatus);
+  const itemRows = (items ?? []) as Array<
+    Pick<UploadItemRow, "id" | "status" | "sha256">
+  >;
+  const statuses = itemRows.map((row) => row.status as UploadItemStatus);
   const nextStatus = deriveBatchStatus(statuses);
   if (!nextStatus) return null;
+
+  if (nextStatus !== "rejected") {
+    for (const item of itemRows) {
+      if (
+        item.status === "approved" &&
+        !(await hasCompletedPublishedPhoto(client, item.sha256))
+      ) {
+        return null;
+      }
+    }
+  }
 
   const batch = await fetchBatch(client, batchId);
   if (!batch) {

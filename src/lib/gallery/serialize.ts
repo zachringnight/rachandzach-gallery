@@ -58,6 +58,7 @@ function toClientPhoto(
     capturedAt: view.capturedAt,
     people: view.people,
     keywords: view.keywords,
+    approvedCaption: view.approvedCaption,
     previews,
   };
 }

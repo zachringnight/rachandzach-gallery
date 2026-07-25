@@ -1,20 +1,25 @@
 /**
  * Approved-photo processing (packet 10).
  *
- * Turns one approved guest upload_item into a published catalog photo:
+ * Turns one guest upload_item into a staged catalog photo:
  * download the private original, decode it (HEIC via the wasm libheif path
  * per docs/plans/.../spikes/heic-decode.md, everything else via sharp
  * directly), generate stripped display derivatives, copy the original and
  * upload the derivatives into rachandzach-guest-approved under new
- * content-hashed names, and ONLY THEN insert the rachandzach_photos row (plus
- * its previews/people/keywords). Nothing before that final insert makes the
- * photo reachable by any gallery query: the row simply does not exist yet.
+ * content-hashed names, and ONLY THEN insert a non-visible, caption-free
+ * rachandzach_photos row. Its preview/people/keyword relations are replayed
+ * idempotently before processing_complete is allowed to become true.
+ *
+ * Publication is deliberately separate. The approve route first stages the
+ * photo, then applies transitionUploadItem's compare-and-swap decision, then
+ * calls reconcileProcessedPhoto. That final step re-reads the persisted item
+ * and is the only place that may publish the photo or copy an approved note.
  *
  * Retry-safe by construction: the catalog identity (image_data_hash /
  * file_sha256) is the SERVER-COMPUTED SHA-256 of the downloaded original
- * bytes, so re-running this for the same item after a prior full or partial
- * success re-derives the same hash, finds the already-created photo, and
- * returns { created: false } without re-uploading or re-inserting anything.
+ * bytes. A retry returns an already-complete photo without another write; an
+ * incomplete same-batch row replays its content-hashed uploads and relation
+ * inserts, tolerating only the unique conflicts created by concurrent repair.
  *
  * HEIC decode failure throws HeicDecodeError and creates nothing: the caller
  * (the approve route) must not mark the item "approved" when this rejects,
@@ -23,7 +28,11 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { STORAGE_BUCKETS, type PhotoRow } from "@/lib/supabase/schema";
+import {
+  STORAGE_BUCKETS,
+  type PhotoRow,
+  type UploadItemRow,
+} from "@/lib/supabase/schema";
 import { GUEST_PENDING_BUCKET } from "@/lib/uploads/contracts";
 import { sniffImage } from "@/lib/uploads/validate-upload";
 import { ModerationPersistenceError } from "./audit";
@@ -70,6 +79,21 @@ export interface ProcessApprovedPhotoMetadata {
   eventSlug: string | null;
   peopleSlugs: string[];
   keywords: string[];
+  expectedBatchId?: string;
+}
+
+export interface ReconcileProcessedPhotoOptions {
+  expectedBatchId?: string;
+  /**
+   * Failure paths set this false: they may quarantine a rejected/removed
+   * staged row, but may not publish one whose decision did not resolve in
+   * this request.
+   */
+  publishApproved?: boolean;
+}
+
+interface ApprovedCaption {
+  text: string;
 }
 
 interface DerivativeSpec {
@@ -194,6 +218,15 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
+async function insertRelationIdempotently(
+  operation: PromiseLike<{ error: unknown }>,
+  failureMessage: string,
+): Promise<void> {
+  const { error } = await operation;
+  if (!error || isUniqueViolation(error)) return;
+  throw new ModerationPersistenceError(failureMessage);
+}
+
 export async function resolveEventId(
   client: Db,
   slug: string,
@@ -221,6 +254,83 @@ export async function resolvePersonIds(
     if (id) ids.push(id);
   }
   return ids;
+}
+
+async function resolveApprovedCaption(
+  client: Db,
+  batchId: string,
+  noteApproved: boolean,
+): Promise<ApprovedCaption | null> {
+  if (!noteApproved) return null;
+  const { data, error } = await client
+    .from("rachandzach_upload_batches")
+    .select("note")
+    .eq("id", batchId)
+    .maybeSingle();
+  if (error) {
+    throw new ModerationPersistenceError("Could not read the uploader note.");
+  }
+  const note = data?.note?.trim();
+  if (!note) return null;
+  return {
+    text: note,
+  };
+}
+
+async function fetchPhoto(
+  client: Db,
+  photoId: string,
+): Promise<PhotoRow | null> {
+  const { data, error } = await client
+    .from("rachandzach_photos")
+    .select("*")
+    .eq("id", photoId)
+    .maybeSingle();
+  if (error) {
+    throw new ModerationPersistenceError("Could not read the catalog photo.");
+  }
+  return (data as PhotoRow | null) ?? null;
+}
+
+function assertReusableCrossBatchPhoto(photo: PhotoRow): void {
+  if (
+    !photo.processing_complete ||
+    (photo.status !== "published" && photo.status !== "hidden")
+  ) {
+    throw new UnprocessableItemStateError(
+      "The matching catalog photo is not yet reusable from another batch.",
+    );
+  }
+}
+
+function assertPhotoMatchesProcessedItem(
+  item: UploadItemRow,
+  photo: PhotoRow,
+): void {
+  if (!item.sha256 || item.sha256 !== photo.file_sha256) {
+    throw new UnprocessableItemStateError(
+      "The catalog photo does not match this upload item's verified content.",
+    );
+  }
+}
+
+async function hasOtherApprovedItemForPhoto(
+  client: Db,
+  item: UploadItemRow,
+  photo: PhotoRow,
+): Promise<boolean> {
+  const { data, error } = await client
+    .from("rachandzach_upload_items")
+    .select("id")
+    .eq("sha256", photo.file_sha256)
+    .eq("status", "approved");
+  if (error) {
+    throw new ModerationPersistenceError(
+      "Could not verify shared catalog photo ownership.",
+    );
+  }
+
+  return (data ?? []).some((candidate) => candidate.id !== item.id);
 }
 
 /**
@@ -321,9 +431,17 @@ export async function processApprovedPhoto(
   if (!item) {
     throw new UnprocessableItemStateError(`Upload item ${itemId} was not found.`);
   }
-  // Called either just before the item flips to "approved" (normal flow) or
-  // again afterward (retry): both are legal states to process from. Anything
-  // else (pending -> never decided, rejected/removed) is not.
+  if (
+    metadata.expectedBatchId &&
+    item.batch_id !== metadata.expectedBatchId
+  ) {
+    throw new UnprocessableItemStateError(
+      `Upload item ${itemId} does not belong to this batch.`,
+    );
+  }
+  // Called just before the item flips to "approved" (normal flow) or again
+  // afterward (retry): both are legal states to stage from. Anything else
+  // (rejected/removed) must remain non-visible and is not processable.
   if (item.status !== "pending" && item.status !== "approved") {
     throw new UnprocessableItemStateError(
       `Upload item ${itemId} is "${item.status}" and cannot be processed into a photo.`,
@@ -349,22 +467,29 @@ export async function processApprovedPhoto(
       .eq("id", itemId);
   }
 
-  const existing = await findExistingGuestPhoto(client, fileSha256);
-  if (existing) {
-    return { photoId: existing.id, created: false };
+  let photoRow = await findExistingGuestPhoto(client, fileSha256);
+  if (photoRow && photoRow.submitted_batch_id !== item.batch_id) {
+    assertReusableCrossBatchPhoto(photoRow);
+    return { photoId: photoRow.id, created: false };
+  }
+  if (photoRow?.processing_complete) {
+    return { photoId: photoRow.id, created: false };
   }
 
   const { width, height, derivatives } = await buildDerivatives(original);
 
   const shaPrefix = fileSha256.slice(0, 16);
   const safeName = sanitizeFilename(item.original_name);
-  const originalObjectPath = `guest-approved/${shaPrefix}-${safeName}`;
+  const originalObjectPath =
+    photoRow?.original_object ?? `guest-approved/${shaPrefix}-${safeName}`;
+  const originalBucket =
+    photoRow?.original_bucket ?? STORAGE_BUCKETS.guestApproved;
 
   // Original first, then every derivative. The photos row is inserted only
   // after every one of these uploads has succeeded.
   await uploadObject(
     client,
-    STORAGE_BUCKETS.guestApproved,
+    originalBucket,
     originalObjectPath,
     original,
     item.media_type,
@@ -395,74 +520,277 @@ export async function processApprovedPhoto(
     });
   }
 
-  const eventId = metadata.eventSlug
-    ? await resolveEventId(client, metadata.eventSlug)
-    : null;
+  let created = false;
+  if (!photoRow) {
+    const eventId = metadata.eventSlug
+      ? await resolveEventId(client, metadata.eventSlug)
+      : null;
 
-  // The catalog row: this is the single statement that makes the photo
-  // discoverable. Everything above it has already durably succeeded.
-  const { data: photo, error: photoError } = await client
-    .from("rachandzach_photos")
-    .insert({
-      image_data_hash: fileSha256,
-      file_sha256: fileSha256,
-      event_id: eventId,
-      original_bucket: STORAGE_BUCKETS.guestApproved,
-      original_object: originalObjectPath,
-      original_filename: item.original_name,
-      original_bytes: original.byteLength,
-      width,
-      height,
-      source: "guest",
-      status: "published",
-      submitted_batch_id: item.batch_id,
-      approved_at: new Date().toISOString(),
-    })
-    .select("*")
-    .single();
+    // This row is intentionally incomplete even though every object upload
+    // has landed. Relation rows are written below and form the final staging
+    // barrier before processing_complete flips to true.
+    const { data: photo, error: photoError } = await client
+      .from("rachandzach_photos")
+      .insert({
+        image_data_hash: fileSha256,
+        file_sha256: fileSha256,
+        event_id: eventId,
+        original_bucket: STORAGE_BUCKETS.guestApproved,
+        original_object: originalObjectPath,
+        original_filename: item.original_name,
+        original_bytes: original.byteLength,
+        width,
+        height,
+        source: "guest",
+        status: "pending",
+        submitted_batch_id: item.batch_id,
+        processing_complete: false,
+        uploader_caption: null,
+        uploader_caption_byline: null,
+        approved_at: null,
+      })
+      .select("*")
+      .single();
 
-  if (photoError || !photo) {
-    if (isUniqueViolation(photoError)) {
-      // Lost a create race against another concurrent approval of the same
-      // content; the winner already has previews in place.
-      const raced = await findExistingGuestPhoto(client, fileSha256);
-      if (raced) return { photoId: raced.id, created: false };
+    if (photoError || !photo) {
+      if (isUniqueViolation(photoError)) {
+        // A concurrent processor owns the content row. Same-batch incomplete
+        // rows are repairable below; cross-batch rows remain blocked until
+        // they are complete and have a reusable visibility status.
+        const raced = await findExistingGuestPhoto(client, fileSha256);
+        if (raced) {
+          if (raced.submitted_batch_id !== item.batch_id) {
+            assertReusableCrossBatchPhoto(raced);
+            return { photoId: raced.id, created: false };
+          }
+          if (raced.processing_complete) {
+            return { photoId: raced.id, created: false };
+          }
+          photoRow = raced;
+        }
+      }
+      if (!photoRow) {
+        throw new ModerationPersistenceError(
+          "Could not create the catalog photo row.",
+        );
+      }
+    } else {
+      photoRow = photo as PhotoRow;
+      created = true;
     }
-    throw new ModerationPersistenceError("Could not create the catalog photo row.");
   }
 
-  const photoRow = photo as PhotoRow;
-
   for (const preview of previewInserts) {
-    const { error } = await client.from("rachandzach_photo_previews").insert({
-      photo_id: photoRow.id,
-      ...preview,
-    });
-    if (error) {
-      throw new ModerationPersistenceError("Could not record a photo preview.");
-    }
+    await insertRelationIdempotently(
+      client.from("rachandzach_photo_previews").insert({
+        photo_id: photoRow.id,
+        ...preview,
+      }),
+      "Could not record a photo preview.",
+    );
   }
 
   if (metadata.peopleSlugs.length > 0) {
     const personIds = await resolvePersonIds(client, metadata.peopleSlugs);
     for (const personId of personIds) {
-      await client.from("rachandzach_photo_people").insert({
-        photo_id: photoRow.id,
-        person_id: personId,
-        source: "confirmed",
-        confidence: "confirmed",
-      });
+      await insertRelationIdempotently(
+        client.from("rachandzach_photo_people").insert({
+          photo_id: photoRow.id,
+          person_id: personId,
+          source: "confirmed",
+          confidence: "confirmed",
+        }),
+        "Could not record a photo person.",
+      );
     }
   }
 
   for (const keyword of metadata.keywords) {
-    await client.from("rachandzach_photo_keywords").insert({
-      photo_id: photoRow.id,
-      keyword,
-    });
+    await insertRelationIdempotently(
+      client.from("rachandzach_photo_keywords").insert({
+        photo_id: photoRow.id,
+        keyword,
+      }),
+      "Could not record a photo keyword.",
+    );
   }
 
-  return { photoId: photoRow.id, created: true };
+  const { data: completed, error: completionError } = await client
+    .from("rachandzach_photos")
+    .update({ processing_complete: true })
+    .eq("id", photoRow.id)
+    .eq("submitted_batch_id", item.batch_id)
+    .eq("processing_complete", false)
+    .select("*")
+    .maybeSingle();
+  if (completionError) {
+    throw new ModerationPersistenceError(
+      "Could not complete catalog photo processing.",
+    );
+  }
+  if (!completed) {
+    const fresh = await fetchPhoto(client, photoRow.id);
+    if (
+      !fresh ||
+      fresh.submitted_batch_id !== item.batch_id ||
+      !fresh.processing_complete
+    ) {
+      throw new ModerationPersistenceError(
+        "Could not verify catalog photo processing.",
+      );
+    }
+  }
+
+  return { photoId: photoRow.id, created };
+}
+
+/**
+ * Reconciles one staged photo against the upload item's persisted moderation
+ * winner. Request payload flags are intentionally absent: concurrent approve
+ * requests must converge on upload_items.note_approved, not whichever request
+ * happens to finish processing last.
+ *
+ * A content duplicate may resolve to a photo first submitted by another
+ * batch. That is a valid idempotent result, but this function never changes
+ * that photo's provenance, visibility, caption, or approval timestamp.
+ */
+export async function reconcileProcessedPhoto(
+  itemId: string,
+  photoId: string,
+  options: ReconcileProcessedPhotoOptions,
+  client: Db,
+): Promise<{
+  photoId: string;
+  owned: boolean;
+  status: string;
+  itemStatus: string;
+}> {
+  const item = await fetchUploadItem(client, itemId);
+  if (!item) {
+    throw new UnprocessableItemStateError(`Upload item ${itemId} was not found.`);
+  }
+  if (options.expectedBatchId && item.batch_id !== options.expectedBatchId) {
+    throw new UnprocessableItemStateError(
+      `Upload item ${itemId} does not belong to this batch.`,
+    );
+  }
+
+  const photo = await fetchPhoto(client, photoId);
+  if (!photo) {
+    throw new UnprocessableItemStateError(
+      `Catalog photo ${photoId} was not found.`,
+    );
+  }
+  assertPhotoMatchesProcessedItem(item, photo);
+
+  // Duplicate content from a different batch belongs to the first catalog
+  // row. Approval of this item must not rewrite that row's provenance/caption.
+  if (photo.submitted_batch_id !== item.batch_id) {
+    assertReusableCrossBatchPhoto(photo);
+    return {
+      photoId: photo.id,
+      owned: false,
+      status: photo.status,
+      itemStatus: item.status,
+    };
+  }
+
+  let patch: Database["public"]["Tables"]["rachandzach_photos"]["Update"];
+  if (item.status === "approved") {
+    if (options.publishApproved === false) {
+      return {
+        photoId: photo.id,
+        owned: true,
+        status: photo.status,
+        itemStatus: item.status,
+      };
+    }
+    if (!photo.processing_complete) {
+      throw new UnprocessableItemStateError(
+        `Catalog photo ${photo.id} has not finished processing.`,
+      );
+    }
+    // A later catalog hide is authoritative. An approval retry must not make
+    // manually hidden content visible again.
+    if (photo.status === "hidden") {
+      return {
+        photoId: photo.id,
+        owned: true,
+        status: photo.status,
+        itemStatus: item.status,
+      };
+    }
+    const caption = await resolveApprovedCaption(
+      client,
+      item.batch_id,
+      item.note_approved,
+    );
+    patch = {
+      status: "published",
+      uploader_caption: caption?.text ?? null,
+      uploader_caption_byline: null,
+      approved_at: photo.approved_at ?? new Date().toISOString(),
+    };
+  } else if (
+    item.status === "pending" ||
+    item.status === "rejected" ||
+    item.status === "removed"
+  ) {
+    // Multiple upload items may legitimately deduplicate onto one catalog row.
+    // A stale failure/rejection for one item cannot quarantine content whose
+    // identical server-verified hash is still approved by another item.
+    if (await hasOtherApprovedItemForPhoto(client, item, photo)) {
+      return {
+        photoId: photo.id,
+        owned: true,
+        status: photo.status,
+        itemStatus: item.status,
+      };
+    }
+    patch = {
+      status: item.status === "pending" ? "pending" : "rejected",
+      uploader_caption: null,
+      uploader_caption_byline: null,
+      approved_at: null,
+    };
+  } else {
+    throw new UnprocessableItemStateError(
+      `Upload item ${itemId} has unsupported status "${item.status}".`,
+    );
+  }
+
+  const { data: updated, error } = await client
+    .from("rachandzach_photos")
+    .update(patch)
+    .eq("id", photo.id)
+    .eq("submitted_batch_id", item.batch_id)
+    .eq("status", photo.status)
+    .select("*")
+    .maybeSingle();
+  if (error) {
+    throw new ModerationPersistenceError(
+      "Could not reconcile the catalog photo.",
+    );
+  }
+  if (!updated) {
+    // Visibility or ownership changed after the read. Re-observe and leave
+    // the newer state authoritative instead of broadening the update.
+    const current = await fetchPhoto(client, photo.id);
+    return {
+      photoId: photo.id,
+      owned: current?.submitted_batch_id === item.batch_id,
+      status: current?.status ?? photo.status,
+      itemStatus: item.status,
+    };
+  }
+
+  const row = updated as PhotoRow;
+  return {
+    photoId: row.id,
+    owned: true,
+    status: row.status,
+    itemStatus: item.status,
+  };
 }
 
 /**

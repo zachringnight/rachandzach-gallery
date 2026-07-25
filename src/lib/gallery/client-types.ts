@@ -30,6 +30,11 @@ export interface ClientPhoto {
   people: { slug: string; displayName: string }[];
   /** Free-text tags, already deduped against this photo's confirmed people. */
   keywords: string[];
+  /** An uploader note copied into the catalog only after admin approval. */
+  approvedCaption?: {
+    text: string;
+    byline: string | null;
+  } | null;
   /** Ordered small -> large; empty if none could be signed. */
   previews: ClientPreview[];
 }
@@ -54,6 +59,7 @@ export interface ClientPhotoDetail {
 
 /** The URL query contract, mirrored on both server and client. */
 export interface GalleryFilterState {
+  q: string;
   person: string | null;
   event: string | null;
   orientation: ClientOrientation | null;
@@ -61,7 +67,10 @@ export interface GalleryFilterState {
   sort: "weekend" | "newest";
 }
 
+export const GALLERY_SEARCH_URL_PARAM = "gallery_q";
+
 export const EMPTY_FILTER_STATE: GalleryFilterState = {
+  q: "",
   person: null,
   event: null,
   orientation: null,

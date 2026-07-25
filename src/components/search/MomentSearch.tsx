@@ -278,6 +278,16 @@ export function MomentSearch({ events }: MomentSearchProps) {
         <Lightbox
           photo={openPhoto}
           onClose={() => setOpenPhotoId(null)}
+          position={openIndex + 1}
+          total={results.length}
+          previousPhoto={
+            openIndex > 0 ? results[openIndex - 1].photo : undefined
+          }
+          nextPhoto={
+            openIndex >= 0 && openIndex < results.length - 1
+              ? results[openIndex + 1].photo
+              : undefined
+          }
           onPrev={
             openIndex > 0 ? () => setOpenPhotoId(results[openIndex - 1].photo.id) : undefined
           }

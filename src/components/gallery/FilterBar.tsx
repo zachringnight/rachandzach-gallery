@@ -1,7 +1,7 @@
 "use client";
 
-import { CheckSquare, SlidersHorizontal, X } from "lucide-react";
-import { useState } from "react";
+import { CheckSquare, Search, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
   ClientGalleryFacets,
@@ -11,6 +11,7 @@ import type {
 } from "@/lib/gallery/client-types";
 import { EventPicker } from "@/components/gallery/EventPicker";
 import { PersonPicker } from "@/components/gallery/PersonPicker";
+import { CopyCurrentViewButton } from "@/components/ui/CopyCurrentViewButton";
 
 export interface FilterBarProps {
   facets: ClientGalleryFacets;
@@ -50,11 +51,69 @@ export function FilterBar({
   onStartSelection,
 }: FilterBarProps) {
   const [open, setOpen] = useState(false);
+  const activeFilterCount = [
+    filters.q,
+    filters.person,
+    filters.event,
+    filters.orientation,
+    filters.source,
+  ].filter(Boolean).length;
   const hasFilters =
+    filters.q !== "" ||
     filters.person !== null ||
     filters.event !== null ||
     filters.orientation !== null ||
     filters.source !== null;
+
+  const activeFilters = useMemo(() => {
+    const chips: {
+      key: keyof GalleryFilterState;
+      label: string;
+      patch: Partial<GalleryFilterState>;
+    }[] = [];
+    if (filters.q) {
+      chips.push({
+        key: "q",
+        label: `Search: ${filters.q}`,
+        patch: { q: "" },
+      });
+    }
+    if (filters.event) {
+      const event = facets.events.find((item) => item.slug === filters.event);
+      chips.push({
+        key: "event",
+        label: event?.name ?? filters.event,
+        patch: { event: null },
+      });
+    }
+    if (filters.person) {
+      const person = facets.people.find((item) => item.slug === filters.person);
+      chips.push({
+        key: "person",
+        label: person?.displayName ?? filters.person,
+        patch: { person: null },
+      });
+    }
+    if (filters.orientation) {
+      chips.push({
+        key: "orientation",
+        label:
+          ORIENTATIONS.find((item) => item.value === filters.orientation)
+            ?.label ?? filters.orientation,
+        patch: { orientation: null },
+      });
+    }
+    if (filters.source) {
+      chips.push({
+        key: "source",
+        label:
+          SOURCES.find((item) => item.value === filters.source)?.label ??
+          filters.source,
+        patch: { source: null },
+      });
+    }
+    return chips;
+  }, [facets.events, facets.people, filters]);
 
   return (
     <aside className="atlas-filter-rail">
@@ -65,6 +124,8 @@ export function FilterBar({
         </p>
 
         <div className="atlas-filter-summary-actions">
+          <CopyCurrentViewButton className="atlas-filter-action" />
+
           {onStartSelection ? (
             <button
               type="button"
@@ -92,6 +153,16 @@ export function FilterBar({
               strokeWidth={1.6}
             />
             Filters
+            {activeFilterCount > 0 ? (
+              <span
+                className="atlas-filter-count"
+                aria-label={`${activeFilterCount} active ${
+                  activeFilterCount === 1 ? "filter" : "filters"
+                }`}
+              >
+                {activeFilterCount}
+              </span>
+            ) : null}
           </button>
 
           {hasFilters ? (
@@ -105,6 +176,33 @@ export function FilterBar({
             </button>
           ) : null}
         </div>
+      </div>
+
+      <div className="atlas-gallery-discovery">
+        <GallerySearchField
+          key={filters.q}
+          value={filters.q}
+          onChange={(q) => onChange({ q })}
+        />
+
+        {activeFilters.length > 0 ? (
+          <div className="atlas-active-filters" aria-label="Active filters">
+            {activeFilters.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => {
+                  onChange(chip.patch);
+                }}
+                className="atlas-active-filter"
+                aria-label={`Remove filter: ${chip.label}`}
+              >
+                <span>{chip.label}</span>
+                <X aria-hidden="true" size={13} strokeWidth={1.7} />
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div
@@ -185,6 +283,51 @@ export function FilterBar({
         />
       </div>
     </aside>
+  );
+}
+
+function GallerySearchField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (query: string) => void;
+}) {
+  const [query, setQuery] = useState(value);
+
+  useEffect(() => {
+    const normalized = query.trim().replace(/\s+/g, " ");
+    if (normalized === value) return;
+    const timer = window.setTimeout(() => onChange(normalized), 250);
+    return () => window.clearTimeout(timer);
+  }, [onChange, query, value]);
+
+  return (
+    <label className="atlas-gallery-search">
+      <Search aria-hidden="true" size={17} strokeWidth={1.6} />
+      <span className="sr-only">Search photos</span>
+      <input
+        type="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        maxLength={120}
+        placeholder="Search names, events, tags"
+        autoComplete="off"
+      />
+      {query ? (
+        <button
+          type="button"
+          onClick={() => {
+            setQuery("");
+            onChange("");
+          }}
+          aria-label="Clear photo search"
+          title="Clear search"
+        >
+          <X aria-hidden="true" size={15} strokeWidth={1.6} />
+        </button>
+      ) : null}
+    </label>
   );
 }
 

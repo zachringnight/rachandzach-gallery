@@ -144,19 +144,10 @@ export interface ApprovedMemoryNoteConfig {
  * this input asks the caller to already have resolved which single approved
  * photo from that batch the note should caption.
  *
- * DATA AVAILABILITY GAP (see this packet's report): noteApproved has no
- * durable home today. The admin approve route
- * (src/app/api/admin/batches/[batchId]/approve/route.ts) accepts
- * ModerationDecision.noteApproved from the request, but
- * transitionUploadItem's audit write only ever records {status,
- * rejection_reason} (src/lib/moderation/state-machine.ts's
- * applyItemTransition), and processApprovedPhoto's metadata parameter has no
- * noteApproved field either (src/lib/moderation/process-approved-photo.ts).
- * Nothing persists the admin's decision, so no caller can honestly populate
- * `noteApproved: true` from a live query yet. resolveApprovedMemoryNote is
- * exercised here as pure, fully-tested logic, ready the day a future packet
- * adds that column (or records it in moderation_actions.after). memoryNotes
- * stays a disabled future flag regardless.
+ * The live moderation flow now persists noteApproved on the upload item and
+ * copies approved note text/byline onto the published photo. This pure helper
+ * remains useful to older module callers; the gallery DTO reads the catalog
+ * caption directly and does not expose batch contact data.
  */
 export interface MemoryNoteCandidateInput {
   batchStatus: UploadBatchStatus;

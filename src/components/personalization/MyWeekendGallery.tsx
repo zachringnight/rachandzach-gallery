@@ -273,6 +273,14 @@ export function MyWeekendGallery({
         <Lightbox
           photo={openPhoto}
           onClose={closeLightbox}
+          position={openIndex + 1}
+          total={photos.length}
+          previousPhoto={openIndex > 0 ? photos[openIndex - 1] : undefined}
+          nextPhoto={
+            openIndex >= 0 && openIndex < photos.length - 1
+              ? photos[openIndex + 1]
+              : undefined
+          }
           onPrev={openIndex > 0 ? prev : undefined}
           onNext={openIndex >= 0 && openIndex < photos.length - 1 ? next : undefined}
         />
