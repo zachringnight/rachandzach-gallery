@@ -718,4 +718,33 @@ describe("serializeMomentResults", () => {
     expect(serialized[0].similarity).toBe(0.42);
     expect(serialized[0].matchType).toBe("embedding");
   });
+
+  it("preserves an approved uploader caption through serialization", async () => {
+    const captioned = photo({
+      id: "approved-caption",
+      approvedCaption: {
+        text: "The dance floor opened with this song.",
+        byline: null,
+      },
+    });
+    const results = await searchMomentsWith(
+      { query: "first dance", event: null, limit: 10 },
+      baseDeps({
+        dataSource: makeDataSource([captioned]),
+        runVectorSearch: async () => [
+          { photoId: captioned.id, similarity: 0.9 },
+        ],
+      }),
+    );
+
+    const serialized = await serializeMomentResults(
+      results,
+      fakeSigningClient(),
+    );
+
+    expect(serialized[0].photo.approvedCaption).toEqual({
+      text: "The dance floor opened with this song.",
+      byline: null,
+    });
+  });
 });

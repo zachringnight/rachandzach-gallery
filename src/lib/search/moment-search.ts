@@ -450,6 +450,7 @@ function toClientMomentPhoto(
     // GalleryPhotoView (toMomentPhotoView above sets it); this line only
     // wires it through so this mirror keeps satisfying that type.
     keywords: view.keywords,
+    approvedCaption: view.approvedCaption,
     previews,
   };
 }
