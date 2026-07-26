@@ -46,7 +46,15 @@ export default defineConfig({
   timeout: 30_000,
   expect: {
     timeout: 5_000,
-    toHaveScreenshot: { maxDiffPixelRatio: 0.02 },
+    // Was 0.02, which was too loose to be a gate on these pages. Rewriting
+    // the favorites empty-state paragraph and adding two buttons moved only
+    // 1.42% of pixels on the full-page 1440x1066 capture -- most of the
+    // archive's surfaces are quiet cream, so a real content change barely
+    // registers as a ratio. It passed, and webkit's baseline sat 1% stale
+    // without anyone noticing. 0.001 still absorbs antialiasing (verified
+    // stable over repeated full runs across all four projects) while
+    // catching changes of that size.
+    toHaveScreenshot: { maxDiffPixelRatio: 0.001 },
   },
   use: {
     baseURL: E2E_BASE_URL,
