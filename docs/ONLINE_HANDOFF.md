@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-07-25 (CDT).
+Updated 2026-07-26 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -13,6 +13,8 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
+| Current production head | `4fdb61baa9c5427458ed688111417befe6d19d5d` |
+| Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to target `production`; current status is `READY` |
@@ -46,7 +48,12 @@ The production release includes:
 - Admin catalog table, search, filters, bulk selection, tagging, and viewer
 - Public Rachel Runs NYC story, Team for Kids context, and donation links at
   `/nyc`; `/marathon` redirects there
-- Configuration-gated Google Drive and Dropbox save controls
+- Active Google Drive and Dropbox save controls; each guest authorizes and
+  saves to their own cloud account
+- Premium warm-neutral, photo-first archive design with direct paths to Find
+  me, search, favorites, original saves, and guest uploads
+- Forward-looking archive and Rachel Runs NYC content; the public weekend recap
+  was removed and `/weekend` now redirects to `/photos`
 
 Photo-overlay labels were removed. The existing photo memories wall remains
 complete. `tsconfig.tsbuildinfo` was deleted from source control and
@@ -54,19 +61,29 @@ complete. `tsconfig.tsbuildinfo` was deleted from source control and
 
 ## Verification evidence
 
-The release was reviewed and verified at its final feature head before merge:
+The redesigned release was verified on `main` before deployment:
 
-- `npm run verify`: typecheck passed; lint passed with 0 errors and 13 existing
-  warnings; Vitest passed 952 tests with 11 live-database skips; production
-  build passed; Chromium end-to-end passed 82 tests with 28 documented skips
+- `npm run verify`: typecheck passed; lint passed with 0 errors and 14 existing
+  warnings; Vitest passed 947 tests with 11 live-database skips; production
+  build passed; Chromium end-to-end passed 80 tests with 28 documented skips
+- The focused accessibility suite passed 13 checks with 3 documented
+  live-data skips
+- The visual suite passed in Chromium, WebKit, tablet, and 390px mobile
+  configurations
 - Pull request #2 checks passed
 - Final GitHub Codex review found no major issues
 - Post-merge `main` CI
   [run 30137350273](https://github.com/zachringnight/rachandzach-gallery/actions/runs/30137350273)
   passed against `4455ba95d15259ef210ebd64f8283bc80fe005da`
-- The Vercel production deployment is `READY`; use
+- The Vercel production deployment for `4fdb61b` is `READY`; use
   `npx vercel inspect https://rachandzach.com` for its current immutable ID
-- No Vercel error logs were returned during the 2026-07-25 handoff check
+- The Vercel branch guard is present in the deployment bundle and correctly
+  selected `main` for build
+- No Vercel runtime errors were returned during the 2026-07-26 production
+  checks
+- An authenticated live-browser check selected an original and reached the
+  Google Drive consent handoff and Dropbox folder handoff with no console
+  errors; no personal cloud account was entered or modified during this check
 
 Production smoke results from 2026-07-25:
 
@@ -94,18 +111,20 @@ owners, readers, and writers.
 
 | Priority | Owner | Target | Action and definition of done |
 |---|---|---|---|
-| P0 | Zach | 2026-07-25, before announcing cloud save | Create the Google Web OAuth client ID and Dropbox Saver app key. Record only the public IDs in secure deployment configuration; do not commit them. |
-| P0 | Codex or next engineer | Same session after IDs exist | Add `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` and `NEXT_PUBLIC_DROPBOX_APP_KEY` to Vercel Production and Preview, redeploy the latest `main`, and verify the new deployment is `READY`. |
-| P0 | Zach/admin | 2026-07-25 | Run the authenticated production acceptance pass below. Release acceptance is complete only when every row passes on the production domain. |
-| P1 | Codex or next engineer | 2026-07-26 | Check Vercel runtime errors and review upload/moderation failures after the first live usage window. Record the result here. |
+| DONE | Zach | 2026-07-26 | Created the Google Web OAuth client ID and Dropbox Saver app key; only the public identifiers were supplied to deployment configuration. |
+| DONE | Codex | 2026-07-26 | Confirmed `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` and `NEXT_PUBLIC_DROPBOX_APP_KEY` in Vercel Production and Preview, deployed `main`, and verified the production deployment is `READY`. |
+| P0 | Zach/admin | Before announcing cloud save | Complete the two consent-dependent file-transfer rows in the authenticated acceptance pass below using a personal Google Drive and Dropbox account. |
+| DONE | Codex | 2026-07-26 | Checked Vercel runtime errors after production smoke traffic; none were returned. |
 | P2 | Zach | Later curation session | Review the local-only face audit before applying any proposed tag changes. The report remains gitignored and no suggestion is auto-applied. |
 | P2 | Engineer | Future maintenance | Add a live-database integration harness to replace the intentional schema/catalog skips when repeatable production-like DB testing becomes worthwhile. |
 | DONE | Codex | 2026-07-25 | Removed the merged `codex/wedding-premium-overhaul` exception from the CI and Vercel branch allowlists after confirming it had no commits outside `main`. |
 | P2 | Zach plus shared-project owners | Future infrastructure decision | Decide whether the wedding app should remain in the shared Supabase project. Any isolation or RLS cleanup requires a cross-app migration plan. |
 
-Google Drive and Dropbox are the only remaining implementation-input gap in
-the agreed feature set. The deployed production build has no public provider
-IDs configured as of this handoff, so the controls correctly remain hidden.
+Google Drive and Dropbox activation is complete in application configuration.
+Both public identifiers are present in Vercel Production and Preview, and both
+controls render and prepare a selected original on the live domain. Final
+file-transfer acceptance remains consent-dependent: an authenticated guest
+must sign in to each personal provider account and approve the save.
 
 ## Provider activation
 

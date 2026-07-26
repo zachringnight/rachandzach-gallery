@@ -72,11 +72,11 @@ See each script's own `--help` for its full flag set.
 - End-to-end: `npm run e2e` for the full cross-browser/viewport matrix, or `npx playwright test tests/e2e --project=chromium` for the bounded suite `npm run verify` runs. The e2e suite is designed to run without a live database: most specs assert on documented fail-closed behavior against an unreachable synthetic Supabase endpoint (see `tests/e2e/support/env.ts`); a smaller set of specs are explicitly out of scope until a live database exists.
 - A local Supabase stack (`supabase start && supabase db reset`) requires Docker, not available on this development machine as of this writing; the schema test layer degrades to static SQL assertions without it and says so loudly when run.
 
-Current test health: fully green at the merged feature head. `npm run verify`
-exits 0: typecheck passes; lint reports 0 errors and 13 existing warnings;
-Vitest passes 952 tests with 11 intentional live-database skips; the production
-build passes; and the bounded Chromium e2e suite passes 82 tests with 28
-documented skips and 0 failures. Current release evidence is in
+Current test health: fully green at the premium archive release head.
+`npm run verify` exits 0: typecheck passes; lint reports 0 errors and 14
+existing warnings; Vitest passes 947 tests with 11 intentional live-database
+skips; the production build passes; and the bounded Chromium e2e suite passes
+80 tests with 28 documented skips and 0 failures. Current release evidence is in
 `docs/ONLINE_HANDOFF.md`.
 
 ## Project structure
