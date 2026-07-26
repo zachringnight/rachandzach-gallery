@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import {
+  personIdentities,
   surfacePeople,
   surfaceGalleryFacets,
   type PersonOverride,
@@ -62,6 +63,10 @@ describe("surfacePeople", () => {
   });
 
   it("appends added people alphabetically with a zero count", () => {
+    // Added people are full catalog identities, but the facet list only
+    // carries people with confirmed photos, so an untagged addition arrives
+    // through the appended branch with the same shape as everyone else (no
+    // special flag: their /{slug} route resolves from the catalog).
     const overrides = new Map([
       [
         "aunt-zelda",
@@ -78,34 +83,13 @@ describe("surfacePeople", () => {
         slug: "aunt-carol",
         displayName: "Aunt Carol",
         count: 0,
-        overrideOnly: true,
       },
       {
         slug: "aunt-zelda",
         displayName: "Aunt Zelda",
         count: 0,
-        overrideOnly: true,
       },
     ]);
-  });
-
-  it("marks only additions as overrideOnly, so catalog people keep their route", () => {
-    // The flag is what stops a guest surface offering /[personSlug] to someone
-    // with no catalog row, where that route 404s. Catalog people must never
-    // carry it, or they lose a route that works.
-    const overrides = new Map([
-      [
-        "aunt-carol",
-        override({ personSlug: "aunt-carol", displayName: "Aunt Carol", added: true }),
-      ],
-    ]);
-    const surfaced = surfacePeople(catalogPeople, overrides);
-    const addition = surfaced.find((person) => person.slug === "aunt-carol");
-    expect(addition?.overrideOnly).toBe(true);
-    for (const person of catalogPeople) {
-      const found = surfaced.find((candidate) => candidate.slug === person.slug);
-      expect(found?.overrideOnly).toBeUndefined();
-    }
   });
 
   it("never surfaces a hidden addition and never duplicates a catalog slug", () => {
@@ -130,8 +114,65 @@ describe("surfacePeople", () => {
   });
 });
 
+describe("personIdentities", () => {
+  it("still resolves a hidden person's saved selection to their real name", () => {
+    // Hiding is picker-only: a guest who already picked themselves in Find
+    // me keeps their preference, so identity resolution must keep working
+    // even though surfacePeople dropped them from the roster.
+    const overrides = new Map([
+      ["cousin-eddie", override({ personSlug: "cousin-eddie", hidden: true })],
+    ]);
+    expect(
+      surfacePeople(catalogPeople, overrides).some(
+        (person) => person.slug === "cousin-eddie",
+      ),
+    ).toBe(false);
+    const identity = personIdentities(catalogPeople, overrides).find(
+      (person) => person.slug === "cousin-eddie",
+    );
+    expect(identity).toEqual({
+      slug: "cousin-eddie",
+      displayName: "Cousin Eddie",
+    });
+  });
+
+  it("applies renames, includes hidden additions, and never carries counts", () => {
+    const overrides = new Map([
+      [
+        "rachel-casciano",
+        override({
+          personSlug: "rachel-casciano",
+          displayName: "Rachel Soskin",
+          hidden: true,
+        }),
+      ],
+      [
+        "aunt-carol",
+        override({
+          personSlug: "aunt-carol",
+          displayName: "Aunt Carol",
+          added: true,
+          hidden: true,
+        }),
+      ],
+    ]);
+    const identities = personIdentities(catalogPeople, overrides);
+    expect(identities.find((p) => p.slug === "rachel-casciano")).toEqual({
+      slug: "rachel-casciano",
+      displayName: "Rachel Soskin",
+    });
+    expect(identities.find((p) => p.slug === "aunt-carol")).toEqual({
+      slug: "aunt-carol",
+      displayName: "Aunt Carol",
+    });
+    for (const identity of identities) {
+      expect(identity).not.toHaveProperty("count");
+    }
+  });
+});
+
 describe("surfaceGalleryFacets", () => {
-  it("rewrites only the people facet", () => {
+  it("rewrites the people facet and carries hidden-capable identities", () => {
     const facets = {
       events: [{ slug: "ceremony", name: "Ceremony", count: 12 }],
       people: catalogPeople,
@@ -142,5 +183,9 @@ describe("surfaceGalleryFacets", () => {
     const surfaced = surfaceGalleryFacets(facets, overrides);
     expect(surfaced.events).toBe(facets.events);
     expect(surfaced.people).toHaveLength(2);
+    // The filter chip for a hidden person's slug resolves through this.
+    expect(
+      surfaced.identities.find((p) => p.slug === "cousin-eddie")?.displayName,
+    ).toBe("Cousin Eddie");
   });
 });

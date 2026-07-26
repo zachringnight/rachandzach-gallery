@@ -13,7 +13,14 @@ import { MyWeekendSetup } from "@/components/personalization/MyWeekendSetup";
 import { MyWeekendGallery } from "@/components/personalization/MyWeekendGallery";
 
 export interface MyWeekendClientProps {
+  /** The picker roster: hidden people out, renames applied. */
   people: ClientGalleryFacets["people"];
+  /**
+   * Name resolution for a saved selection, hidden people included: hiding
+   * is picker-only, so a guest who already chose themselves must keep
+   * resolving to their real name even after being hidden from the picker.
+   */
+  identities: { slug: string; displayName: string }[];
   /** How to draw each face; built server-side, never bundled. */
   faces: ClientFaceDirectory;
 }
@@ -29,7 +36,11 @@ export interface MyWeekendClientProps {
  * deliberately client-only (no cookie, no server round trip to learn who is
  * asking), so this switch has to live in a client component somewhere.
  */
-export function MyWeekendClient({ people, faces }: MyWeekendClientProps) {
+export function MyWeekendClient({
+  people,
+  identities,
+  faces,
+}: MyWeekendClientProps) {
   // undefined = not yet hydrated from localStorage. Deliberately NOT a
   // useState lazy initializer: that would run during SSR too (no real
   // localStorage there -> always null) and again on the client during
@@ -77,16 +88,18 @@ export function MyWeekendClient({ people, faces }: MyWeekendClientProps) {
     );
   }
 
-  const person = people.find((candidate) => candidate.slug === personSlug);
+  // Resolve from identities, not the picker roster: a hidden person's saved
+  // selection must still land on their own name.
+  const person = identities.find((candidate) => candidate.slug === personSlug);
   return (
     <MyWeekendGallery
       personSlug={personSlug}
       personName={person?.displayName ?? "Guest"}
       onChangePerson={handleChangePerson}
-      // Omitted for override-only people: the dynamic route resolves from the
-      // catalog, so the link would 404 for someone who exists only as an
-      // admin addition.
-      personalPageHref={person?.overrideOnly ? undefined : `/${personSlug}`}
+      // Every surfaced person is a catalog identity (admin additions get a
+      // rachandzach_people row at creation), so the personalized route
+      // resolves for all of them.
+      personalPageHref={`/${personSlug}`}
     />
   );
 }

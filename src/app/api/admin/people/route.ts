@@ -1,9 +1,8 @@
 /**
  * GET  /api/admin/people -- the guest roster the /admin/faces manager shows.
- * POST /api/admin/people -- add a person who is not in the catalog.
- *
- * Writes touch only rachandzach_person_overrides; the catalog is never
- * mutated from this surface.
+ * POST /api/admin/people -- add a person as a real catalog identity
+ *        (rachandzach_people row + added-provenance override row), so they
+ *        can be tagged into photos from the admin tagging surfaces.
  */
 import { NextResponse, type NextRequest } from "next/server";
 

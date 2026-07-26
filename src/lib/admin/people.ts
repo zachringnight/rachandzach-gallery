@@ -15,11 +15,16 @@ export interface AdminRosterPerson {
   slug: string;
   /** Effective guest-facing name (override rename, else catalog name). */
   displayName: string;
-  /** Raw catalog name; null for people added outside the catalog. */
+  /**
+   * Raw catalog name. Added people get a catalog row at creation, so this
+   * is null only for the anomaly case of an added override row with no
+   * catalog row (pre-backfill data).
+   */
   catalogName: string | null;
-  /** Confirmed-photo count (admin-only; 0 for added people). */
+  /** Confirmed-photo count (admin-only; 0 until a person is tagged). */
   count: number;
   hidden: boolean;
+  /** Created from /admin/faces (provenance; they are still full catalog people). */
   added: boolean;
   faceKind: AdminFaceKind;
   /**

@@ -118,6 +118,20 @@ left empty after verification. The export round trip back to committed source
 is `scripts/export-face-overrides.mjs` followed by
 `scripts/build-face-thumbnails.mjs` (see each script's header).
 
+Later on 2026-07-26, admin-added people were upgraded to full catalog
+identities. "Add a person" on `/admin/faces` now creates a real
+`rachandzach_people` row (catalog first, override second), so added people
+can be tagged from `/admin/catalog` and the review screens, appear in Find
+me, and own a working `/{slug}` personalized page. The DML-only backfill
+migration `20260726180000_rachandzach_added_people_catalog_backfill.sql` was
+applied to the live project (a no-op there: the overrides table held zero
+rows). Remove semantics: pipeline-matched people are only ever soft-hidden;
+an added person is deleted outright only while zero
+`rachandzach_photo_people` rows reference them, and otherwise degrades to
+the same soft hide (the server re-checks the link count, and the UI states
+the consequence before confirming). The `overrideOnly` guest-surface flag
+was removed along with the suppressed personalized-route link.
+
 ## Next actions
 
 | Priority | Owner | Target | Action and definition of done |

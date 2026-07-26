@@ -105,13 +105,13 @@ export interface ClientGalleryFacets {
     slug: string;
     displayName: string;
     count: number;
-    /**
-     * Present only for admin-added people, who have no rachandzach_people
-     * row. Guest surfaces must not link them to /[personSlug]: that route
-     * resolves from the catalog and would 404.
-     */
-    overrideOnly?: boolean;
   }[];
+  /**
+   * Name resolution for people the pickers no longer offer (hiding is
+   * picker-only: a hidden person's filter and tags keep working, so labels
+   * must still resolve). Names only, never counts.
+   */
+  identities?: { slug: string; displayName: string }[];
 }
 
 export interface ClientPhotoDetail {
