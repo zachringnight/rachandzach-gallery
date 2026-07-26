@@ -60,17 +60,30 @@ async function readDetectionDims() {
  * the 132 catalog guests were never resolved by the face pipeline at all, so
  * automation has nothing to offer them.
  *
- * Shape, keyed by person slug:
+ * Shape, keyed by person slug (under a "people" key or bare):
  *   { "rachel-casciano": { "photoId": "<32-hex>", "bbox": [x1, y1, x2, y2] } }
+ *   { "aunt-carol":      { "photoId": "<32-hex>",
+ *                          "crop": { "x": 0.31, "y": 0.12, "size": 0.4 } } }
  *
  * `photoId` is the imageDataHash, i.e. the directory name under
- * metadata/import/derivatives/previews/. `bbox` is in that photo's detection
- * space (the dw/dh recorded in detections.jsonl) and may be omitted for a
- * person the detector found -- then only the photo changes and the detected
- * box is reused. For an unresolved guest a bbox is required, since there is
- * no detection to fall back on.
+ * metadata/import/derivatives/previews/.
  *
- * Use scripts/list-face-candidates.mjs to find a photoId and bbox.
+ * Two override styles:
+ *  - `bbox`: a FACE box in that photo's detection space (the dw/dh recorded
+ *    in detections.jsonl); this script expands it into a portrait crop via
+ *    squareCrop(). May be omitted for a person the detector found -- then
+ *    only the photo changes and the detected box is reused. For an
+ *    unresolved guest a bbox (or crop) is required.
+ *  - `crop`: an exact normalized CROP square chosen by a human in the
+ *    /admin/faces screen: x = left/width, y = top/height, size =
+ *    side/min(width, height), all fractions of the photo's pixel grid.
+ *    Used verbatim (no expansion, no detection data needed). This is what
+ *    scripts/export-face-overrides.mjs writes -- the round trip is:
+ *    Rachel crops in /admin/faces (Supabase rachandzach_person_overrides)
+ *    -> export-face-overrides.mjs -> this file -> this script -> committed
+ *    public/faces/{slug}.webp.
+ *
+ * Use scripts/list-face-candidates.mjs to find a photoId and bbox by hand.
  */
 async function readOverrides(repoRoot) {
   const path = join(repoRoot, "metadata/faces/face-overrides.json");
@@ -122,6 +135,23 @@ function squareCrop(bbox, scale, imgW, imgH) {
   return { left, top, width: box, height: box };
 }
 
+/**
+ * An exact human-chosen crop from /admin/faces: x = left/width,
+ * y = top/height, size = side/min(width, height). Same normalized contract
+ * as rachandzach_person_overrides and src/lib/people/face-types.ts; used
+ * verbatim (clamped to the image), never expanded.
+ */
+function normalizedCrop({ x, y, size }, imgW, imgH) {
+  if (![x, y, size].every((v) => typeof v === "number" && Number.isFinite(v))) {
+    return null;
+  }
+  if (size <= 0 || size > 1) return null;
+  const side = Math.max(1, Math.round(size * Math.min(imgW, imgH)));
+  const left = Math.max(0, Math.min(Math.round(x * imgW), imgW - side));
+  const top = Math.max(0, Math.min(Math.round(y * imgH), imgH - side));
+  return { left, top, width: side, height: side };
+}
+
 async function main() {
   const [signatures, catalog, dims, overrides] = await Promise.all([
     fs.readFile(join(repoRoot, "metadata/faces/signatures.json"), "utf8").then(JSON.parse),
@@ -148,27 +178,36 @@ async function main() {
   const skipped = [];
 
   for (const person of bySlug.values()) {
+    const override = overrides[person.slug];
     if (!inCatalog.has(person.slug)) {
-      if (overrides[person.slug]) {
+      // An exact crop override can still be built for a person outside the
+      // catalog facet (an /admin/faces "added" guest): the runtime override
+      // shows their face immediately, and this bakes it into the committed
+      // set. Anything else outside the catalog is a stale entry.
+      if (override && !(override.photoId && override.crop)) {
         skipped.push([person.slug, "override names a slug that is not in the catalog"]);
       }
-      continue;
+      if (!(override?.photoId && override?.crop)) continue;
+      console.log(`note: ${person.slug} is not in the catalog; building from its crop override anyway`);
     }
-    const override = overrides[person.slug];
     const detected = pickSampleFace(person);
-    // An override supplies the photo, and either its own bbox or the one the
-    // detector already found in that photo.
+    // An override supplies the photo, and either an exact human crop, its
+    // own bbox, or the bbox the detector already found in that photo.
     let face = detected;
     if (override?.photoId) {
-      const bbox = override.bbox ?? (detected?.photoId === override.photoId ? detected.bbox : null);
-      if (!bbox) {
-        skipped.push([
-          person.slug,
-          "override needs a bbox (no detection to reuse for that photo)",
-        ]);
-        continue;
+      if (override.crop) {
+        face = { photoId: override.photoId, crop: override.crop };
+      } else {
+        const bbox = override.bbox ?? (detected?.photoId === override.photoId ? detected.bbox : null);
+        if (!bbox) {
+          skipped.push([
+            person.slug,
+            "override needs a bbox or crop (no detection to reuse for that photo)",
+          ]);
+          continue;
+        }
+        face = { photoId: override.photoId, bbox };
       }
-      face = { photoId: override.photoId, bbox };
       overridden += 1;
     }
     if (!face) {
@@ -180,11 +219,24 @@ async function main() {
     try {
       const image = sharp(source);
       const meta = await image.metadata();
-      if (!dim || !meta.width || !meta.height) {
+      if (!meta.width || !meta.height) {
         skipped.push([person.slug, "missing dimensions"]);
         continue;
       }
-      const crop = squareCrop(face.bbox, meta.width / dim.dw, meta.width, meta.height);
+      let crop;
+      if (face.crop) {
+        crop = normalizedCrop(face.crop, meta.width, meta.height);
+        if (!crop) {
+          skipped.push([person.slug, "crop override out of range"]);
+          continue;
+        }
+      } else {
+        if (!dim) {
+          skipped.push([person.slug, "missing dimensions"]);
+          continue;
+        }
+        crop = squareCrop(face.bbox, meta.width / dim.dw, meta.width, meta.height);
+      }
       await image
         .extract(crop)
         .resize(SIZE, SIZE, { fit: "cover" })
