@@ -16,10 +16,6 @@ import {
   type JustifiedItem,
 } from "@/lib/gallery/layout";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
-import {
-  computeEventBoundaries,
-  EventScrubber,
-} from "@/components/gallery/EventScrubber";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
 
 export interface VirtualPhotoGridProps {
@@ -32,6 +28,11 @@ export interface VirtualPhotoGridProps {
   selected?: ReadonlySet<string>;
   onToggleSelection?: (photoId: string) => void;
   onStartSelection?: (photoId: string) => void;
+  /**
+   * Reports the index (into `photos`) of the first photograph on screen as
+   * the guest scrolls; drives the Light Bar and chapter label (P3).
+   */
+  onFirstVisiblePhotoChange?: (photoIndex: number) => void;
 }
 
 export interface VirtualPhotoGridHandle {
@@ -40,6 +41,8 @@ export interface VirtualPhotoGridHandle {
 
 const TARGET_ROW_HEIGHT = 240;
 const GAP = 12;
+/** Sticky chrome (header + control bar + chapter strip) above the grid. */
+const VISIBLE_TOP_OFFSET = 170;
 
 /** SSR-safe layout-effect: no-op on the server, real effect in the browser. */
 const useIsoLayoutEffect =
@@ -78,6 +81,7 @@ export const VirtualPhotoGrid = forwardRef<
     selected = new Set<string>(),
     onToggleSelection,
     onStartSelection,
+    onFirstVisiblePhotoChange,
   },
   forwardedRef,
 ) {
@@ -134,6 +138,9 @@ export const VirtualPhotoGrid = forwardRef<
       const box = boxById.get(photo.id);
       if (!box) return;
       virtualizer.scrollToIndex(box.rowIndex, { align: "start" });
+      // Pull the row out from under the sticky chrome (header + control
+      // bar + chapter strip), keeping a small breath above it.
+      window.scrollBy(0, -(VISIBLE_TOP_OFFSET - 12));
     },
     [boxById, photos, virtualizer],
   );
@@ -142,11 +149,6 @@ export const VirtualPhotoGrid = forwardRef<
     forwardedRef,
     () => ({ scrollToIndex: scrollToPhotoIndex }),
     [scrollToPhotoIndex],
-  );
-
-  const eventBoundaries = useMemo(
-    () => computeEventBoundaries(photos),
-    [photos],
   );
 
   // Load more when the last virtualized row is within reach of the tail.
@@ -163,13 +165,35 @@ export const VirtualPhotoGrid = forwardRef<
     }
   }, [hasMore, loading, lastVirtualIndex, layout.rows.length, onLoadMore]);
 
+  // Report the first photograph on screen (below the sticky chrome) so the
+  // Light Bar and chapter label track scroll in both directions.
+  const lastReportedIndex = useRef(-1);
+  const scrollOffset = virtualizer.scrollOffset ?? 0;
+  useEffect(() => {
+    if (!onFirstVisiblePhotoChange || layout.rows.length === 0) return;
+    const threshold = scrollOffset + VISIBLE_TOP_OFFSET;
+    let firstRow = layout.rows[0];
+    for (const row of layout.rows) {
+      if (row.top + scrollMargin + row.height > threshold) {
+        firstRow = row;
+        break;
+      }
+    }
+    const photoIndex = firstRow.itemIndexes[0];
+    if (photoIndex === undefined) return;
+    if (photoIndex !== lastReportedIndex.current) {
+      lastReportedIndex.current = photoIndex;
+      onFirstVisiblePhotoChange(photoIndex);
+    }
+  }, [
+    layout.rows,
+    onFirstVisiblePhotoChange,
+    scrollMargin,
+    scrollOffset,
+  ]);
+
   return (
     <div ref={containerRef} className="w-full">
-      <EventScrubber
-        boundaries={eventBoundaries}
-        onJump={scrollToPhotoIndex}
-      />
-
       {containerWidth > 0 && layout.rows.length > 0 ? (
         <div
           style={{ height: virtualizer.getTotalSize(), position: "relative" }}

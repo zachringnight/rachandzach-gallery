@@ -22,6 +22,16 @@ import {
   PREVIEW_URL_TTL_SECONDS,
   previewExpiresAt,
 } from "@/lib/gallery/signed-previews";
+import {
+  assignBursts,
+  computeTimeline,
+  imageKeyFromPreviewPath,
+  type ArchiveTimeline,
+  type BurstAssignment,
+  type LightLookup,
+  type LightSortedPhoto,
+} from "@/lib/gallery/archive-light";
+import { lookupPhotoLight } from "@/lib/gallery/light-data";
 
 // ---------------------------------------------------------------------------
 // Public vocabulary
@@ -123,6 +133,11 @@ export interface GalleryPhotoSource {
     byline: string | null;
   } | null;
   previews: GalleryPreviewObject[];
+  /**
+   * Key into the sampled-light artifact (design upgrade P3/P4). When absent
+   * it is derived from the first preview's content-hashed object path.
+   */
+  lightKey?: string | null;
 }
 
 export interface GalleryEventMeta {
@@ -181,6 +196,10 @@ export interface GalleryPhotoView {
   } | null;
   /** Preview descriptors incl. object paths; sign + strip before client I/O. */
   previews: GalleryPreviewView[];
+  /** Dominant light sampled from the photograph itself; null when unknown. */
+  light?: { tint: string; lum: number } | null;
+  /** Contact-sheet burst membership; null outside any multi-frame burst. */
+  burst?: BurstAssignment | null;
 }
 
 export interface GalleryPage {
@@ -189,6 +208,8 @@ export interface GalleryPage {
   /** Count of photos matching the filters (independent of cursor/limit). */
   total: number;
   signedUrlExpiresAt: string;
+  /** The filtered archive's light timeline; null/absent for id lookups. */
+  timeline?: ArchiveTimeline | null;
 }
 
 export interface GalleryPhotoDetail {
@@ -559,7 +580,33 @@ export function displayEventName(slug: string, sourceName: string): string {
   return slug === "film" ? "Film Camera" : sourceName;
 }
 
-function toView(photo: GalleryPhotoSource): GalleryPhotoView {
+/** The light-artifact key: explicit, or derived from a preview path. */
+function lightKeyOf(photo: GalleryPhotoSource): string | null {
+  if (photo.lightKey !== undefined) return photo.lightKey;
+  const first = photo.previews[0];
+  return first ? imageKeyFromPreviewPath(first.objectPath) : null;
+}
+
+function toLightSorted(photo: GalleryPhotoSource): LightSortedPhoto {
+  return {
+    id: photo.id,
+    eventSlug: photo.eventSlug,
+    eventName: displayEventName(photo.eventSlug, photo.eventName),
+    orientation: photo.orientation,
+    capturedAt: photo.capturedAt,
+    lightKey: lightKeyOf(photo),
+  };
+}
+
+interface ViewExtras {
+  light?: GalleryPhotoView["light"];
+  burst?: BurstAssignment | null;
+}
+
+function toView(
+  photo: GalleryPhotoSource,
+  extras: ViewExtras = {},
+): GalleryPhotoView {
   const aspectRatio = photo.height > 0 ? photo.width / photo.height : 1;
   const people = confirmedPeople(photo);
   return {
@@ -593,6 +640,8 @@ function toView(photo: GalleryPhotoSource): GalleryPhotoView {
           : preview.width,
       format: preview.format,
     })),
+    light: extras.light ?? null,
+    burst: extras.burst ?? null,
   };
 }
 
@@ -604,10 +653,17 @@ function toView(photo: GalleryPhotoSource): GalleryPhotoView {
  * Page the gallery. `total` is the count matching the filters; `nextCursor` is
  * null once the last page is returned. Approved-only, at every entry point.
  */
+export interface GalleryPageDeps {
+  /** Injectable light lookup so tests never read the committed artifact. */
+  lightFor?: LightLookup;
+}
+
 export async function getGalleryPage(
   input: GalleryQueryInput,
   dataSource: GalleryDataSource,
+  deps: GalleryPageDeps = {},
 ): Promise<GalleryPage> {
+  const lightFor = deps.lightFor ?? lookupPhotoLight;
   const query = normalizeGalleryQuery(input);
   const all = await dataSource.listPhotos();
   const approved = all.filter(isVisible);
@@ -631,6 +687,7 @@ export async function getGalleryPage(
       nextCursor: null,
       total: photos.length,
       signedUrlExpiresAt: expiresAt,
+      timeline: null,
     };
   }
 
@@ -638,6 +695,13 @@ export async function getGalleryPage(
   matched.sort((a, b) =>
     compareBySortKey(sortKeyOf(a), sortKeyOf(b), query.sort),
   );
+
+  // The archive's shape in light and time (P3/P4), computed over the FULL
+  // sorted result set so every pagination window agrees about burst
+  // membership and the Light Bar maps the whole filtered archive.
+  const lightSorted = matched.map(toLightSorted);
+  const bursts = assignBursts(lightSorted, lightFor);
+  const timeline = computeTimeline(lightSorted, lightFor);
 
   let start = 0;
   if (query.cursor) {
@@ -654,10 +718,20 @@ export async function getGalleryPage(
   const nextCursor = hasMore && last ? encodeCursor(last, query.sort) : null;
 
   return {
-    photos: window.map(toView),
+    photos: window.map((photo) => {
+      const sample = (() => {
+        const key = lightKeyOf(photo);
+        return key ? lightFor(key) : null;
+      })();
+      return toView(photo, {
+        light: sample ? { tint: `#${sample.t}`, lum: sample.l } : null,
+        burst: bursts.get(photo.id) ?? null,
+      });
+    }),
     nextCursor,
     total: matched.length,
     signedUrlExpiresAt: expiresAt,
+    timeline,
   };
 }
 

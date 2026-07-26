@@ -3344,28 +3344,29 @@ button {
   opacity: 0;
 }
 
-.atlas-event-scrubber {
+/*
+ * P3 chapter label: a slim sticky tab at the grid's top edge naming where
+ * the guest is in the day. The clock and frame counter sit in the archive's
+ * utility voice; the event name gets the display face.
+ */
+.atlas-chapter {
   position: sticky;
   z-index: 18;
-  top: 8.2rem;
-  display: grid;
-  grid-template-columns: minmax(8rem, auto) minmax(15rem, 1fr);
-  gap: clamp(1rem, 3vw, 3rem);
-  align-items: center;
-  min-height: 3.7rem;
-  margin-bottom: 1rem;
-  padding: 0.7rem 1rem;
+  top: 8.35rem;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+  padding: 0.42rem 0.85rem;
   border: 1px solid var(--rz-wheat);
   background: color-mix(in srgb, var(--rz-cream) 94%, transparent);
   backdrop-filter: blur(18px);
+  white-space: nowrap;
 }
 
-.atlas-event-scrubber-heading {
-  display: grid;
-  gap: 0.1rem;
-}
-
-.atlas-event-scrubber-heading span {
+.atlas-chapter-kicker {
   color: var(--rz-muted);
   font-size: 0.52rem;
   font-weight: 650;
@@ -3373,70 +3374,186 @@ button {
   text-transform: uppercase;
 }
 
-.atlas-event-scrubber-heading strong {
+.atlas-chapter strong {
   overflow: hidden;
+  max-width: 14rem;
   font-family: var(--rz-font-display);
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 470;
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.atlas-event-scrubber-rail {
+.atlas-chapter-clock,
+.atlas-chapter-position {
+  color: var(--rz-muted);
+  font-size: 0.6rem;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.atlas-chapter-position {
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--rz-wheat);
+}
+
+/*
+ * P3 Light Bar: the whole archive mapped onto the arc of the day, every
+ * segment tinted by the dominant light sampled from its own photographs.
+ * Vertical rail fixed to the right edge on desktop; a horizontal band that
+ * docks under the chapter label on smaller screens. The tints are
+ * photographic light (the one sanctioned color source beyond the palette);
+ * all chrome around them stays on the paper tokens.
+ */
+.atlas-light-bar {
+  position: fixed;
+  z-index: 30;
+  top: 50%;
+  right: clamp(0.55rem, 1.6vw, 1.5rem);
+  height: min(58vh, 34rem);
+  transform: translateY(-50%);
+}
+
+.atlas-light-bar-rail {
+  --rz-light-axis: to bottom;
   position: relative;
   display: flex;
-  min-width: 0;
-  height: 2rem;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  width: 0.85rem;
+  height: 100%;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-cream);
+  box-shadow: var(--rz-shadow-soft);
+  transition: width var(--rz-dur-fast) var(--rz-ease-out);
 }
 
-.atlas-event-scrubber-line {
-  position: absolute;
-  right: 0;
-  left: 0;
-  height: 1px;
-  background: var(--rz-tan);
+.atlas-light-bar:hover .atlas-light-bar-rail,
+.atlas-light-bar:focus-within .atlas-light-bar-rail {
+  width: 1.15rem;
 }
 
-.atlas-event-marker {
+.atlas-light-bar-segment {
   position: relative;
-  z-index: 3;
-  display: grid;
-  width: 1.7rem;
-  height: 1.7rem;
-  place-items: center;
+  z-index: 1;
+  flex-basis: 0;
+  min-height: 4px;
   padding: 0;
   border: 0;
-  background: transparent;
+  background: linear-gradient(
+    var(--rz-light-axis),
+    var(--rz-light-stops, transparent, transparent)
+  );
+  /* Uniform amplification of the sampled light so the rail reads as the
+   * day's arc rather than a scrollbar. The hues stay the photographs' own;
+   * saturate() only turns them up, it never authors a color. */
+  filter: saturate(2.1) contrast(1.06);
+  opacity: 0.88;
+  transition: opacity var(--rz-dur-fast) var(--rz-ease-out);
 }
 
-.atlas-event-marker > span {
-  width: 0.38rem;
-  height: 0.38rem;
-  border: 1px solid var(--rz-ink);
-  border-radius: 50%;
-  background: var(--rz-cream);
-  transition:
-    transform var(--rz-dur-fast) ease,
-    background var(--rz-dur-fast) ease;
+.atlas-light-bar-segment + .atlas-light-bar-segment {
+  border-top: 1px solid color-mix(in srgb, var(--rz-cream) 65%, transparent);
 }
 
-.atlas-event-marker:hover > span,
-.atlas-event-marker:focus-visible > span,
-.atlas-event-marker[data-active="true"] > span {
+.atlas-light-bar-segment:hover,
+.atlas-light-bar-segment:focus-visible,
+.atlas-light-bar-segment[data-active="true"] {
+  opacity: 1;
+}
+
+.atlas-light-bar-segment[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1px var(--rz-ink);
+  pointer-events: none;
+}
+
+.atlas-light-bar-segment:focus-visible {
+  outline: 2px solid var(--rz-coral);
+  outline-offset: 1px;
+}
+
+/* The index pointer: an ink hairline with a coral tick, tracking scroll. */
+.atlas-light-bar-thumb {
+  position: absolute;
+  z-index: 3;
+  top: var(--rz-light-thumb, 0%);
+  right: -0.3rem;
+  left: -0.3rem;
+  height: 0;
+  border-top: 2px solid var(--rz-ink);
+  transition: top var(--rz-dur-fast) var(--rz-ease-out);
+  pointer-events: none;
+}
+
+.atlas-light-bar-thumb::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -0.2rem;
+  width: 4px;
+  height: 4px;
   background: var(--rz-coral);
-  transform: scale(1.75);
 }
 
-.atlas-event-scrubber-rail input[type="range"] {
+.atlas-light-bar-rail input[type="range"] {
   position: absolute;
   z-index: 2;
   inset: 0;
   width: 100%;
   height: 100%;
-  cursor: ew-resize;
+  cursor: ns-resize;
   opacity: 0;
+  writing-mode: vertical-lr;
+}
+
+/* Chapter name that follows the pointer (or the scrub) along the rail. */
+.atlas-light-bar-flag {
+  position: absolute;
+  z-index: 4;
+  top: var(--rz-light-flag, 0%);
+  right: calc(100% + 0.55rem);
+  padding: 0.22rem 0.5rem;
+  border: 1px solid var(--rz-wheat);
+  background: color-mix(in srgb, var(--rz-cream) 96%, transparent);
+  color: var(--rz-ink);
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.atlas-light-bar[data-busy="true"] .atlas-light-bar-rail {
+  animation: atlas-light-busy 1.1s var(--rz-ease-inout) infinite alternate;
+}
+
+@keyframes atlas-light-busy {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-light-bar-rail,
+  .atlas-light-bar-segment,
+  .atlas-light-bar-thumb {
+    transition: none;
+  }
+
+  .atlas-light-bar[data-busy="true"] .atlas-light-bar-rail {
+    animation: none;
+  }
 }
 
 .atlas-selection-bar {
@@ -4648,8 +4765,77 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .atlas-event-scrubber {
+  /* P3: below the desktop breakpoint the Light Bar becomes a horizontal
+   * band docked directly under the sticky chapter label. */
+  .atlas-chapter {
     top: 8.2rem;
+    width: 100%;
+    margin-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .atlas-light-bar {
+    position: sticky;
+    z-index: 17;
+    top: 10.3rem;
+    right: auto;
+    height: auto;
+    margin-bottom: 1rem;
+    transform: none;
+  }
+
+  .atlas-light-bar-rail {
+    --rz-light-axis: to right;
+    flex-direction: row;
+    width: 100%;
+    height: 0.8rem;
+    box-shadow: none;
+  }
+
+  .atlas-light-bar:hover .atlas-light-bar-rail,
+  .atlas-light-bar:focus-within .atlas-light-bar-rail {
+    width: 100%;
+  }
+
+  .atlas-light-bar-segment {
+    min-height: 0;
+    min-width: 4px;
+  }
+
+  .atlas-light-bar-segment + .atlas-light-bar-segment {
+    border-top: 0;
+    border-left: 1px solid color-mix(in srgb, var(--rz-cream) 65%, transparent);
+  }
+
+  .atlas-light-bar-thumb {
+    top: -0.3rem;
+    right: auto;
+    bottom: -0.3rem;
+    left: var(--rz-light-thumb, 0%);
+    width: 0;
+    height: auto;
+    border-top: 0;
+    border-left: 2px solid var(--rz-ink);
+    transition: left var(--rz-dur-fast) var(--rz-ease-out);
+  }
+
+  .atlas-light-bar-thumb::before {
+    top: auto;
+    bottom: -0.15rem;
+    left: -3px;
+  }
+
+  .atlas-light-bar-rail input[type="range"] {
+    cursor: ew-resize;
+    writing-mode: horizontal-tb;
+  }
+
+  .atlas-light-bar-flag {
+    top: auto;
+    right: auto;
+    bottom: calc(100% + 0.45rem);
+    left: clamp(2.5rem, var(--rz-light-flag, 0%), calc(100% - 2.5rem));
+    transform: translateX(-50%);
   }
 
   .atlas-lightbox-shortcuts {
@@ -4699,10 +4885,19 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .atlas-event-scrubber {
+  .atlas-chapter {
     top: 7.8rem;
-    grid-template-columns: minmax(6.5rem, 0.5fr) minmax(10rem, 1fr);
-    padding-inline: 0.7rem;
+    gap: 0.5rem;
+    padding: 0.38rem 0.7rem;
+  }
+
+  .atlas-chapter strong {
+    max-width: 9rem;
+    font-size: 0.88rem;
+  }
+
+  .atlas-light-bar {
+    top: 9.7rem;
   }
 
   .atlas-selection-bar {

@@ -5,6 +5,7 @@ import type {
   ClientGalleryFacets,
   ClientGalleryPage,
   ClientPhoto,
+  ClientTimeline,
   GalleryFilterState,
 } from "@/lib/gallery/client-types";
 import {
@@ -12,9 +13,13 @@ import {
   GALLERY_SEARCH_URL_PARAM,
 } from "@/lib/gallery/client-types";
 import { FilterBar } from "@/components/gallery/FilterBar";
+import { LightBar } from "@/components/gallery/LightBar";
 import { SelectionBar } from "@/components/gallery/SelectionBar";
 import { useSelection } from "@/components/gallery/useSelection";
-import { VirtualPhotoGrid } from "@/components/gallery/VirtualPhotoGrid";
+import {
+  VirtualPhotoGrid,
+  type VirtualPhotoGridHandle,
+} from "@/components/gallery/VirtualPhotoGrid";
 import { Lightbox } from "@/components/gallery/Lightbox";
 import { DownloadSelectionButton } from "@/components/downloads/DownloadSelectionButton";
 import { SavePhotosButton } from "@/components/downloads/SavePhotosButton";
@@ -37,6 +42,8 @@ export interface GalleryShellProps {
 }
 
 const PAGE_LIMIT = 60;
+/** Larger pages while the Light Bar races toward a far scrub target. */
+const JUMP_PAGE_LIMIT = 100;
 const RENEW_LEAD_MS = 60_000;
 
 type LoadState = "idle" | "loading" | "error-session" | "error-network";
@@ -56,7 +63,7 @@ function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
 
 function apiUrl(
   filters: GalleryFilterState,
-  extra: { cursor?: string | null; ids?: string[] } = {},
+  extra: { cursor?: string | null; ids?: string[]; limit?: number } = {},
 ): string {
   const params = new URLSearchParams();
   if (extra.ids && extra.ids.length > 0) {
@@ -69,7 +76,7 @@ function apiUrl(
   if (filters.orientation) params.set("orientation", filters.orientation);
   if (filters.source) params.set("source", filters.source);
   params.set("sort", filters.sort);
-  params.set("limit", String(PAGE_LIMIT));
+  params.set("limit", String(extra.limit ?? PAGE_LIMIT));
   if (extra.cursor) params.set("cursor", extra.cursor);
   return `/api/gallery?${params.toString()}`;
 }
@@ -117,6 +124,13 @@ export function GalleryShell({
   const [activePhotoId, setActivePhotoId] = useState<string | null>(
     initialPhotoId,
   );
+  // The archive's light timeline (P3).
+  const [timeline, setTimeline] = useState<ClientTimeline | null>(
+    initialPage.timeline ?? null,
+  );
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [jumping, setJumping] = useState(false);
+  const gridRef = useRef<VirtualPhotoGridHandle | null>(null);
   const selection = useSelection();
   const selectedIds = useMemo(
     () => Array.from(selection.selected),
@@ -127,6 +141,15 @@ export function GalleryShell({
   const requestSeq = useRef(0);
   const requestBusyRef = useRef(false);
   const filtersRef = useRef(filters);
+  // Live mirrors for the Light Bar's paging jump loop.
+  const photosCountRef = useRef(photos.length);
+  const cursorRef = useRef(cursor);
+  useEffect(() => {
+    photosCountRef.current = photos.length;
+  }, [photos.length]);
+  useEffect(() => {
+    cursorRef.current = cursor;
+  }, [cursor]);
 
   const runQuery = useCallback(
     async (next: GalleryFilterState) => {
@@ -147,8 +170,11 @@ export function GalleryShell({
         if (seq !== requestSeq.current) return;
         setPhotos(body.photos);
         setCursor(body.nextCursor);
+        cursorRef.current = body.nextCursor;
         setTotal(body.total);
         setExpiresAt(body.signedUrlExpiresAt);
+        setTimeline(body.timeline ?? null);
+        setCurrentIndex(0);
         requestBusyRef.current = false;
         setState("idle");
       } catch {
@@ -161,41 +187,122 @@ export function GalleryShell({
     [],
   );
 
-  const loadMore = useCallback(async () => {
-    if (!cursor || requestBusyRef.current) return;
-    const seq = requestSeq.current;
-    requestBusyRef.current = true;
-    setState("loading");
-    try {
-      const res = await fetchWithRetry(apiUrl(filters, { cursor }), {
-        cache: "no-store",
-      });
-      if (res.status === 401) {
+  /**
+   * Fetch and append the next page. Shared by grid tail-loading and Light
+   * Bar jumps. "busy" means another request holds the wire (retryable);
+   * "end" means the last page is already loaded; "stale" covers filter
+   * changes and failures (both end a jump).
+   */
+  const fetchNextPage = useCallback(
+    async (limit: number): Promise<"appended" | "busy" | "end" | "stale"> => {
+      const nextCursor = cursorRef.current;
+      if (!nextCursor) return "end";
+      if (requestBusyRef.current) return "busy";
+      const seq = requestSeq.current;
+      requestBusyRef.current = true;
+      setState("loading");
+      try {
+        const res = await fetchWithRetry(
+          apiUrl(filtersRef.current, { cursor: nextCursor, limit }),
+          { cache: "no-store" },
+        );
+        if (res.status === 401) {
+          if (seq === requestSeq.current) {
+            requestBusyRef.current = false;
+            setState("error-session");
+          }
+          return "stale";
+        }
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const body: ClientGalleryPage = await res.json();
+        if (seq !== requestSeq.current) return "stale"; // filters changed
+        setPhotos((prev) => {
+          const seen = new Set(prev.map((p) => p.id));
+          const next = [...prev, ...body.photos.filter((p) => !seen.has(p.id))];
+          photosCountRef.current = next.length;
+          return next;
+        });
+        setCursor(body.nextCursor);
+        cursorRef.current = body.nextCursor;
+        setTotal(body.total);
+        setExpiresAt(body.signedUrlExpiresAt);
+        if (body.timeline) setTimeline(body.timeline);
+        requestBusyRef.current = false;
+        setState("idle");
+        return "appended";
+      } catch {
         if (seq === requestSeq.current) {
           requestBusyRef.current = false;
-          setState("error-session");
+          setState("error-network");
         }
+        return "stale";
+      }
+    },
+    [],
+  );
+
+  const loadMore = useCallback(async () => {
+    await fetchNextPage(PAGE_LIMIT);
+  }, [fetchNextPage]);
+
+  /**
+   * Light Bar scrub target (P3). Anything already loaded scrolls
+   * immediately; a farther target pages toward it first, keeping the
+   * loaded list a contiguous prefix of the archive order.
+   */
+  const pendingJumpRef = useRef<number | null>(null);
+  // Land a deferred jump only after the grid has committed the rows that
+  // contain it (scrolling before the re-render would target stale layout).
+  useEffect(() => {
+    const target = pendingJumpRef.current;
+    if (target !== null && photos.length > target) {
+      pendingJumpRef.current = null;
+      requestAnimationFrame(() => gridRef.current?.scrollToIndex(target));
+    }
+  }, [photos.length]);
+
+  const jumpToIndex = useCallback(
+    async (photoIndex: number) => {
+      if (photoIndex < photosCountRef.current) {
+        pendingJumpRef.current = null;
+        gridRef.current?.scrollToIndex(photoIndex);
         return;
       }
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const body: ClientGalleryPage = await res.json();
-      if (seq !== requestSeq.current) return; // filters changed; drop this page
-      setPhotos((prev) => {
-        const seen = new Set(prev.map((p) => p.id));
-        return [...prev, ...body.photos.filter((p) => !seen.has(p.id))];
-      });
-      setCursor(body.nextCursor);
-      setTotal(body.total);
-      setExpiresAt(body.signedUrlExpiresAt);
-      requestBusyRef.current = false;
-      setState("idle");
-    } catch {
-      if (seq === requestSeq.current) {
-        requestBusyRef.current = false;
-        setState("error-network");
+      const seq = requestSeq.current;
+      pendingJumpRef.current = photoIndex;
+      setJumping(true);
+      try {
+        while (
+          seq === requestSeq.current &&
+          photosCountRef.current <= photoIndex &&
+          cursorRef.current
+        ) {
+          const outcome = await fetchNextPage(JUMP_PAGE_LIMIT);
+          if (outcome === "busy") {
+            // Another request (e.g. tail-loading) holds the wire; let it
+            // land, then keep paging toward the target.
+            await new Promise((resolve) => setTimeout(resolve, 150));
+            continue;
+          }
+          if (outcome !== "appended") break;
+        }
+      } finally {
+        setJumping(false);
       }
-    }
-  }, [cursor, filters]);
+      if (seq !== requestSeq.current) {
+        pendingJumpRef.current = null;
+        return;
+      }
+      // Ran out of archive before the target (or the effect above already
+      // landed it): settle on the last loaded photograph.
+      if (pendingJumpRef.current !== null && photosCountRef.current > 0) {
+        const target = Math.min(photoIndex, photosCountRef.current - 1);
+        pendingJumpRef.current = null;
+        requestAnimationFrame(() => gridRef.current?.scrollToIndex(target));
+      }
+    },
+    [fetchNextPage],
+  );
 
   const applyFilters = useCallback(
     (patch: Partial<GalleryFilterState>) => {
@@ -293,6 +400,15 @@ export function GalleryShell({
 
   const showEmpty = state === "idle" && photos.length === 0;
 
+  // Sticky chapter label (P3): where the guest is in the day right now.
+  const chapterPhoto =
+    photos.length > 0
+      ? photos[Math.max(0, Math.min(currentIndex, photos.length - 1))]
+      : null;
+  const chapterClock = chapterPhoto
+    ? formatChapterClock(chapterPhoto.capturedAt)
+    : null;
+
   const favoriteSelected = useCallback(() => {
     for (const photoId of selectedIds) {
       if (!favoriteStore.has(photoId)) favoriteStore.toggle(photoId);
@@ -360,17 +476,45 @@ export function GalleryShell({
             </button>
           </div>
         ) : (
-          <VirtualPhotoGrid
-            photos={photos}
-            hasMore={cursor !== null}
-            loading={state === "loading"}
-            onOpenPhoto={openPhoto}
-            onLoadMore={() => void loadMore()}
-            selecting={selection.selecting}
-            selected={selection.selected}
-            onToggleSelection={selection.toggle}
-            onStartSelection={(photoId) => selection.toggle(photoId)}
-          />
+          <>
+            {chapterPhoto ? (
+              <div className="atlas-chapter">
+                <span className="atlas-chapter-kicker">Now in</span>
+                <strong>{chapterPhoto.eventName}</strong>
+                {chapterClock ? (
+                  <span className="atlas-chapter-clock">{chapterClock}</span>
+                ) : null}
+                <span className="atlas-chapter-position">
+                  {String(
+                    Math.min(currentIndex + 1, total),
+                  ).padStart(String(total).length, "0")}
+                  &thinsp;/&thinsp;{total}
+                </span>
+              </div>
+            ) : null}
+
+            <LightBar
+              timeline={timeline}
+              photos={photos}
+              currentIndex={currentIndex}
+              onJump={(photoIndex) => void jumpToIndex(photoIndex)}
+              jumping={jumping}
+            />
+
+            <VirtualPhotoGrid
+              ref={gridRef}
+              photos={photos}
+              hasMore={cursor !== null}
+              loading={state === "loading"}
+              onOpenPhoto={openPhoto}
+              onLoadMore={() => void loadMore()}
+              selecting={selection.selecting}
+              selected={selection.selected}
+              onToggleSelection={selection.toggle}
+              onStartSelection={(photoId) => selection.toggle(photoId)}
+              onFirstVisiblePhotoChange={setCurrentIndex}
+            />
+          </>
         )}
       </div>
 
@@ -431,6 +575,21 @@ export function GalleryShell({
       ) : null}
     </div>
   );
+}
+
+/**
+ * Wall-clock label for the chapter strip, in the wedding's timezone
+ * (matching the lightbox caption's formatting).
+ */
+function formatChapterClock(capturedAt: string | null): string | null {
+  if (!capturedAt) return null;
+  const parsed = new Date(capturedAt);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/Los_Angeles",
+  }).format(parsed);
 }
 
 function ErrorState({

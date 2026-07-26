@@ -60,6 +60,8 @@ function toClientPhoto(
     keywords: view.keywords,
     approvedCaption: view.approvedCaption,
     previews,
+    light: view.light ?? null,
+    burst: view.burst ?? null,
   };
 }
 
@@ -76,6 +78,7 @@ export async function serializeGalleryPage(
     nextCursor: page.nextCursor,
     total: page.total,
     signedUrlExpiresAt: expiresAt,
+    timeline: page.timeline ?? null,
   };
 }
 
