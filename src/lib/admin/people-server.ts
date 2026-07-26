@@ -21,10 +21,17 @@ import {
 /**
  * Server operations behind /admin/faces and /api/admin/people. Every entry
  * point here is reached only after requireAdmin(); this module never checks
- * auth itself. Writes touch ONLY rachandzach_person_overrides -- the guest
- * catalog (people, photos, tags) is read, never mutated: "remove" is a soft
- * hidden flag, "add" is an override-only row, and "revert" clears the face
- * columns. See the migration header for the crop scheme.
+ * auth itself.
+ *
+ * Presentation state (face crop, rename, hidden flag) lives in
+ * rachandzach_person_overrides. Identity lives in rachandzach_people:
+ * "add" creates a real catalog row (so the person is taggable everywhere)
+ * plus an override row carrying the added = true provenance marker, and
+ * "remove" deletes that identity ONLY while nothing references it -- the
+ * moment a person has photo tags, remove degrades to the soft hidden flag
+ * and destroys nothing. Photos and photo-person links are never deleted
+ * from this module. See the migration headers for the crop scheme and the
+ * added-people invariant.
  */
 
 type Db = SupabaseClient<Database>;
@@ -64,8 +71,9 @@ export async function loadGuestRoster(
     facets.people.map((person) => [person.slug, person.count]),
   );
 
-  // Everyone: the full catalog (even people with zero confirmed photos),
-  // plus override-only additions.
+  // Everyone: the full catalog (even people with zero confirmed photos).
+  // Admin-added people have catalog rows too, so they arrive through this
+  // loop; the override's added flag rides along as provenance.
   const people: AdminRosterPerson[] = [];
   for (const [slug, catalogName] of catalogNames) {
     const override = overrides.get(slug);
@@ -75,12 +83,17 @@ export async function loadGuestRoster(
       catalogName,
       count: counts.get(slug) ?? 0,
       hidden: override?.hidden ?? false,
-      added: false,
+      added: override?.added ?? false,
       faceKind: "none",
       hasCommittedFace: false,
       updatedAt: override?.updatedAt ?? null,
     });
   }
+  // Anomaly recovery only: an added override without a catalog row cannot be
+  // created any more (addPerson writes the catalog row first, and the
+  // backfill migration upgraded history), but if one ever appears it must
+  // stay visible here so the admin can remove it rather than having it
+  // silently vanish from the manager while still surfacing to guests.
   for (const override of overrides.values()) {
     if (!override.added || catalogNames.has(override.personSlug)) continue;
     people.push({
@@ -165,16 +178,38 @@ async function getOverrideRow(
   return data ?? null;
 }
 
-async function isCatalogPerson(client: Db, slug: string): Promise<boolean> {
+async function getCatalogPerson(
+  client: Db,
+  slug: string,
+): Promise<{ id: string } | null> {
   const { data, error } = await client
     .from("rachandzach_people")
-    .select("slug")
+    .select("id")
     .eq("slug", slug)
     .maybeSingle();
   if (error) {
     throw new Error(`Catalog person read failed: ${error.message}`);
   }
-  return data !== null;
+  return data ?? null;
+}
+
+async function isCatalogPerson(client: Db, slug: string): Promise<boolean> {
+  return (await getCatalogPerson(client, slug)) !== null;
+}
+
+/** Photo-person links of ANY source/confidence; the remove guard uses it. */
+async function countPersonPhotoLinks(
+  client: Db,
+  personId: string,
+): Promise<number> {
+  const { count, error } = await client
+    .from("rachandzach_photo_people")
+    .select("photo_id", { count: "exact", head: true })
+    .eq("person_id", personId);
+  if (error) {
+    throw new Error(`Person tag count failed: ${error.message}`);
+  }
+  return count ?? 0;
 }
 
 /**
@@ -312,7 +347,20 @@ export async function patchPerson(
   await dropOverrideIfEmpty(client, slug);
 }
 
-/** Add a person who is not in the catalog (override-only row). */
+/**
+ * Add a person as a real catalog identity: a rachandzach_people row (so they
+ * can be tagged into photographs, filtered on, and given a personalized
+ * route) plus an override row whose added = true records that they came from
+ * this screen. photo_count stays 0 -- the catalog trigger maintains it as
+ * tags are written.
+ *
+ * Write order is the invariant: catalog row FIRST, then the override. If the
+ * override insert fails, the catalog row is removed again; if even that
+ * compensation fails, the leftover is a plain catalog person (fully
+ * functional, just missing the "added" provenance) -- never an added
+ * override without a catalog row, which is the one state guest surfaces no
+ * longer guard against.
+ */
 export async function addPerson(
   slug: string,
   displayName: string,
@@ -332,34 +380,71 @@ export async function addPerson(
       409,
     );
   }
-  const { error } = await client.from("rachandzach_person_overrides").insert({
-    person_slug: slug,
-    display_name: displayName,
-    added: true,
-    updated_by: actorEmail,
-  });
-  if (error) {
-    throw new Error(`Person add failed: ${error.message}`);
+
+  const catalogInsert = await client
+    .from("rachandzach_people")
+    .insert({ slug, display_name: displayName });
+  if (catalogInsert.error) {
+    // The unique index is the authoritative collision check; the pre-check
+    // above only exists for the friendlier 409 message.
+    if (catalogInsert.error.code === "23505") {
+      throw new PersonAdminError(
+        "Someone already uses that slug. Pick a different one.",
+        409,
+      );
+    }
+    throw new Error(`Person add failed: ${catalogInsert.error.message}`);
+  }
+
+  const overrideInsert = await client
+    .from("rachandzach_person_overrides")
+    .insert({
+      person_slug: slug,
+      display_name: displayName,
+      added: true,
+      updated_by: actorEmail,
+    });
+  if (overrideInsert.error) {
+    await client.from("rachandzach_people").delete().eq("slug", slug);
+    throw new Error(`Person add failed: ${overrideInsert.error.message}`);
   }
 }
 
 /**
- * Remove a person from guest-facing pickers. For an added person the
- * override row is deleted outright (it was the only thing defining them).
- * For a catalog person this sets the soft hidden flag: their photo tags,
- * favorites, and /{slug} personalized route all keep working; they simply
- * stop being offered. Nothing in the catalog is deleted or changed.
+ * Remove a person. Semantics, in order of preference for safety:
+ *
+ * - A person the pipeline matched (not added here) is NEVER deleted:
+ *   removing sets the soft hidden flag. Their photo tags, favorites, and
+ *   /{slug} personalized route all keep working; they simply stop being
+ *   offered in pickers. Fully reversible from the Hidden filter.
+ * - An added person with ZERO photo-person links (any source or confidence)
+ *   is deleted outright -- catalog row and override row. Nothing references
+ *   them yet, so nothing can be orphaned, and photographs are untouched by
+ *   construction.
+ * - An added person WITH links degrades to the same soft hide as a catalog
+ *   person. Deleting their rachandzach_people row would cascade-delete
+ *   confirmed tags (rachandzach_photo_people.person_id is ON DELETE
+ *   CASCADE), which must never happen implicitly. Untag them first if a
+ *   full delete is really wanted; the UI says so before confirming.
+ *
+ * The link count is re-checked here rather than trusted from the client, so
+ * a tag written after the admin's confirm dialog opened still blocks the
+ * delete. Delete order is override row first, catalog row second: a failure
+ * between the two leaves a plain catalog person (safe) rather than an added
+ * override with no catalog row.
  */
 export async function removePerson(
   slug: string,
   actorEmail: string,
   client: Db = createAdminClient(),
 ): Promise<"deleted" | "hidden"> {
-  const [inCatalog, override] = await Promise.all([
-    isCatalogPerson(client, slug),
+  const [catalogPerson, override] = await Promise.all([
+    getCatalogPerson(client, slug),
     getOverrideRow(client, slug),
   ]);
-  if (override?.added && !inCatalog) {
+  if (override?.added && !catalogPerson) {
+    // Anomaly recovery: an added override with no catalog row predates the
+    // backfill migration (or was hand-inserted). Nothing references it.
     const { error } = await client
       .from("rachandzach_person_overrides")
       .delete()
@@ -369,9 +454,33 @@ export async function removePerson(
     }
     return "deleted";
   }
-  if (!inCatalog) {
+  if (!catalogPerson) {
     throw new PersonAdminError("That person does not exist.", 404);
   }
+
+  if (override?.added) {
+    const linkCount = await countPersonPhotoLinks(client, catalogPerson.id);
+    if (linkCount === 0) {
+      const overrideDelete = await client
+        .from("rachandzach_person_overrides")
+        .delete()
+        .eq("person_slug", slug);
+      if (overrideDelete.error) {
+        throw new Error(
+          `Person delete failed: ${overrideDelete.error.message}`,
+        );
+      }
+      const catalogDelete = await client
+        .from("rachandzach_people")
+        .delete()
+        .eq("id", catalogPerson.id);
+      if (catalogDelete.error) {
+        throw new Error(`Person delete failed: ${catalogDelete.error.message}`);
+      }
+      return "deleted";
+    }
+  }
+
   await patchPerson(slug, { hidden: true }, actorEmail, client);
   return "hidden";
 }

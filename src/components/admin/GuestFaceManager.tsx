@@ -12,9 +12,14 @@
  * Crops are pure geometry: a normalized square (x, y as fractions of the
  * photo's width/height, size as a fraction of its shorter axis) stored in
  * rachandzach_person_overrides and rendered by CSS-cropping the signed
- * preview -- nothing is written to disk at runtime. The catalog is never
- * mutated from this screen: "remove" soft-hides a catalog person, "add"
- * creates an override-only person, and "revert" clears the hand-pick.
+ * preview -- nothing is written to disk at runtime.
+ *
+ * "Add" creates a real catalog person (taggable from the Catalog screen)
+ * plus the override row that marks them as added here. "Remove" soft-hides
+ * anyone whose photos reference them and hard-deletes an added person only
+ * while nothing is tagged with them; the confirm dialog states which will
+ * happen. "Revert" clears the hand-picked crop. Photo tags are never edited
+ * from this screen.
  */
 import {
   useCallback,
@@ -750,13 +755,16 @@ function PersonEditor({
   }, [person, onUpdated]);
 
   const remove = useCallback(async () => {
-    if (
-      !window.confirm(
-        person.added
-          ? `Remove ${person.displayName}? They were added here and will be deleted.`
-          : `Remove ${person.displayName} from the Find me picker? Their photos and tags stay untouched, and you can undo this from the Hidden filter.`,
-      )
-    ) {
+    // Added people are real catalog identities now, so the consequence
+    // depends on whether photos reference them. The server re-checks the
+    // tag count before deleting anything, so a delete can quietly become a
+    // hide if tags landed meanwhile -- never the other way around.
+    const confirmMessage = !person.added
+      ? `Remove ${person.displayName} from the Find me picker? Their photos and tags stay untouched, and you can undo this from the Hidden filter.`
+      : person.count > 0
+        ? `Remove ${person.displayName}? They are tagged in ${person.count} ${person.count === 1 ? "photo" : "photos"}, so they will be hidden from the Find me picker instead of deleted: their photos, tags, and personal page stay. To delete them entirely, untag those photos in the Catalog first. Undo from the Hidden filter.`
+        : `Remove ${person.displayName}? No photos are tagged with them, so they will be deleted entirely. No photographs are affected.`;
+    if (!window.confirm(confirmMessage)) {
       return;
     }
     setActionError(null);
@@ -1616,7 +1624,8 @@ function AddPersonDialog({
       onAdded({
         slug: effectiveSlug,
         displayName: trimmed,
-        catalogName: null,
+        // Adding creates a real catalog row carrying this name.
+        catalogName: trimmed,
         // A person who did not exist a moment ago has no committed crop.
         hasCommittedFace: false,
         count: 0,
@@ -1674,8 +1683,10 @@ function AddPersonDialog({
           </button>
         </div>
         <p className="text-xs" style={{ color: "var(--color-muted)" }}>
-          For a guest the photo pipeline never matched. They will appear in
-          the Find me picker; give them a face right after.
+          For a guest the photo pipeline never matched. They become a real
+          catalog person: they appear in the Find me picker right away, and
+          you can tag them into photos from the Catalog screen. Give them a
+          face right after.
         </p>
         <label className="flex flex-col gap-1 text-sm" style={{ color: "var(--color-ink)" }}>
           Name

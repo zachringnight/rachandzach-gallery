@@ -1,8 +1,10 @@
 /**
  * PATCH  /api/admin/people/[slug] -- rename, clear a rename, hide/unhide.
- * DELETE /api/admin/people/[slug] -- remove from guest pickers: an added
- *         person's override row is deleted; a catalog person is soft-hidden
- *         (tags, favorites, and their personalized route keep working).
+ * DELETE /api/admin/people/[slug] -- remove from guest pickers. An added
+ *         person nothing is tagged with is deleted outright; anyone whose
+ *         photos reference them is soft-hidden instead (tags, favorites,
+ *         and their personalized route keep working). Photos and tags are
+ *         never deleted here; see removePerson for the exact semantics.
  */
 import { NextResponse, type NextRequest } from "next/server";
 
