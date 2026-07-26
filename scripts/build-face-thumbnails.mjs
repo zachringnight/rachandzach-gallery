@@ -60,6 +60,10 @@ async function readDetectionDims() {
  * the 132 catalog guests were never resolved by the face pipeline at all, so
  * automation has nothing to offer them.
  *
+ * Read from src/generated/person-overrides.json (tracked; written by
+ * scripts/export-face-overrides.mjs), falling back to the legacy
+ * metadata/faces/face-overrides.json.
+ *
  * Shape, keyed by person slug (under a "people" key or bare):
  *   { "rachel-casciano": { "photoId": "<32-hex>", "bbox": [x1, y1, x2, y2] } }
  *   { "aunt-carol":      { "photoId": "<32-hex>",
@@ -86,15 +90,26 @@ async function readDetectionDims() {
  * Use scripts/list-face-candidates.mjs to find a photoId and bbox by hand.
  */
 async function readOverrides(repoRoot) {
-  const path = join(repoRoot, "metadata/faces/face-overrides.json");
-  try {
-    const raw = await fs.readFile(path, "utf8");
+  // src/generated/ is tracked and is where export-face-overrides.mjs writes.
+  // metadata/faces/ is the legacy location and is gitignored, so anything
+  // written there was never committed; still read it so an existing local
+  // hand-edited file keeps working.
+  const candidates = [
+    join(repoRoot, "src/generated/person-overrides.json"),
+    join(repoRoot, "metadata/faces/face-overrides.json"),
+  ];
+  for (const path of candidates) {
+    let raw;
+    try {
+      raw = await fs.readFile(path, "utf8");
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      throw new Error(`${path} is present but unreadable: ${error.message}`);
+    }
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === "object" ? (parsed.people ?? parsed) : {};
-  } catch (error) {
-    if (error.code === "ENOENT") return {};
-    throw new Error(`face-overrides.json is present but unreadable: ${error.message}`);
   }
+  return {};
 }
 
 /**

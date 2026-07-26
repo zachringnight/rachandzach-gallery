@@ -172,6 +172,7 @@ export function Lightbox({
   const reducedMotion = usePrefersReducedMotion();
   const [chromeVisible, setChromeVisible] = useState(true);
   const [notesOpen, setNotesOpen] = useState(false);
+  const activeFrameRef = useRef<HTMLButtonElement | null>(null);
   const hideChromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scheduleChromeHide = useCallback(() => {
@@ -334,6 +335,29 @@ export function Lightbox({
     const end = Math.min(filmstrip.photos.length, index + FILMSTRIP_REACH + 1);
     return filmstrip.photos.slice(start, end);
   }, [filmstrip, photo.id]);
+
+  /**
+   * Keep the current frame visible in the filmstrip.
+   *
+   * The strip renders up to FILMSTRIP_REACH neighbours each side, so once a
+   * guest is that far into the archive the active frame sits in the middle of
+   * an overflowing rail that starts scrolled to 0. Without this, opening a
+   * middle photo or stepping with the arrows left the current frame and every
+   * forward neighbour off-screen until the guest scrolled the strip by hand.
+   *
+   * Centred inline, and never vertically: `block: "nearest"` stops this
+   * scrolling the page itself. Jumps rather than animates under reduced
+   * motion.
+   */
+  useEffect(() => {
+    const active = activeFrameRef.current;
+    if (!active) return;
+    active.scrollIntoView({
+      behavior: reducedMotion ? "auto" : "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [photo.id, reducedMotion, stripFrames]);
 
   return (
     <div
@@ -520,6 +544,7 @@ export function Lightbox({
             return (
               <button
                 key={frame.id}
+                ref={active ? activeFrameRef : undefined}
                 type="button"
                 onClick={() => {
                   if (!active) filmstrip?.onSelect(frame.id);

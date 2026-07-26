@@ -26,14 +26,21 @@
 //
 // Renames, hidden flags, and added people are runtime concerns (applied
 // straight from Supabase); they are exported here too, under "names",
-// "hidden", and "added", purely so the decisions are version-controlled.
+// "hidden", and "added", so the decisions are version-controlled.
 // build-face-thumbnails.mjs only consumes the "people" section.
+//
+// The default output is src/generated/, which is TRACKED, alongside
+// gallery-v2.json (which already carries every guest name) and
+// face-thumbnails.json. It used to default under metadata/faces/, which
+// .gitignore excludes -- so nothing this script wrote was ever committed and
+// the "version-controlled" claim above was false: lose the database and the
+// renames, hidden flags and added people went with it. Commit the output.
 //
 // Requires SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and
 // SUPABASE_SERVICE_ROLE_KEY in the environment / .env.local. Read-only
-// against the database; writes only metadata/faces/face-overrides.json.
+// against the database; writes only the --out file.
 //
-// Usage: node scripts/export-face-overrides.mjs [--out metadata/faces/face-overrides.json]
+// Usage: node scripts/export-face-overrides.mjs [--out src/generated/person-overrides.json]
 import { promises as fs } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -50,7 +57,10 @@ function argValue(flag, fallback) {
   return i === -1 || i === process.argv.length - 1 ? fallback : process.argv[i + 1];
 }
 
-const OUT_PATH = resolve(repoRoot, argValue("--out", "metadata/faces/face-overrides.json"));
+const OUT_PATH = resolve(
+  repoRoot,
+  argValue("--out", "src/generated/person-overrides.json"),
+);
 
 const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
