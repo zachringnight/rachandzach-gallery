@@ -8,4 +8,5 @@ out
 # Local review workflow files. The deployed app only needs public/, src/,
 # package files, and the generated gallery JSON.
 metadata
-scripts
+scripts/**
+!scripts/vercel-ignore-build.mjs
