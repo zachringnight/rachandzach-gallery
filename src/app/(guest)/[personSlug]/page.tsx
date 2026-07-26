@@ -49,16 +49,12 @@ export default async function PersonGalleryPage({
 
   return (
     <section className="atlas-guest-page atlas-person-route">
-      <header className="atlas-guest-header">
-        <div>
-          <p className="atlas-kicker">A page made for you</p>
-          <h1>{person.displayName}</h1>
-        </div>
-        <p>
-          Every confirmed photograph that includes you, gathered in one
-          private place and ready to favorite, download, or save.
+      <header className="atlas-page-bar">
+        <h1>{person.displayName}</h1>
+        <p className="atlas-page-bar-note">
+          Every confirmed photograph that includes you, gathered in one private
+          place and ready to favorite, download, or save.
         </p>
-        <span aria-hidden="true">Made for you</span>
       </header>
 
       <div className="atlas-guest-body">

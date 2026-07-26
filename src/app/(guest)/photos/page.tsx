@@ -14,7 +14,6 @@ import {
   type GalleryFilterState,
 } from "@/lib/gallery/client-types";
 import { GalleryShell } from "@/components/gallery/GalleryShell";
-import { siteConfig } from "@/content/site";
 
 export const dynamic = "force-dynamic";
 
@@ -90,16 +89,8 @@ export default async function PhotosPage({
 
   return (
     <section className="atlas-guest-page atlas-photos-page">
-      <header className="atlas-guest-header">
-        <div>
-          <p className="atlas-kicker">Browse and save</p>
-          <h1>The archive</h1>
-        </div>
-        <p>{siteConfig.voice.galleryIntro}</p>
-        <span aria-hidden="true">Search · Select · Save</span>
-      </header>
-
       <GalleryShell
+        heading="The archive"
         initialPage={initialPage}
         facets={facets}
         initialFilters={filterStateFromParams(params)}

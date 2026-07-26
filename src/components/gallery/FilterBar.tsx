@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckSquare, Search, SlidersHorizontal, X } from "lucide-react";
+import { CheckSquare, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import type {
@@ -22,6 +22,8 @@ export interface FilterBarProps {
   selecting?: boolean;
   selectedCount?: number;
   onStartSelection?: () => void;
+  /** Optional Moment Search panel, toggled from the control bar. */
+  momentSearchSlot?: React.ReactNode;
 }
 
 const ORIENTATIONS: { value: ClientOrientation; label: string }[] = [
@@ -36,21 +38,24 @@ const SOURCES: { value: ClientSource; label: string }[] = [
 ];
 
 /**
- * Sticky on desktop (a left rail), compact and horizontally scrollable on
- * mobile. Every control writes straight to the shared filter state, which the
- * shell reflects into the URL.
+ * P1 control bar: a single compact row (search, active-filter chips,
+ * actions) that stays docked below the site header at every scroll depth.
+ * The full filter groups and the optional Moment Search panel expand from
+ * the same docked bar. Every control writes straight to the shared filter
+ * state, which the shell reflects into the URL.
  */
 export function FilterBar({
   facets,
   filters,
-  total,
   onChange,
   onReset,
   selecting = false,
   selectedCount = 0,
   onStartSelection,
+  momentSearchSlot,
 }: FilterBarProps) {
   const [open, setOpen] = useState(false);
+  const [momentOpen, setMomentOpen] = useState(false);
   const activeFilterCount = [
     filters.q,
     filters.person,
@@ -117,68 +122,7 @@ export function FilterBar({
 
   return (
     <aside className="atlas-filter-rail">
-      <div className="atlas-filter-summary">
-        <p aria-live="polite">
-          <strong>{total.toLocaleString()}</strong>
-          {total === 1 ? " photo" : " photos"}
-        </p>
-
-        <div className="atlas-filter-summary-actions">
-          <CopyCurrentViewButton className="atlas-filter-action" />
-
-          {onStartSelection ? (
-            <button
-              type="button"
-              onClick={onStartSelection}
-              aria-pressed={selecting}
-              className="atlas-filter-action"
-            >
-              <CheckSquare aria-hidden="true" size={15} strokeWidth={1.6} />
-              {selecting
-                ? `${selectedCount.toLocaleString()} selected`
-                : "Select"}
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => setOpen((current) => !current)}
-            aria-expanded={open}
-            aria-controls="gallery-filter-groups"
-            className="atlas-filter-action"
-          >
-            <SlidersHorizontal
-              aria-hidden="true"
-              size={15}
-              strokeWidth={1.6}
-            />
-            Filters
-            {activeFilterCount > 0 ? (
-              <span
-                className="atlas-filter-count"
-                aria-label={`${activeFilterCount} active ${
-                  activeFilterCount === 1 ? "filter" : "filters"
-                }`}
-              >
-                {activeFilterCount}
-              </span>
-            ) : null}
-          </button>
-
-          {hasFilters ? (
-            <button
-              type="button"
-              onClick={onReset}
-              className="atlas-filter-action"
-            >
-              <X aria-hidden="true" size={15} strokeWidth={1.6} />
-              Clear
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="atlas-gallery-discovery">
+      <div className="atlas-control-row">
         <GallerySearchField
           key={filters.q}
           value={filters.q}
@@ -203,6 +147,97 @@ export function FilterBar({
             ))}
           </div>
         ) : null}
+
+        <div className="atlas-control-actions">
+          <CopyCurrentViewButton className="atlas-filter-action" />
+
+          {onStartSelection ? (
+            <button
+              type="button"
+              onClick={onStartSelection}
+              aria-pressed={selecting}
+              aria-label={
+                selecting
+                  ? `${selectedCount.toLocaleString()} selected`
+                  : "Select"
+              }
+              className="atlas-filter-action"
+            >
+              <CheckSquare aria-hidden="true" size={15} strokeWidth={1.6} />
+              <span>
+                {selecting
+                  ? `${selectedCount.toLocaleString()} selected`
+                  : "Select"}
+              </span>
+            </button>
+          ) : null}
+
+          {momentSearchSlot ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMomentOpen((current) => {
+                  if (!current) setOpen(false);
+                  return !current;
+                });
+              }}
+              aria-expanded={momentOpen}
+              aria-controls="gallery-moment-search"
+              aria-label="Moment search"
+              className="atlas-filter-action"
+            >
+              <Sparkles aria-hidden="true" size={15} strokeWidth={1.6} />
+              <span>Moments</span>
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen((current) => {
+                if (!current) setMomentOpen(false);
+                return !current;
+              });
+            }}
+            aria-expanded={open}
+            aria-controls="gallery-filter-groups"
+            aria-label={
+              activeFilterCount > 0
+                ? `Filters, ${activeFilterCount} active`
+                : "Filters"
+            }
+            className="atlas-filter-action"
+          >
+            <SlidersHorizontal
+              aria-hidden="true"
+              size={15}
+              strokeWidth={1.6}
+            />
+            <span>Filters</span>
+            {activeFilterCount > 0 ? (
+              <span
+                className="atlas-filter-count"
+                aria-label={`${activeFilterCount} active ${
+                  activeFilterCount === 1 ? "filter" : "filters"
+                }`}
+              >
+                {activeFilterCount}
+              </span>
+            ) : null}
+          </button>
+
+          {hasFilters ? (
+            <button
+              type="button"
+              onClick={onReset}
+              aria-label="Clear filters"
+              className="atlas-filter-action"
+            >
+              <X aria-hidden="true" size={15} strokeWidth={1.6} />
+              <span>Clear</span>
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div
@@ -214,7 +249,7 @@ export function FilterBar({
           <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
             Sort
           </legend>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Toggle
               label="Chronological"
               active={filters.sort === "weekend"}
@@ -282,6 +317,16 @@ export function FilterBar({
           onSelect={(person) => onChange({ person })}
         />
       </div>
+
+      {momentSearchSlot ? (
+        <div
+          id="gallery-moment-search"
+          className="atlas-moment-panel"
+          data-open={momentOpen ? "true" : "false"}
+        >
+          {momentOpen ? momentSearchSlot : null}
+        </div>
+      ) : null}
     </aside>
   );
 }

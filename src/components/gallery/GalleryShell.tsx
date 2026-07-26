@@ -29,6 +29,11 @@ export interface GalleryShellProps {
   initialFilters: GalleryFilterState;
   initialPhotoId: string | null;
   toolbarSlot?: React.ReactNode;
+  /**
+   * Page headline rendered as the single compact header above the control
+   * bar, with the live result count beside it (P1: one headline per page).
+   */
+  heading?: string;
 }
 
 const PAGE_LIMIT = 60;
@@ -99,6 +104,7 @@ export function GalleryShell({
   initialFilters,
   initialPhotoId,
   toolbarSlot,
+  heading,
 }: GalleryShellProps) {
   const [filters, setFilters] = useState<GalleryFilterState>(initialFilters);
   const [photos, setPhotos] = useState<ClientPhoto[]>(initialPage.photos);
@@ -295,6 +301,16 @@ export function GalleryShell({
 
   return (
     <div className="atlas-gallery-shell">
+      {heading ? (
+        <header className="atlas-page-bar">
+          <h1>{heading}</h1>
+          <p className="atlas-page-bar-count" aria-live="polite">
+            <strong>{total.toLocaleString()}</strong>
+            {total === 1 ? " photograph" : " photographs"}
+          </p>
+        </header>
+      ) : null}
+
       <FilterBar
         facets={facets}
         filters={filters}
@@ -304,21 +320,16 @@ export function GalleryShell({
         selecting={selection.selecting}
         selectedCount={selectedIds.length}
         onStartSelection={selection.start}
+        momentSearchSlot={
+          featureFlags.momentSearch ? (
+            <MomentSearch events={facets.events} />
+          ) : undefined
+        }
       />
 
       <div className="atlas-gallery-main">
-        {featureFlags.momentSearch || toolbarSlot ? (
-          <div className="atlas-gallery-toolbar">
-            {featureFlags.momentSearch ? (
-              <details className="atlas-search-disclosure">
-                <summary>Search the moments</summary>
-                <div className="atlas-search-disclosure-body">
-                  <MomentSearch events={facets.events} />
-                </div>
-              </details>
-            ) : null}
-            {toolbarSlot}
-          </div>
+        {toolbarSlot ? (
+          <div className="atlas-gallery-toolbar">{toolbarSlot}</div>
         ) : null}
 
         {state === "error-session" ? (
@@ -395,6 +406,7 @@ export function GalleryShell({
           onClose={closePhoto}
           position={activeIndex + 1}
           total={total}
+          filmstrip={{ photos, onSelect: selectPhoto }}
           previousPhoto={
             activeIndex > 0 ? photos[activeIndex - 1] : undefined
           }

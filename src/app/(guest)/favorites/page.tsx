@@ -20,21 +20,9 @@ export const metadata: Metadata = {
 export default function FavoritesPage() {
   return (
     <section className="atlas-guest-page">
-      <header className="atlas-guest-header">
-        <div>
-          <p className="atlas-kicker">Private shortlist</p>
-          <h1>Favorites</h1>
-        </div>
-        <p>
-          Keep the photographs you want in one place. Play them as a slideshow,
-          download the whole set, save it to your cloud account, or export a
-          shortlist for a printed album.
-        </p>
-        <span aria-hidden="true">Keep · Save · Print</span>
-      </header>
-      <div className="atlas-guest-body">
-        <FavoritesGallery />
-      </div>
+      {/* The single page header (headline, live count, controls) renders
+          inside FavoritesGallery: the count and actions are client state. */}
+      <FavoritesGallery />
     </section>
   );
 }

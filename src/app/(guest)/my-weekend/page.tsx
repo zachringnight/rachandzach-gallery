@@ -28,16 +28,12 @@ export default async function MyWeekendPage() {
 
   return (
     <section className="atlas-guest-page">
-      <header className="atlas-guest-header">
-        <div>
-          <p className="atlas-kicker">Find me</p>
-          <h1>Your photos</h1>
-        </div>
-        <p>
-          Choose your name to open the confirmed photographs you are in. Your
-          selection stays private and is ready whenever you return.
+      <header className="atlas-page-bar">
+        <h1>Find me</h1>
+        <p className="atlas-page-bar-note">
+          Choose your name to open the photographs you are in. Your selection
+          stays private on this device.
         </p>
-        <span aria-hidden="true">One private collection</span>
       </header>
 
       <div className="atlas-guest-body">

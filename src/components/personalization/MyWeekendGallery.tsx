@@ -284,6 +284,7 @@ export function MyWeekendGallery({
           }
           onPrev={openIndex > 0 ? prev : undefined}
           onNext={openIndex >= 0 && openIndex < photos.length - 1 ? next : undefined}
+          filmstrip={{ photos, onSelect: setOpenPhotoId }}
         />
       ) : null}
 

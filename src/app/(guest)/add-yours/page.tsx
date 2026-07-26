@@ -31,16 +31,12 @@ export default async function AddYoursPage() {
     <main
       className="atlas-guest-page atlas-upload-page"
     >
-      <header className="atlas-guest-header">
-        <div>
-          <p className="atlas-kicker">Keep the archive growing</p>
-          <h1>Add your photos</h1>
-        </div>
-        <p>
+      <header className="atlas-page-bar">
+        <h1>Add your photos</h1>
+        <p className="atlas-page-bar-note">
           Contribute the photographs only you have. Every submission waits for
           review before it joins the private archive.
         </p>
-        <span aria-hidden="true">Your point of view</span>
       </header>
 
       <div className="atlas-guest-body atlas-upload-body">

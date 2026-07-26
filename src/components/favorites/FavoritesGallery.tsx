@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Heart } from "lucide-react";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { favoriteStore } from "@/lib/favorites/store";
@@ -74,6 +74,30 @@ async function fetchPhotosByIds(ids: string[]): Promise<ClientPhoto[]> {
     photos.push(...body.photos);
   }
   return photos;
+}
+
+/**
+ * The single /favorites page header (P1): headline, live count, and the
+ * collection controls on one line. Rendered here rather than in the server
+ * page because the count and actions are client-side favorite state.
+ */
+function FavoritesPageBar({
+  count,
+  actions,
+}: {
+  count: number;
+  actions?: ReactNode;
+}) {
+  return (
+    <header className="atlas-page-bar">
+      <h1>Favorites</h1>
+      <p className="atlas-page-bar-count" aria-live="polite">
+        <strong>{count.toLocaleString()}</strong>
+        {count === 1 ? " photograph" : " photographs"}
+      </p>
+      {actions ? <div className="atlas-page-bar-actions">{actions}</div> : null}
+    </header>
+  );
 }
 
 function toSlideshowPhoto(photo: ClientPhoto): SlideshowPhoto {
@@ -150,13 +174,21 @@ export function FavoritesGallery() {
   }, [hasFavorites, favoriteIdsKey]);
 
   if (hasFavorites && photos === null && !error) {
-    return <p className="atlas-personal-state">Loading your favorites…</p>;
+    return (
+      <div>
+        <FavoritesPageBar count={favoriteIds.length} />
+        <p className="atlas-personal-state">Loading your favorites…</p>
+      </div>
+    );
   }
 
   if (hasFavorites && error) {
     return (
-      <div role="alert" className="atlas-favorites-error">
-        <p>{error}</p>
+      <div>
+        <FavoritesPageBar count={favoriteIds.length} />
+        <div role="alert" className="atlas-favorites-error">
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
@@ -165,17 +197,19 @@ export function FavoritesGallery() {
 
   if (items.length === 0) {
     return (
-      <section className="atlas-favorites-empty">
-        <Heart aria-hidden="true" size={54} strokeWidth={1} />
-        <div>
-          <p className="atlas-kicker">A collection in the making</p>
-          <h2>Keep the frames you love close.</h2>
-          <p>
-            You have not favorited any photos yet. Open Find me or the full
-            archive, then tap the heart on the ones you want to keep.
-          </p>
-        </div>
-      </section>
+      <div>
+        <FavoritesPageBar count={0} />
+        <section className="atlas-favorites-empty">
+          <Heart aria-hidden="true" size={40} strokeWidth={1} />
+          <div>
+            <p className="atlas-kicker">A collection in the making</p>
+            <p>
+              You have not favorited any photos yet. Open Find me or the full
+              archive, then tap the heart on the ones you want to keep.
+            </p>
+          </div>
+        </section>
+      </div>
     );
   }
 
@@ -183,31 +217,30 @@ export function FavoritesGallery() {
 
   return (
     <div className="atlas-favorites-collection">
-      <header className="atlas-favorites-collection-header">
-        <div>
-          <p className="atlas-kicker">Your keepsake</p>
-          <h2>{items.length.toLocaleString()} favorite {items.length === 1 ? "photo" : "photos"}</h2>
-        </div>
-        <div className="atlas-favorites-actions">
-        <button
-          type="button"
-          onClick={() => setSlideshowIndex(0)}
-          className="atlas-inline-action"
-        >
-          Play slideshow
-        </button>
-        <DownloadSelectionButton photoIds={photoIds} label="Download all favorites" />
-        <SavePhotosButton photoIds={photoIds} />
-        <AlbumShortlistExport
-          photos={items.map((photo) => ({
-            id: photo.id,
-            eventName: photo.eventName,
-            people: photo.people.map((person) => person.displayName),
-          }))}
-          filenamePrefix="favorites-shortlist"
-        />
-        </div>
-      </header>
+      <FavoritesPageBar
+        count={items.length}
+        actions={
+          <>
+            <button
+              type="button"
+              onClick={() => setSlideshowIndex(0)}
+              className="atlas-inline-action"
+            >
+              Play slideshow
+            </button>
+            <DownloadSelectionButton photoIds={photoIds} label="Download all favorites" />
+            <SavePhotosButton photoIds={photoIds} />
+            <AlbumShortlistExport
+              photos={items.map((photo) => ({
+                id: photo.id,
+                eventName: photo.eventName,
+                people: photo.people.map((person) => person.displayName),
+              }))}
+              filenamePrefix="favorites-shortlist"
+            />
+          </>
+        }
+      />
 
       <ul className="atlas-favorites-grid">
         {items.map((photo, index) => {
