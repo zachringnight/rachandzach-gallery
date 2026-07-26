@@ -98,6 +98,13 @@ export interface SurfacedPerson {
   slug: string;
   displayName: string;
   count: number;
+  /**
+   * True for a person who exists only as an admin addition, with no
+   * rachandzach_people row. They can be picked and given a face, but
+   * /[personSlug] resolves identities from the catalog, so guest surfaces
+   * must not offer them that route.
+   */
+  overrideOnly?: boolean;
 }
 
 /**
@@ -133,6 +140,10 @@ export function surfacePeople(
       slug: override.personSlug,
       displayName: override.displayName as string,
       count: 0,
+      // Flagged so guest surfaces do not offer this person a personalized
+      // route: /[personSlug] resolves identities from the catalog, and an
+      // override-only person has no catalog row, so the link 404s.
+      overrideOnly: true as const,
     }))
     .sort((a, b) => a.displayName.localeCompare(b.displayName, "en-US"));
   return [...surfaced, ...additions];

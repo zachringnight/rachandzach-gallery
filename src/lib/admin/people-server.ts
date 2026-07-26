@@ -8,6 +8,7 @@ import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
 import { getGalleryFacets } from "@/lib/gallery/query";
 import {
   buildFaceDirectory,
+  hasCommittedFace,
   loadPersonOverrides,
 } from "@/lib/people/overrides";
 import { normalizeFaceCrop, type FaceCrop } from "@/lib/people/face-types";
@@ -76,6 +77,7 @@ export async function loadGuestRoster(
       hidden: override?.hidden ?? false,
       added: false,
       faceKind: "none",
+      hasCommittedFace: false,
       updatedAt: override?.updatedAt ?? null,
     });
   }
@@ -89,6 +91,7 @@ export async function loadGuestRoster(
       hidden: override.hidden,
       added: true,
       faceKind: "none",
+      hasCommittedFace: false,
       updatedAt: override.updatedAt,
     });
   }
@@ -98,6 +101,9 @@ export async function loadGuestRoster(
   const directory = await buildFaceDirectory(client, people, overrides);
   for (const person of people) {
     const face = directory[person.slug];
+    // committedFaceSlugs is the manifest itself, so this is the fact rather
+    // than a guess -- true even when an override is currently shown on top.
+    person.hasCommittedFace = hasCommittedFace(person.slug);
     if (face?.kind === "crop") {
       person.faceKind = "override";
       person.face = {

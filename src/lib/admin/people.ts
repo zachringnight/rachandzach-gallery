@@ -22,6 +22,16 @@ export interface AdminRosterPerson {
   hidden: boolean;
   added: boolean;
   faceKind: AdminFaceKind;
+  /**
+   * Whether a committed crop actually exists at /faces/{slug}.webp.
+   *
+   * Distinct from faceKind, which reports what is being shown right now: a
+   * person with an override has faceKind "override" and may or may not also
+   * have a committed crop underneath. The client needs the underlying fact to
+   * know what reverting will fall back to, and must not infer it from the
+   * photo count -- the documented unresolved guests have photos and no crop.
+   */
+  hasCommittedFace: boolean;
   /** Present when faceKind is "override": how to draw the current crop. */
   face?: { url: string; aspectRatio: number; crop: FaceCrop };
   /** Last override write, if any. */

@@ -408,7 +408,10 @@ function FaceDisc({
       ) : showCommitted ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/faces/${person.slug}.webp`}
+          // Not /faces/: that path is gated on a GUEST session, and an admin
+          // may hold no guest cookie, which made every committed thumbnail
+          // fall back to initials here. This route re-checks requireAdmin().
+          src={`/api/admin/faces/${person.slug}`}
           alt=""
           loading="lazy"
           decoding="async"
@@ -890,10 +893,13 @@ const editorButtonStyle: React.CSSProperties = {
 };
 
 function committedLikely(person: AdminRosterPerson): boolean {
-  // After reverting we cannot know locally whether a committed crop exists;
-  // catalog people with photos usually have one, added people never do.
-  // The next server render corrects any optimistic mismatch.
-  return !person.added && person.count > 0;
+  // The server carries the fact, so do not infer it. Guessing from the photo
+  // count ("catalog person with photos probably has a crop") was wrong for
+  // exactly the guests this screen exists to fix: the unresolved group has
+  // photos and no committed crop, so reverting them dropped them out of
+  // "Needs a face" and bumped the progress bar while the disc fell back to
+  // initials, until a full reload undid the lie.
+  return person.hasCommittedFace;
 }
 
 function hasSamePreview(photo: ClientPhoto, url: string): boolean {
@@ -1576,6 +1582,8 @@ function AddPersonDialog({
         slug: effectiveSlug,
         displayName: trimmed,
         catalogName: null,
+        // A person who did not exist a moment ago has no committed crop.
+        hasCommittedFace: false,
         count: 0,
         hidden: false,
         added: true,

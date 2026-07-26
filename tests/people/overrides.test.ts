@@ -74,9 +74,38 @@ describe("surfacePeople", () => {
     ]);
     const surfaced = surfacePeople(catalogPeople, overrides);
     expect(surfaced.slice(-2)).toEqual([
-      { slug: "aunt-carol", displayName: "Aunt Carol", count: 0 },
-      { slug: "aunt-zelda", displayName: "Aunt Zelda", count: 0 },
+      {
+        slug: "aunt-carol",
+        displayName: "Aunt Carol",
+        count: 0,
+        overrideOnly: true,
+      },
+      {
+        slug: "aunt-zelda",
+        displayName: "Aunt Zelda",
+        count: 0,
+        overrideOnly: true,
+      },
     ]);
+  });
+
+  it("marks only additions as overrideOnly, so catalog people keep their route", () => {
+    // The flag is what stops a guest surface offering /[personSlug] to someone
+    // with no catalog row, where that route 404s. Catalog people must never
+    // carry it, or they lose a route that works.
+    const overrides = new Map([
+      [
+        "aunt-carol",
+        override({ personSlug: "aunt-carol", displayName: "Aunt Carol", added: true }),
+      ],
+    ]);
+    const surfaced = surfacePeople(catalogPeople, overrides);
+    const addition = surfaced.find((person) => person.slug === "aunt-carol");
+    expect(addition?.overrideOnly).toBe(true);
+    for (const person of catalogPeople) {
+      const found = surfaced.find((candidate) => candidate.slug === person.slug);
+      expect(found?.overrideOnly).toBeUndefined();
+    }
   });
 
   it("never surfaces a hidden addition and never duplicates a catalog slug", () => {
