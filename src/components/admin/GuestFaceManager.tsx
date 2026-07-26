@@ -1066,6 +1066,7 @@ function CandidateStep({
                       loading="lazy"
                       decoding="async"
                       className="block aspect-square w-full object-cover"
+                      style={{ backgroundColor: "var(--color-sand)" }}
                     />
                   </button>
                 </li>
@@ -1346,6 +1347,7 @@ function CropStep({
               maxHeight: "52vh",
               maxWidth: "100%",
               borderRadius: "var(--radius-card)",
+              backgroundColor: "var(--color-sand)",
             }}
             onPointerDown={onStagePointerDown}
             onPointerMove={onPointerMove}
