@@ -2,9 +2,6 @@
 
 import { useMemo, useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
-import faceThumbnails from "@/generated/face-thumbnails.json";
-
-const FACES: Record<string, unknown> = faceThumbnails.people;
 
 export interface PersonPickerProps {
   people: ClientGalleryFacets["people"];
@@ -15,6 +12,18 @@ export interface PersonPickerProps {
    * "faces" is the Find me picker: every guest, shown as a face.
    */
   variant?: "chips" | "faces";
+  /**
+   * Slugs that have a built face crop, supplied by an authenticated server
+   * component.
+   *
+   * This deliberately does NOT import src/generated/face-thumbnails.json.
+   * This is a "use client" module, so importing it compiled every guest's
+   * name slug and face-confidence score into a /_next/static chunk -- and
+   * src/proxy.ts serves that path without authentication, so the private
+   * guest list was fetchable by anyone with the URL. Guest identities only
+   * travel through gated server data.
+   */
+  faceSlugs?: readonly string[];
 }
 
 /**
@@ -32,9 +41,11 @@ export function PersonPicker({
   selected,
   onSelect,
   variant = "chips",
+  faceSlugs,
 }: PersonPickerProps) {
   const [query, setQuery] = useState("");
   const faces = variant === "faces";
+  const faceSet = useMemo(() => new Set(faceSlugs ?? []), [faceSlugs]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const base = needle
@@ -85,6 +96,7 @@ export function PersonPicker({
                 key={person.slug}
                 slug={person.slug}
                 name={person.displayName}
+                hasFace={faceSet.has(person.slug)}
                 active={selected === person.slug}
                 onClick={() => onSelect(person.slug)}
               />
@@ -126,15 +138,16 @@ export function PersonPicker({
 function FaceTile({
   slug,
   name,
+  hasFace,
   active,
   onClick,
 }: {
   slug: string;
   name: string;
+  hasFace: boolean;
   active: boolean;
   onClick: () => void;
 }) {
-  const hasFace = Object.hasOwn(FACES, slug);
   const initials = name
     .split(/\s+/)
     .slice(0, 2)

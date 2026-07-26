@@ -13,6 +13,8 @@ import { MyWeekendGallery } from "@/components/personalization/MyWeekendGallery"
 
 export interface MyWeekendClientProps {
   people: ClientGalleryFacets["people"];
+  /** Slugs with a built face crop; read server-side, never bundled. */
+  faceSlugs: readonly string[];
 }
 
 /**
@@ -26,7 +28,7 @@ export interface MyWeekendClientProps {
  * deliberately client-only (no cookie, no server round trip to learn who is
  * asking), so this switch has to live in a client component somewhere.
  */
-export function MyWeekendClient({ people }: MyWeekendClientProps) {
+export function MyWeekendClient({ people, faceSlugs }: MyWeekendClientProps) {
   // undefined = not yet hydrated from localStorage. Deliberately NOT a
   // useState lazy initializer: that would run during SSR too (no real
   // localStorage there -> always null) and again on the client during
@@ -65,7 +67,13 @@ export function MyWeekendClient({ people }: MyWeekendClientProps) {
   }
 
   if (personSlug === null) {
-    return <MyWeekendSetup people={people} onSelect={handleSelect} />;
+    return (
+      <MyWeekendSetup
+        people={people}
+        faceSlugs={faceSlugs}
+        onSelect={handleSelect}
+      />
+    );
   }
 
   const person = people.find((candidate) => candidate.slug === personSlug);

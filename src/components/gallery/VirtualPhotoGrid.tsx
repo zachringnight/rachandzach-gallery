@@ -188,7 +188,15 @@ export const VirtualPhotoGrid = forwardRef<
 
   const virtualizer = useWindowVirtualizer({
     count: layout.rows.length,
-    estimateSize: (index) => layout.rows[index].height + GAP,
+    // Must be the same gap computeJustifiedLayout used, not the fixed GAP:
+    // below 900px the layout packs rows 6-10px apart while the virtualizer
+    // was advancing each one by 12px, so rendered positions drifted from
+    // layout.rows[].top by up to 6px per row. Deep into the mobile archive
+    // that compounds, and the first-visible-row search then reports a photo
+    // dozens of rows from what is on screen -- which the chapter label and
+    // the Light Bar both read.
+    estimateSize: (index) =>
+      layout.rows[index].height + gridMetricsFor(containerWidth).gap,
     overscan: 6,
     scrollMargin,
   });

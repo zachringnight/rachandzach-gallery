@@ -6,6 +6,7 @@ import { PersonPicker } from "@/components/gallery/PersonPicker";
 
 export interface MyWeekendSetupProps {
   people: ClientGalleryFacets["people"];
+  faceSlugs: readonly string[];
   onSelect: (personSlug: string) => void;
 }
 
@@ -16,7 +17,9 @@ export interface MyWeekendSetupProps {
  * "Everyone" chip (selected -> null); that state simply leaves the confirm
  * button disabled here, since "everyone" is not a valid My Weekend person.
  */
-export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
+export function MyWeekendSetup({
+  people,
+  faceSlugs, onSelect }: MyWeekendSetupProps) {
   const [pending, setPending] = useState<string | null>(null);
 
   if (people.length === 0) {
@@ -48,6 +51,7 @@ export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
           selected={pending}
           onSelect={setPending}
           variant="faces"
+          faceSlugs={faceSlugs}
         />
         <button
           type="button"
