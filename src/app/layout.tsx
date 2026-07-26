@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
-import { bodyFont, displayFont } from "@/components/brand/Wordmark";
+import { archiveFont, bodyFont, displayFont } from "@/components/brand/Wordmark";
 
 import "./globals.css";
 
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     // would otherwise log a development-only className mismatch.
     <html
       lang="en"
-      className={`${displayFont.variable} ${bodyFont.variable}`}
+      className={`${displayFont.variable} ${bodyFont.variable} ${archiveFont.variable}`}
       suppressHydrationWarning
     >
       <body>

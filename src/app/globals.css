@@ -737,12 +737,19 @@ button {
   padding-block: clamp(4rem, 10vh, 8rem);
 }
 
+/*
+ * Eyebrows are labels on the archive, not prose, so they take the archive
+ * voice (P7). Mono at this size reads as a catalogue annotation and, more
+ * usefully, stops the eyebrow and the headline beneath it being the same
+ * typeface at two sizes.
+ */
 .atlas-kicker {
   margin: 0;
   color: var(--rz-muted);
-  font-size: 0.67rem;
-  font-weight: 640;
-  letter-spacing: 0.16em;
+  font-family: var(--rz-font-archive);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   line-height: 1.4;
   text-transform: uppercase;
 }
@@ -2225,6 +2232,7 @@ button {
 .atlas-page-bar-count {
   margin: 0;
   color: var(--rz-muted);
+  font-family: var(--rz-font-archive);
   font-size: 0.66rem;
   font-weight: 620;
   letter-spacing: 0.09em;
@@ -3631,6 +3639,7 @@ button {
 
 /* Caption data in the archive's utility voice, never a headline (P2). */
 .atlas-lightbox-meta {
+  font-family: var(--rz-font-archive);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -3683,6 +3692,7 @@ button {
 }
 
 .atlas-lightbox-position {
+  font-family: var(--rz-font-archive);
   min-width: 4.25rem;
   padding-inline: 0.45rem;
   color: color-mix(in srgb, var(--rz-cream) 66%, transparent);
@@ -4114,16 +4124,22 @@ button {
 }
 
 /*
- * Two columns, not three. Picking your name is this page's whole job, so the
- * picker gets the dominant column instead of sharing the row with two columns
- * of copy that said the same thing twice.
+ * One column. Picking your name is this page's whole job, and the face grid
+ * (P5) is tall enough that putting it beside the copy left a 4,000px empty
+ * column running down the page. Copy on top, faces across the full width:
+ * roughly eleven faces per row instead of seven, so the page is shorter and
+ * nothing is stranded.
  */
 .atlas-person-setup {
   display: grid;
-  grid-template-columns: minmax(15rem, 0.6fr) minmax(24rem, 1.4fr);
-  gap: clamp(2rem, 5vw, 4.5rem);
+  grid-template-columns: 1fr;
+  gap: clamp(1.75rem, 3vw, 2.75rem);
   align-items: start;
   padding: 0 0 clamp(3rem, 6vw, 5.5rem);
+}
+
+.atlas-person-setup-copy {
+  max-width: 42rem;
 }
 
 /* Section headings sit well below the single page headline (P1). */
@@ -4158,6 +4174,116 @@ button {
 .atlas-person-setup-picker .atlas-picker-options {
   max-height: none;
   overflow-y: visible;
+}
+
+/*
+ * Find me, as faces (P5). Recognising yourself is faster than reading 132
+ * names, and the faces are the archive's own material -- each tile is a crop
+ * from a photograph in the collection, cut at build time by
+ * scripts/build-face-thumbnails.mjs.
+ *
+ * The counts rule holds: a tile never shows how many photographs someone is
+ * in. Faces here, count after you pick.
+ */
+.atlas-picker[data-variant="faces"] .atlas-picker-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
+  gap: 1.15rem 0.9rem;
+}
+
+/*
+ * Phones get four faces per row, not two. At the desktop tile size a 132-guest
+ * grid ran past 15,000px on a 390px screen; four across keeps the whole party
+ * inside a few thumb-flicks.
+ */
+@media (max-width: 620px) {
+  .atlas-picker[data-variant="faces"] .atlas-picker-options {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem 0.55rem;
+  }
+
+  .atlas-face-tile-name {
+    font-size: 0.66rem;
+  }
+}
+
+.atlas-face-tile {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rz-ink);
+  cursor: pointer;
+  text-align: center;
+}
+
+.atlas-face-tile-image {
+  display: grid;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: var(--rz-wheat);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rz-tan) 34%, transparent);
+  color: var(--rz-tan-text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition:
+    box-shadow var(--rz-dur-fast) var(--rz-ease-out),
+    transform var(--rz-dur-fast) var(--rz-ease-out);
+}
+
+.atlas-face-tile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* "Everyone" is a word, not a face: set it as a label inside the same disc. */
+.atlas-face-tile-all .atlas-face-tile-image {
+  background: var(--rz-sand);
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.atlas-face-tile-name {
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.atlas-face-tile:hover .atlas-face-tile-image,
+.atlas-face-tile:focus-visible .atlas-face-tile-image {
+  box-shadow: 0 0 0 2px var(--rz-tan);
+  transform: translateY(-2px);
+}
+
+.atlas-face-tile[data-active="true"] .atlas-face-tile-image {
+  box-shadow: 0 0 0 2px var(--rz-coral);
+}
+
+.atlas-face-tile[data-active="true"] .atlas-face-tile-name {
+  font-weight: 650;
+}
+
+.atlas-face-empty {
+  margin: 1.25rem 0 0;
+  color: var(--rz-muted-on-sand);
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-face-tile-image,
+  .atlas-face-tile:hover .atlas-face-tile-image,
+  .atlas-face-tile:focus-visible .atlas-face-tile-image {
+    transform: none;
+    transition: none;
+  }
 }
 
 .atlas-person-setup-picker .atlas-inline-action {

@@ -29,14 +29,26 @@
   --rz-tan-text: #735c40;
   --rz-olive: #59604d;
   --rz-limestone: #ded6c9;
+  /*
+   * Deep ground (added 2026-07-26). The archive was warm cream end to end,
+   * which left it tonally flat: with no dark surface anywhere, empty space
+   * read as void rather than as composition, and the photographs had nothing
+   * to sit against. These are not new hues -- both are the existing espresso
+   * ink pushed darker and slightly warmed, so the family is unchanged.
+   * Reserved for full-bleed surfaces where photographs are the content.
+   */
+  --rz-espresso: #1a1611;
+  --rz-espresso-soft: #262019;
 
   /*
    * Font variables are attached to <html> by next/font (see
    * src/components/brand/Wordmark.tsx for the loaded faces). The fallback
    * stacks keep type coherent before the root layout wires the variables.
    */
-  --rz-font-display: var(--font-display-face, "Avenir Next", Avenir, ui-sans-serif, system-ui, sans-serif);
+  --rz-font-display: var(--font-display-face, "Iowan Old Style", Palatino, Georgia, serif);
   --rz-font-body: var(--font-body-face, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  /* The archive voice: counts, times, positions, eyebrows, frame numbers. */
+  --rz-font-archive: var(--font-archive-face, ui-monospace, SFMono-Regular, Menlo, monospace);
 
   --rz-radius-card: 0.25rem;
   --rz-shadow-soft: 0 24px 64px -38px rgba(36, 31, 24, 0.34);
@@ -70,8 +82,11 @@
   --color-coral: var(--rz-coral);
   --color-white: var(--rz-white);
   --color-muted: var(--rz-muted);
+  --color-espresso: var(--rz-espresso);
+  --color-espresso-soft: var(--rz-espresso-soft);
   --font-display: var(--rz-font-display);
   --font-body: var(--rz-font-body);
+  --font-archive: var(--rz-font-archive);
   --radius-card: var(--rz-radius-card);
   --shadow-soft: var(--rz-shadow-soft);
   --text-hero: var(--rz-text-hero);

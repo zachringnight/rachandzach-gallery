@@ -43,7 +43,12 @@ export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
         </p>
       </div>
       <div className="atlas-person-setup-picker">
-        <PersonPicker people={people} selected={pending} onSelect={setPending} />
+        <PersonPicker
+          people={people}
+          selected={pending}
+          onSelect={setPending}
+          variant="faces"
+        />
         <button
           type="button"
           disabled={!pending}
