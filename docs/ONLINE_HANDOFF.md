@@ -108,6 +108,16 @@ have RLS disabled. That is a cross-application project concern, not a wedding
 release blocker. Do not change those unrelated tables without tracing their
 owners, readers, and writers.
 
+On 2026-07-26 the additive `rachandzach_person_overrides` table was applied to
+the live project (migration `20260726101500_rachandzach_person_overrides.sql`;
+RLS on, zero policies, per-object revokes, service-role only). It backs the
+`/admin/faces` guest manager: hand-picked Find me face crops, display-name
+corrections, soft hiding from guest pickers, and admin-added people. No
+existing table, policy, function, or bucket was altered, and the table was
+left empty after verification. The export round trip back to committed source
+is `scripts/export-face-overrides.mjs` followed by
+`scripts/build-face-thumbnails.mjs` (see each script's header).
+
 ## Next actions
 
 | Priority | Owner | Target | Action and definition of done |
