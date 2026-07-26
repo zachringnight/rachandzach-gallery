@@ -1,6 +1,10 @@
-# 0719 + co. -- Rachel & Zach's digital wedding home
+# 0719 + co. -- Rachel & Zach's private photo archive
 
-A private, password-gated wedding gallery: browse and download the full photo catalog, find yourself by event or person, search moments in plain language, submit your own photos for approval, and relive the weekend. Built with Next.js and Supabase. Guests and admin both authenticate; nothing here is public except the marketing pages.
+A private, password-gated wedding photo archive: browse the full catalog, find
+yourself by event or person, search moments in plain language, keep favorites,
+save original photographs to your own cloud account, and contribute new photos
+for approval. Built with Next.js and Supabase. Guests and admin both
+authenticate; nothing here is public except the marketing pages.
 
 **Status: LIVE.** The premium gallery is deployed on Vercel at
 [rachandzach.com](https://rachandzach.com), backed by this private GitHub
@@ -38,6 +42,10 @@ Copy `.env.example` to `.env.local` and fill in real values for local developmen
 | `SOURCE_PHOTO_DIR` | Read-only path to the wedding master catalog source, used only by import scripts |
 | `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` | Optional public Google Web OAuth client ID; enables Google Drive save |
 | `NEXT_PUBLIC_DROPBOX_APP_KEY` | Optional public Dropbox Saver app key; enables Dropbox save |
+
+Both public provider identifiers are configured in Vercel Production and
+Preview. They remain optional for local development, and their values must not
+be copied into source control or printed in logs.
 
 Real production values (guest password, Supabase project keys) are staged in `.env.cloud` at the repo root, which is gitignored and never auto-loaded by Next -- see `docs/0719_Content_Needed_v1.md` for what's decided and `docs/0719_Launch_Checklist_v1.md` for how they get into Vercel.
 
@@ -95,6 +103,7 @@ docs/plans/2026-07-22-0719-digital-wedding-home/   The build plan: manifest, per
 
 ## Documentation
 
+- `AGENTS.md` -- concise operating rules, product truth, code map, protected-data boundaries, verification commands, and deployment behavior for coding agents
 - `docs/ONLINE_HANDOFF.md` -- **read this one first.** Canonical production state, release evidence, next-step owners and dates, provider activation, and continuation commands
 - `docs/HANDOFF_CURRENT.md` -- historical pre-launch build, media, and reconciliation record
 - `docs/0719_Architecture_v1.md` -- system design: stack, data flow, storage buckets, table model, auth, import/sync pipeline, moderation state machine, feature flags, and current known issues
