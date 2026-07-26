@@ -37,6 +37,49 @@ const timeline: ClientTimeline = {
   ],
 };
 
+/**
+ * The rail's hit area is the invisible range input stretched over the
+ * segments, so segment clicks are judged by the rail's own pointer handlers
+ * (see LightBar's pointer-routing comment). These helpers stand in for real
+ * pointer gestures; jsdom has no layout, so the rail's rect is stubbed.
+ */
+function railOf(container: HTMLElement): HTMLElement {
+  const rail = container.querySelector<HTMLElement>(".atlas-light-bar-rail");
+  if (!rail) throw new Error("rail not rendered");
+  // Vertical desktop rail: 20px wide, 200px tall, at the origin.
+  rail.getBoundingClientRect = () =>
+    ({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 20,
+      bottom: 200,
+      width: 20,
+      height: 200,
+      toJSON: () => ({}),
+    }) as DOMRect;
+  return rail;
+}
+
+function firePointer(
+  element: Element,
+  type: "pointerdown" | "pointermove" | "pointerup",
+  at: { x: number; y: number },
+) {
+  const Ctor = window.PointerEvent ?? MouseEvent;
+  const event = new Ctor(type, {
+    bubbles: true,
+    cancelable: true,
+    clientX: at.x,
+    clientY: at.y,
+  });
+  if (!("pointerId" in event) || event.pointerId === undefined) {
+    Object.defineProperty(event, "pointerId", { value: 1 });
+  }
+  element.dispatchEvent(event);
+}
+
 describe("LightBar", () => {
   it("renders one pointer target per segment and jumps to its start", () => {
     const onJump = vi.fn();
@@ -106,6 +149,61 @@ describe("LightBar", () => {
       expect(onJump).not.toHaveBeenCalled();
       vi.advanceTimersByTime(300);
       expect(onJump).toHaveBeenCalledWith(90);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("routes a stationary press on the rail to the segment under it", () => {
+    // Regression: the range input sits on top of the segment buttons, so a
+    // mouse click lands on the range, not the button, and used to scrub to
+    // an approximate coordinate. A clean click must jump to the START of
+    // the named segment under the pointer.
+    vi.useFakeTimers();
+    try {
+      const onJump = vi.fn();
+      const { container } = render(
+        <LightBar
+          timeline={timeline}
+          photos={[]}
+          currentIndex={0}
+          onJump={onJump}
+        />,
+      );
+      const rail = railOf(container);
+      // y=170 of 200 -> fraction 0.85 -> photo 85, inside Reception (75-99).
+      firePointer(rail, "pointerdown", { x: 10, y: 170 });
+      firePointer(rail, "pointerup", { x: 10, y: 170 });
+      expect(onJump).toHaveBeenCalledTimes(1);
+      expect(onJump).toHaveBeenCalledWith(75);
+      // The click cancels any queued approximate scrub commit.
+      vi.advanceTimersByTime(400);
+      expect(onJump).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("leaves a drag on the rail to the range's scrubbing", () => {
+    vi.useFakeTimers();
+    try {
+      const onJump = vi.fn();
+      const { container } = render(
+        <LightBar
+          timeline={timeline}
+          photos={[]}
+          currentIndex={0}
+          onJump={onJump}
+        />,
+      );
+      const rail = railOf(container);
+      firePointer(rail, "pointerdown", { x: 10, y: 40 });
+      firePointer(rail, "pointermove", { x: 10, y: 120 });
+      firePointer(rail, "pointerup", { x: 10, y: 160 });
+      // No segment-click jump; the native range drag (change events, tested
+      // above) is the only thing that commits a scrub.
+      vi.advanceTimersByTime(400);
+      expect(onJump).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }

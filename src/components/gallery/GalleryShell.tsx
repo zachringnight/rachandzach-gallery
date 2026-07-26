@@ -12,6 +12,11 @@ import {
   EMPTY_FILTER_STATE,
   GALLERY_SEARCH_URL_PARAM,
 } from "@/lib/gallery/client-types";
+import { collectWholeBurstIds } from "@/lib/gallery/grouping";
+import {
+  createJumpController,
+  type JumpController,
+} from "@/lib/gallery/jump";
 import { FilterBar } from "@/components/gallery/FilterBar";
 import { LightBar } from "@/components/gallery/LightBar";
 import { SelectionBar } from "@/components/gallery/SelectionBar";
@@ -47,6 +52,10 @@ const JUMP_PAGE_LIMIT = 100;
 const RENEW_LEAD_MS = 60_000;
 
 type LoadState = "idle" | "loading" | "error-session" | "error-network";
+
+type PageFetchResult =
+  | { status: "appended"; photos: ClientPhoto[] }
+  | { status: "busy" | "end" | "stale" };
 
 function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
   const params = new URLSearchParams();
@@ -144,12 +153,15 @@ export function GalleryShell({
   const requestSeq = useRef(0);
   const requestBusyRef = useRef(false);
   const filtersRef = useRef(filters);
-  // Live mirrors for the Light Bar's paging jump loop.
+  // Live mirrors for the Light Bar's paging jump loop and the contact-sheet
+  // burst completer.
   const photosCountRef = useRef(photos.length);
+  const photosRef = useRef<ClientPhoto[]>(photos);
   const cursorRef = useRef(cursor);
   useEffect(() => {
     photosCountRef.current = photos.length;
-  }, [photos.length]);
+    photosRef.current = photos;
+  }, [photos]);
   useEffect(() => {
     cursorRef.current = cursor;
   }, [cursor]);
@@ -172,6 +184,8 @@ export function GalleryShell({
         const body: ClientGalleryPage = await res.json();
         if (seq !== requestSeq.current) return;
         setPhotos(body.photos);
+        photosRef.current = body.photos;
+        photosCountRef.current = body.photos.length;
         setCursor(body.nextCursor);
         cursorRef.current = body.nextCursor;
         setTotal(body.total);
@@ -198,10 +212,10 @@ export function GalleryShell({
    * changes and failures (both end a jump).
    */
   const fetchNextPage = useCallback(
-    async (limit: number): Promise<"appended" | "busy" | "end" | "stale"> => {
+    async (limit: number): Promise<PageFetchResult> => {
       const nextCursor = cursorRef.current;
-      if (!nextCursor) return "end";
-      if (requestBusyRef.current) return "busy";
+      if (!nextCursor) return { status: "end" };
+      if (requestBusyRef.current) return { status: "busy" };
       const seq = requestSeq.current;
       requestBusyRef.current = true;
       setState("loading");
@@ -215,15 +229,16 @@ export function GalleryShell({
             requestBusyRef.current = false;
             setState("error-session");
           }
-          return "stale";
+          return { status: "stale" };
         }
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: ClientGalleryPage = await res.json();
-        if (seq !== requestSeq.current) return "stale"; // filters changed
+        if (seq !== requestSeq.current) return { status: "stale" }; // filters changed
         setPhotos((prev) => {
           const seen = new Set(prev.map((p) => p.id));
           const next = [...prev, ...body.photos.filter((p) => !seen.has(p.id))];
           photosCountRef.current = next.length;
+          photosRef.current = next;
           return next;
         });
         setCursor(body.nextCursor);
@@ -233,13 +248,13 @@ export function GalleryShell({
         if (body.timeline) setTimeline(body.timeline);
         requestBusyRef.current = false;
         setState("idle");
-        return "appended";
+        return { status: "appended", photos: body.photos };
       } catch {
         if (seq === requestSeq.current) {
           requestBusyRef.current = false;
           setState("error-network");
         }
-        return "stale";
+        return { status: "stale" };
       }
     },
     [],
@@ -252,61 +267,41 @@ export function GalleryShell({
   /**
    * Light Bar scrub target (P3). Anything already loaded scrolls
    * immediately; a farther target pages toward it first, keeping the
-   * loaded list a contiguous prefix of the archive order.
+   * loaded list a contiguous prefix of the archive order. Rapid re-scrubs
+   * overlap, so the paging loops live in a generation-tokened controller
+   * (see src/lib/gallery/jump.ts): only the guest's LATEST jump may land,
+   * cancel, or idle the rail -- an earlier loop that finishes late can no
+   * longer clear the newer target and strand the grid at a stale index.
    */
-  const pendingJumpRef = useRef<number | null>(null);
-  // Land a deferred jump only after the grid has committed the rows that
-  // contain it (scrolling before the re-render would target stale layout).
+  // Created lazily in an effect (never during render: the io closures read
+  // live refs). Jumps only start from pointer/keyboard handlers, which
+  // cannot fire before the first effect pass.
+  const jumpControllerRef = useRef<JumpController | null>(null);
   useEffect(() => {
-    const target = pendingJumpRef.current;
-    if (target !== null && photos.length > target) {
-      pendingJumpRef.current = null;
-      requestAnimationFrame(() => gridRef.current?.scrollToIndex(target));
-    }
+    jumpControllerRef.current ??= createJumpController({
+      loadedCount: () => photosCountRef.current,
+      hasMore: () => cursorRef.current !== null,
+      requestSeq: () => requestSeq.current,
+      fetchNextPage: () => fetchNextPage(JUMP_PAGE_LIMIT),
+      waitForWire: () => new Promise((resolve) => setTimeout(resolve, 150)),
+      scrollTo: (photoIndex) => gridRef.current?.scrollToIndex(photoIndex),
+      // Land a deferred jump only after the grid has committed the rows
+      // that contain it (scrolling before the re-render would target
+      // stale layout).
+      scrollAfterCommit: (photoIndex) =>
+        requestAnimationFrame(() =>
+          gridRef.current?.scrollToIndex(photoIndex),
+        ),
+      setBusy: setJumping,
+    });
+  }, [fetchNextPage]);
+  useEffect(() => {
+    jumpControllerRef.current?.notifyLoaded();
   }, [photos.length]);
 
-  const jumpToIndex = useCallback(
-    async (photoIndex: number) => {
-      if (photoIndex < photosCountRef.current) {
-        pendingJumpRef.current = null;
-        gridRef.current?.scrollToIndex(photoIndex);
-        return;
-      }
-      const seq = requestSeq.current;
-      pendingJumpRef.current = photoIndex;
-      setJumping(true);
-      try {
-        while (
-          seq === requestSeq.current &&
-          photosCountRef.current <= photoIndex &&
-          cursorRef.current
-        ) {
-          const outcome = await fetchNextPage(JUMP_PAGE_LIMIT);
-          if (outcome === "busy") {
-            // Another request (e.g. tail-loading) holds the wire; let it
-            // land, then keep paging toward the target.
-            await new Promise((resolve) => setTimeout(resolve, 150));
-            continue;
-          }
-          if (outcome !== "appended") break;
-        }
-      } finally {
-        setJumping(false);
-      }
-      if (seq !== requestSeq.current) {
-        pendingJumpRef.current = null;
-        return;
-      }
-      // Ran out of archive before the target (or the effect above already
-      // landed it): settle on the last loaded photograph.
-      if (pendingJumpRef.current !== null && photosCountRef.current > 0) {
-        const target = Math.min(photoIndex, photosCountRef.current - 1);
-        pendingJumpRef.current = null;
-        requestAnimationFrame(() => gridRef.current?.scrollToIndex(target));
-      }
-    },
-    [fetchNextPage],
-  );
+  const jumpToIndex = useCallback((photoIndex: number) => {
+    void jumpControllerRef.current?.jumpTo(photoIndex);
+  }, []);
 
   const toggleBurst = useCallback((burstId: string) => {
     setExpandedBursts((current) => {
@@ -317,17 +312,51 @@ export function GalleryShell({
     });
   }, []);
 
-  /** Selecting a stack selects its loaded frames; again deselects them. */
+  /**
+   * Selecting a stack selects the WHOLE burst; selecting it again deselects.
+   * A burst that crosses a pagination boundary only has its leading frames
+   * loaded, while the stack card promises the full size -- so before such a
+   * stack counts as selected, page the rest of the burst in and select every
+   * frame at once. If paging fails, nothing is selected (the network error
+   * state surfaces); the selected count must never exceed what download,
+   * ZIP, Drive, and Dropbox will actually receive.
+   */
   const toggleBurstSelection = useCallback(
-    (photoIds: string[]) => {
+    ({
+      burstId,
+      photoIds,
+      size,
+    }: {
+      burstId: string;
+      photoIds: string[];
+      size: number;
+    }) => {
       const allSelected =
         photoIds.length > 0 &&
         photoIds.every((id) => selection.selected.has(id));
-      for (const id of photoIds) {
-        if (allSelected || !selection.selected.has(id)) selection.toggle(id);
+      if (allSelected) {
+        for (const id of photoIds) selection.toggle(id);
+        return;
       }
+      if (photoIds.length >= size) {
+        selection.selectAllVisible(photoIds);
+        return;
+      }
+      const seq = requestSeq.current;
+      void collectWholeBurstIds(burstId, size, {
+        loadedPhotos: () => photosRef.current,
+        hasMore: () => cursorRef.current !== null,
+        fetchNextPage: () => fetchNextPage(PAGE_LIMIT),
+        isStale: () => requestSeq.current !== seq,
+        waitForWire: () =>
+          new Promise((resolve) => setTimeout(resolve, 150)),
+      }).then((ids) => {
+        if (ids && requestSeq.current === seq) {
+          selection.selectAllVisible(ids);
+        }
+      });
     },
-    [selection],
+    [fetchNextPage, selection],
   );
 
   const applyFilters = useCallback(
@@ -540,7 +569,7 @@ export function GalleryShell({
               timeline={timeline}
               photos={photos}
               currentIndex={currentIndex}
-              onJump={(photoIndex) => void jumpToIndex(photoIndex)}
+              onJump={jumpToIndex}
               jumping={jumping}
             />
 
