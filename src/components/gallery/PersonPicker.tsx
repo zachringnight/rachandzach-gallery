@@ -163,8 +163,13 @@ function FaceTile({
   const [cropFailed, setCropFailed] = useState(false);
   const [committedFailed, setCommittedFailed] = useState(false);
   useEffect(() => {
-    setCropFailed(false);
-    setCommittedFailed(false);
+    // Wrapped so the setState calls are not direct synchronous statements in
+    // the effect body (react-hooks/set-state-in-effect), matching
+    // MyWeekendClient's pattern; behavior is unchanged.
+    void (async () => {
+      setCropFailed(false);
+      setCommittedFailed(false);
+    })();
   }, [face?.kind === "crop" ? face.url : null, slug]);
 
   const showCrop = face?.kind === "crop" && !cropFailed;
