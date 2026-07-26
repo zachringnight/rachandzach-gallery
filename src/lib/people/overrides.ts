@@ -146,12 +146,56 @@ export function surfacePeople(
   return [...surfaced, ...additions];
 }
 
-/** Convenience: facets with the people list surfaced for pickers. */
+export interface PersonIdentity {
+  slug: string;
+  displayName: string;
+}
+
+/**
+ * Identity resolution for guest surfaces that must still RECOGNIZE a person
+ * who is no longer OFFERED. Hiding is picker-only by contract: a hidden
+ * guest's saved Find me selection, their photo tags, and the ?person=
+ * filter all keep working, so the surfaces behind them need the display
+ * name even though the picker roster dropped it (otherwise the guest's own
+ * page degrades to "Guest's photos", which is the worst place to break).
+ *
+ * Covers every facet person (hidden included, renames applied) plus every
+ * added person (hidden included; additions may have zero confirmed photos
+ * and therefore no facet entry). Deliberately carries names only -- no
+ * counts -- so it can never violate the no-comparative-counts-at-rest rule.
+ */
+export function personIdentities(
+  people: readonly SurfacedPerson[],
+  overrides: ReadonlyMap<string, PersonOverride>,
+): PersonIdentity[] {
+  const bySlug = new Map<string, string>();
+  for (const person of people) {
+    const override = overrides.get(person.slug);
+    bySlug.set(person.slug, override?.displayName ?? person.displayName);
+  }
+  for (const override of overrides.values()) {
+    if (!override.added || !override.displayName) continue;
+    if (!bySlug.has(override.personSlug)) {
+      bySlug.set(override.personSlug, override.displayName);
+    }
+  }
+  return [...bySlug].map(([slug, displayName]) => ({ slug, displayName }));
+}
+
+/**
+ * Convenience: facets with the people list surfaced for pickers, plus the
+ * identity list for surfaces that must resolve hidden people (see
+ * personIdentities).
+ */
 export function surfaceGalleryFacets(
   facets: GalleryFacets,
   overrides: ReadonlyMap<string, PersonOverride>,
-): GalleryFacets {
-  return { ...facets, people: surfacePeople(facets.people, overrides) };
+): GalleryFacets & { identities: PersonIdentity[] } {
+  return {
+    ...facets,
+    people: surfacePeople(facets.people, overrides),
+    identities: personIdentities(facets.people, overrides),
+  };
 }
 
 /** The preview width the face tiles crop from; tiles render well under it. */

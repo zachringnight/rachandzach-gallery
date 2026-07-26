@@ -7,6 +7,7 @@ import { MyWeekendClient } from "@/components/personalization/MyWeekendClient";
 import {
   buildFaceDirectory,
   loadPersonOverrides,
+  personIdentities,
   surfacePeople,
 } from "@/lib/people/overrides";
 import { MomentSearch } from "@/components/search/MomentSearch";
@@ -45,6 +46,9 @@ export default async function MyWeekendPage() {
   ]);
   // Hidden people drop out, renames apply, admin-added people join.
   const people = surfacePeople(facets.people, overrides);
+  // Hiding is picker-only: a guest who already selected themselves must
+  // still resolve to their real name, so identities include hidden people.
+  const identities = personIdentities(facets.people, overrides);
   const faces = await buildFaceDirectory(client, people, overrides);
 
   return (
@@ -58,7 +62,7 @@ export default async function MyWeekendPage() {
       </header>
 
       <div className="atlas-guest-body">
-        <MyWeekendClient people={people} faces={faces} />
+        <MyWeekendClient people={people} identities={identities} faces={faces} />
       </div>
 
       {featureFlags.momentSearch ? (

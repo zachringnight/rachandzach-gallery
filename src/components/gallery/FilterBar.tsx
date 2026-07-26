@@ -92,7 +92,12 @@ export function FilterBar({
       });
     }
     if (filters.person) {
-      const person = facets.people.find((item) => item.slug === filters.person);
+      // Identities include hidden people (hiding is picker-only), so a
+      // hidden person's active filter chip still reads as their name
+      // rather than degrading to the raw slug.
+      const person =
+        facets.identities?.find((item) => item.slug === filters.person) ??
+        facets.people.find((item) => item.slug === filters.person);
       chips.push({
         key: "person",
         label: person?.displayName ?? filters.person,

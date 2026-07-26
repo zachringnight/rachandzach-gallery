@@ -106,6 +106,12 @@ export interface ClientGalleryFacets {
     displayName: string;
     count: number;
   }[];
+  /**
+   * Name resolution for people the pickers no longer offer (hiding is
+   * picker-only: a hidden person's filter and tags keep working, so labels
+   * must still resolve). Names only, never counts.
+   */
+  identities?: { slug: string; displayName: string }[];
 }
 
 export interface ClientPhotoDetail {
