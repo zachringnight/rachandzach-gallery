@@ -776,7 +776,7 @@ button {
 .atlas-hero-body {
   max-width: 34rem;
   margin: clamp(1.6rem, 3.5vh, 2.5rem) 0 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.08rem, 1.45vw, 1.38rem);
   font-weight: 390;
   line-height: 1.55;
@@ -1267,7 +1267,7 @@ button {
   top: -2.5rem;
   right: 0;
   color: color-mix(in srgb, var(--rz-tan) 16%, transparent);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(7rem, 13vw, 15rem);
   font-weight: 320;
   letter-spacing: -0.08em;
@@ -1972,7 +1972,7 @@ button {
   max-width: 38rem;
   margin: 0;
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.15rem, 1.8vw, 1.55rem);
   line-height: 1.55;
 }
@@ -1991,7 +1991,7 @@ button {
 }
 
 .atlas-page-hero-index span {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(5rem, 12vw, 10rem);
   font-weight: 300;
   letter-spacing: -0.08em;
@@ -2133,7 +2133,7 @@ button {
   break-inside: avoid;
   margin: 0 0 1.4rem;
   color: var(--rz-ink);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1rem, 1.3vw, 1.16rem);
   line-height: 1.7;
 }
@@ -2181,7 +2181,7 @@ button {
 .atlas-page-cta p {
   max-width: 30ch;
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(2rem, 4vw, 4.6rem);
   font-weight: 360;
   letter-spacing: -0.045em;
@@ -2420,7 +2420,7 @@ button {
   top: 0.5rem;
   right: 1rem;
   color: color-mix(in srgb, var(--rz-tan) 24%, transparent);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(9rem, 22vw, 19rem);
   font-weight: 260;
   line-height: 0.8;
@@ -3148,7 +3148,7 @@ button {
   max-width: 42rem;
   margin: 0 0 1.25rem;
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.05rem;
   line-height: 1.6;
 }
@@ -3392,9 +3392,12 @@ button {
   text-overflow: ellipsis;
 }
 
+/* Capture time and archive position are data about photographs, so they take
+ * the archive voice like every other count and index. */
 .atlas-chapter-clock,
 .atlas-chapter-position {
   color: var(--rz-muted);
+  font-family: var(--rz-font-archive);
   font-size: 0.6rem;
   font-weight: 620;
   font-variant-numeric: tabular-nums;
@@ -3706,7 +3709,7 @@ button {
 .atlas-selection-count span {
   margin-right: 0.35rem;
   color: var(--rz-coral);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: 1.35rem;
   font-weight: 450;
   letter-spacing: -0.03em;
@@ -4164,7 +4167,7 @@ button {
 .atlas-lightbox-uploader-caption p {
   margin: 0;
   color: var(--rz-cream);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.2rem;
   font-style: italic;
   line-height: 1.45;
@@ -4213,7 +4216,7 @@ button {
 
 .atlas-lightbox-margin-note {
   color: var(--rz-coral);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 0.85rem;
   font-style: italic;
   line-height: 1.25;
@@ -4269,7 +4272,7 @@ button {
   padding: clamp(3rem, 8vw, 7rem) 0;
   border-block: 1px solid var(--rz-wheat);
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.15rem, 2vw, 1.65rem);
 }
 
@@ -5463,7 +5466,7 @@ button {
 }
 
 .atlas-nyc-progress-numbers strong {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(1.5rem, 2.2vw, 2.1rem);
   font-weight: 410;
   letter-spacing: -0.04em;
@@ -5567,7 +5570,7 @@ button {
 .atlas-nyc-signoff p {
   margin: 0;
   color: var(--rz-ink);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(2rem, 3.2vw, 3.2rem);
   font-style: italic;
 }
@@ -5631,7 +5634,7 @@ button {
 }
 
 .atlas-nyc-impact-stats strong {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(3.5rem, 7vw, 7.4rem);
   font-weight: 320;
   letter-spacing: -0.075em;
@@ -5659,7 +5662,7 @@ button {
 .atlas-nyc-impact-cta p {
   max-width: 36rem;
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.15rem, 1.8vw, 1.55rem);
   line-height: 1.55;
 }
@@ -5854,7 +5857,7 @@ button {
 }
 
 .atlas-submission-counts strong {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: 2.3rem;
   font-weight: 400;
 }
