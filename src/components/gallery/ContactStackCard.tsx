@@ -57,7 +57,11 @@ export function ContactStackCard({
       <button
         type="button"
         className="atlas-stack-open"
-        aria-expanded="false"
+        // No aria-expanded: this is not a disclosure control. Expanding
+        // replaces the stack with its individual frames, so this button does
+        // not persist in an expanded state, and a permanently "false" value
+        // just tells assistive tech the wrong thing. The label carries the
+        // affordance instead.
         aria-label={
           selecting
             ? `${selected ? "Deselect" : "Select"} ${describe}`

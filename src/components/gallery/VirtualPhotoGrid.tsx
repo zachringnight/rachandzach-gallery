@@ -235,13 +235,25 @@ export const VirtualPhotoGrid = forwardRef<
   useEffect(() => {
     if (!onFirstVisiblePhotoChange || layout.rows.length === 0) return;
     const threshold = scrollOffset + VISIBLE_TOP_OFFSET;
-    let firstRow = layout.rows[0];
-    for (const row of layout.rows) {
+    // Binary search, not a linear scan: this runs on every scroll update, and
+    // rows are already ordered by `top`, so an O(n) walk put the whole row
+    // list on the scroll path once the archive got large.
+    // Falls back to row 0 when nothing crosses the threshold, matching the
+    // linear scan this replaces.
+    let lo = 0;
+    let hi = layout.rows.length - 1;
+    let firstIndex = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const row = layout.rows[mid];
       if (row.top + scrollMargin + row.height > threshold) {
-        firstRow = row;
-        break;
+        firstIndex = mid;
+        hi = mid - 1;
+      } else {
+        lo = mid + 1;
       }
     }
+    const firstRow = firstIndex === -1 ? layout.rows[0] : layout.rows[firstIndex];
     const item = displayItems[firstRow.itemIndexes[0]];
     if (!item) return;
     if (item.photoIndex !== lastReportedIndex.current) {
