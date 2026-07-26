@@ -53,6 +53,38 @@ async function readDetectionDims() {
 }
 
 /**
+ * Hand-picked faces, from metadata/faces/face-overrides.json.
+ *
+ * The automatic pick is good but not always right: it can land on someone
+ * turned away, mid-hug, or sharing the frame with a stronger face. And 24 of
+ * the 132 catalog guests were never resolved by the face pipeline at all, so
+ * automation has nothing to offer them.
+ *
+ * Shape, keyed by person slug:
+ *   { "rachel-casciano": { "photoId": "<32-hex>", "bbox": [x1, y1, x2, y2] } }
+ *
+ * `photoId` is the imageDataHash, i.e. the directory name under
+ * metadata/import/derivatives/previews/. `bbox` is in that photo's detection
+ * space (the dw/dh recorded in detections.jsonl) and may be omitted for a
+ * person the detector found -- then only the photo changes and the detected
+ * box is reused. For an unresolved guest a bbox is required, since there is
+ * no detection to fall back on.
+ *
+ * Use scripts/list-face-candidates.mjs to find a photoId and bbox.
+ */
+async function readOverrides(repoRoot) {
+  const path = join(repoRoot, "metadata/faces/face-overrides.json");
+  try {
+    const raw = await fs.readFile(path, "utf8");
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed.people ?? parsed) : {};
+  } catch (error) {
+    if (error.code === "ENOENT") return {};
+    throw new Error(`face-overrides.json is present but unreadable: ${error.message}`);
+  }
+}
+
+/**
  * The face a person is most recognisably themselves in: highest-confidence
  * cluster, and within it the largest sample face (bigger box = closer to
  * camera = a better thumbnail than a distant face in a group shot).
@@ -91,10 +123,11 @@ function squareCrop(bbox, scale, imgW, imgH) {
 }
 
 async function main() {
-  const [signatures, catalog, dims] = await Promise.all([
+  const [signatures, catalog, dims, overrides] = await Promise.all([
     fs.readFile(join(repoRoot, "metadata/faces/signatures.json"), "utf8").then(JSON.parse),
     fs.readFile(join(repoRoot, "src/generated/gallery-v2.json"), "utf8").then(JSON.parse),
     readDetectionDims(),
+    readOverrides(repoRoot),
   ]);
 
   // Only guests who actually appear in the gallery's people facet: the
@@ -102,13 +135,42 @@ async function main() {
   const inCatalog = new Set(catalog.people.map((p) => p.slug));
   await fs.mkdir(OUT_DIR, { recursive: true });
 
+  // Everyone the pipeline resolved, plus anyone named only in the overrides:
+  // that second group is how an unresolved guest gets a face at all.
+  const bySlug = new Map(signatures.people.map((p) => [p.slug, p]));
+  for (const slug of Object.keys(overrides)) {
+    if (!bySlug.has(slug)) bySlug.set(slug, { slug, clusters: [], bestConfidence: null });
+  }
+
   const manifest = {};
   let written = 0;
+  let overridden = 0;
   const skipped = [];
 
-  for (const person of signatures.people) {
-    if (!inCatalog.has(person.slug)) continue;
-    const face = pickSampleFace(person);
+  for (const person of bySlug.values()) {
+    if (!inCatalog.has(person.slug)) {
+      if (overrides[person.slug]) {
+        skipped.push([person.slug, "override names a slug that is not in the catalog"]);
+      }
+      continue;
+    }
+    const override = overrides[person.slug];
+    const detected = pickSampleFace(person);
+    // An override supplies the photo, and either its own bbox or the one the
+    // detector already found in that photo.
+    let face = detected;
+    if (override?.photoId) {
+      const bbox = override.bbox ?? (detected?.photoId === override.photoId ? detected.bbox : null);
+      if (!bbox) {
+        skipped.push([
+          person.slug,
+          "override needs a bbox (no detection to reuse for that photo)",
+        ]);
+        continue;
+      }
+      face = { photoId: override.photoId, bbox };
+      overridden += 1;
+    }
     if (!face) {
       skipped.push([person.slug, "no sample face"]);
       continue;
