@@ -246,8 +246,13 @@ export const VirtualPhotoGrid = forwardRef<
     // Binary search, not a linear scan: this runs on every scroll update, and
     // rows are already ordered by `top`, so an O(n) walk put the whole row
     // list on the scroll path once the archive got large.
-    // Falls back to row 0 when nothing crosses the threshold, matching the
-    // linear scan this replaces.
+    // Past the last row -> the last row, not row 0. The authenticated layout
+    // renders SiteFooter after the grid, so scrolling into the footer puts the
+    // threshold beyond every row while the fixed desktop Light Bar is still on
+    // screen; falling back to row 0 snapped its thumb and position back to
+    // photograph 1 at the exact moment the guest reached the end. (The linear
+    // scan this replaced had the same flaw; it is fixed here rather than
+    // faithfully preserved.)
     let lo = 0;
     let hi = layout.rows.length - 1;
     let firstIndex = -1;
@@ -261,7 +266,8 @@ export const VirtualPhotoGrid = forwardRef<
         lo = mid + 1;
       }
     }
-    const firstRow = firstIndex === -1 ? layout.rows[0] : layout.rows[firstIndex];
+    const firstRow =
+      firstIndex === -1 ? layout.rows[layout.rows.length - 1] : layout.rows[firstIndex];
     const item = displayItems[firstRow.itemIndexes[0]];
     if (!item) return;
     if (item.photoIndex !== lastReportedIndex.current) {

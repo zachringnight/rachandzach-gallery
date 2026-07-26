@@ -8,7 +8,6 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { formatWallClock } from "@/lib/gallery/archive-light";
 import {
   useCallback,
   useEffect,
@@ -50,6 +49,26 @@ export interface LightboxProps {
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex="-1"])';
+
+/**
+ * Whether a control is actually rendered, for the focus trap.
+ *
+ * offsetParent alone is not enough: it only goes null for display:none, and
+ * the closed Notes panel uses visibility:hidden, so its buttons stayed in the
+ * trap's list. The trap then believed a hidden Notes control was its last
+ * element, so tabbing off the last *visible* control was not intercepted and
+ * focus could escape to the page behind the dialog.
+ */
+function isRenderedFocusable(element: HTMLElement): boolean {
+  if (element.offsetParent === null) return false;
+  if (typeof element.checkVisibility === "function") {
+    return element.checkVisibility({
+      visibilityProperty: true,
+      contentVisibilityAuto: true,
+    } as CheckVisibilityOptions);
+  }
+  return getComputedStyle(element).visibility !== "hidden";
+}
 
 /** How long the pointer/keyboard must stay idle before the chrome fades. */
 const CHROME_IDLE_MS = 2_000;
@@ -95,14 +114,19 @@ function usePrefersReducedMotion(): boolean {
  * client render identical text.
  */
 function formatCaptureTime(capturedAt: string | null): string | null {
-  // Wall clock as stamped, not as an instant: see formatWallClock. A second
-  // camera stamped -08:00 during a -07:00 weekend, so converting would show
-  // those photos an hour later than the archive orders them.
-  return formatWallClock(capturedAt, {
-    weekday: "long",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  if (!capturedAt) return null;
+  const date = new Date(capturedAt);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Los_Angeles",
+    }).format(date);
+  } catch {
+    return null;
+  }
 }
 
 function smallestPreview(photo: ClientPhoto) {
@@ -157,6 +181,18 @@ export function Lightbox({
     // chrome layer.
     if (reducedMotion || notesOpen) return;
     hideChromeTimer.current = setTimeout(() => {
+      // Never fade the chrome out from under the keyboard. A keyboard guest
+      // lands on Close when the lightbox opens; hiding it after two idle
+      // seconds took away the visible focused control and left them tabbing
+      // blind, potentially into the page behind the dialog. The focusout
+      // handler re-arms this once focus leaves the chrome.
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLElement &&
+        active.closest('[data-lightbox-chrome="true"]')
+      ) {
+        return;
+      }
       setChromeVisible(false);
     }, CHROME_IDLE_MS);
   }, [notesOpen, reducedMotion]);
@@ -168,7 +204,15 @@ export function Lightbox({
 
   useEffect(() => {
     scheduleChromeHide();
+    // Focus leaving the chrome re-arms the idle timer that the focus guard
+    // above suppresses, so the chrome still fades once the keyboard moves on
+    // rather than staying up for the rest of the session.
+    const onFocusOut = () => {
+      window.setTimeout(scheduleChromeHide, 0);
+    };
+    document.addEventListener("focusout", onFocusOut);
     return () => {
+      document.removeEventListener("focusout", onFocusOut);
       if (hideChromeTimer.current) clearTimeout(hideChromeTimer.current);
     };
   }, [scheduleChromeHide]);
@@ -215,7 +259,7 @@ export function Lightbox({
         root.querySelectorAll<HTMLElement>(FOCUSABLE),
       ).filter(
         (element) =>
-          element.offsetParent !== null || element === document.activeElement,
+          isRenderedFocusable(element) || element === document.activeElement,
       );
       if (focusable.length === 0) {
         event.preventDefault();

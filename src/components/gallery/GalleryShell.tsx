@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { formatWallClock } from "@/lib/gallery/archive-light";
 import type {
   ClientGalleryFacets,
   ClientGalleryPage,
@@ -629,8 +628,20 @@ export function GalleryShell({
  * (matching the lightbox caption's formatting).
  */
 function formatChapterClock(capturedAt: string | null): string | null {
-  // Same wall-clock rule as the lightbox caption and the burst grouping.
-  return formatWallClock(capturedAt, { hour: "numeric", minute: "2-digit" });
+  if (!capturedAt) return null;
+  const parsed = new Date(capturedAt);
+  if (Number.isNaN(parsed.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Los_Angeles",
+    }).format(parsed);
+  } catch {
+    // A runtime without the requested IANA zone throws here; the chapter
+    // clock is decoration and must not take the gallery down with it.
+    return null;
+  }
 }
 
 function ErrorState({
