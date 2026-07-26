@@ -12,6 +12,10 @@ import {
   parseGalleryQuery,
 } from "@/lib/gallery/query";
 import { serializeGalleryPage } from "@/lib/gallery/serialize";
+import {
+  loadPersonOverrides,
+  surfaceGalleryFacets,
+} from "@/lib/people/overrides";
 
 // Reads cookies + private storage; never static, never cached at the edge.
 export const runtime = "nodejs";
@@ -44,8 +48,16 @@ export async function GET(request: NextRequest) {
     const page = await getGalleryPage(input, source);
     const body = await serializeGalleryPage(page, client);
     if (wantFacets) {
-      const facets = await getGalleryFacets(source);
-      return NextResponse.json({ ...body, facets });
+      // Facets feed pickers, so they carry the surfaced roster: hidden
+      // people out, renames applied, admin-added people in.
+      const [facets, overrides] = await Promise.all([
+        getGalleryFacets(source),
+        loadPersonOverrides(client),
+      ]);
+      return NextResponse.json({
+        ...body,
+        facets: surfaceGalleryFacets(facets, overrides),
+      });
     }
     return NextResponse.json(body);
   } catch (error) {

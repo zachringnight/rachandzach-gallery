@@ -142,23 +142,64 @@ function mapRow(row: RawPhotoRow): GalleryPhotoSource {
 export function createSupabaseGalleryDataSource(
   client: SupabaseClient<Database> = createAdminClient(),
 ): GalleryDataSource {
+  /**
+   * Admin display-name corrections (rachandzach_person_overrides), applied
+   * at this boundary so every guest surface agrees on a person's name:
+   * picker labels, photo people chips, lightbox captions, and the search
+   * haystack. Hiding and admin-added people are deliberately NOT applied
+   * here -- they are picker-surfacing concerns (src/lib/people/overrides.ts)
+   * and must not affect tags, filters, or personalized routes. Loaded once
+   * per data-source instance (each request builds a fresh source).
+   */
+  let renamesPromise: Promise<Map<string, string>> | null = null;
+  const loadRenames = (): Promise<Map<string, string>> => {
+    renamesPromise ??= (async () => {
+      const { data, error } = await client
+        .from("rachandzach_person_overrides")
+        .select("person_slug, display_name")
+        .not("display_name", "is", null);
+      if (error) {
+        throw new Error(`Person rename query failed: ${error.message}`);
+      }
+      return new Map(
+        (data ?? [])
+          .filter((row) => row.display_name)
+          .map((row) => [row.person_slug, row.display_name as string]),
+      );
+    })();
+    return renamesPromise;
+  };
+
   return {
     async listPhotos(): Promise<GalleryPhotoSource[]> {
-      const rows: GalleryPhotoSource[] = [];
-      for (let offset = 0; ; offset += PAGE_SIZE) {
-        const { data, error } = await client
-          .from("rachandzach_photos")
-          .select(SELECT)
-          .eq("status", VISIBLE_PHOTO_STATUS)
-          .range(offset, offset + PAGE_SIZE - 1);
-        if (error) {
-          throw new Error(`Gallery photo query failed: ${error.message}`);
-        }
-        const page = (data ?? []) as unknown as RawPhotoRow[];
-        for (const row of page) rows.push(mapRow(row));
-        if (page.length < PAGE_SIZE) break;
-      }
-      return rows;
+      const [renames, rows] = await Promise.all([
+        loadRenames(),
+        (async () => {
+          const collected: GalleryPhotoSource[] = [];
+          for (let offset = 0; ; offset += PAGE_SIZE) {
+            const { data, error } = await client
+              .from("rachandzach_photos")
+              .select(SELECT)
+              .eq("status", VISIBLE_PHOTO_STATUS)
+              .range(offset, offset + PAGE_SIZE - 1);
+            if (error) {
+              throw new Error(`Gallery photo query failed: ${error.message}`);
+            }
+            const page = (data ?? []) as unknown as RawPhotoRow[];
+            for (const row of page) collected.push(mapRow(row));
+            if (page.length < PAGE_SIZE) break;
+          }
+          return collected;
+        })(),
+      ]);
+      if (renames.size === 0) return rows;
+      return rows.map((row) => ({
+        ...row,
+        people: row.people.map((person) => {
+          const renamed = renames.get(person.slug);
+          return renamed ? { ...person, displayName: renamed } : person;
+        }),
+      }));
     },
 
     async listEvents(): Promise<GalleryEventMeta[]> {
@@ -174,13 +215,14 @@ export function createSupabaseGalleryDataSource(
     },
 
     async listPeople(): Promise<GalleryPersonMeta[]> {
-      const { data, error } = await client
-        .from("rachandzach_people")
-        .select("slug, display_name");
+      const [renames, { data, error }] = await Promise.all([
+        loadRenames(),
+        client.from("rachandzach_people").select("slug, display_name"),
+      ]);
       if (error) throw new Error(`Gallery people query failed: ${error.message}`);
       return (data ?? []).map((person) => ({
         slug: person.slug,
-        displayName: person.display_name,
+        displayName: renames.get(person.slug) ?? person.display_name,
       }));
     },
   };

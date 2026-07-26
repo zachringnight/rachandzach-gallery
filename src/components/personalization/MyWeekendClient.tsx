@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
+import type { ClientFaceDirectory } from "@/lib/people/face-types";
 import {
   clearMyWeekendPreference,
   getMyWeekendPreference,
@@ -13,8 +14,8 @@ import { MyWeekendGallery } from "@/components/personalization/MyWeekendGallery"
 
 export interface MyWeekendClientProps {
   people: ClientGalleryFacets["people"];
-  /** Slugs with a built face crop; read server-side, never bundled. */
-  faceSlugs: readonly string[];
+  /** How to draw each face; built server-side, never bundled. */
+  faces: ClientFaceDirectory;
 }
 
 /**
@@ -28,7 +29,7 @@ export interface MyWeekendClientProps {
  * deliberately client-only (no cookie, no server round trip to learn who is
  * asking), so this switch has to live in a client component somewhere.
  */
-export function MyWeekendClient({ people, faceSlugs }: MyWeekendClientProps) {
+export function MyWeekendClient({ people, faces }: MyWeekendClientProps) {
   // undefined = not yet hydrated from localStorage. Deliberately NOT a
   // useState lazy initializer: that would run during SSR too (no real
   // localStorage there -> always null) and again on the client during
@@ -70,7 +71,7 @@ export function MyWeekendClient({ people, faceSlugs }: MyWeekendClientProps) {
     return (
       <MyWeekendSetup
         people={people}
-        faceSlugs={faceSlugs}
+        faces={faces}
         onSelect={handleSelect}
       />
     );

@@ -4,17 +4,22 @@ import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
 import { getGalleryFacets } from "@/lib/gallery/query";
 import { featureFlags } from "@/content/features";
 import { MyWeekendClient } from "@/components/personalization/MyWeekendClient";
-import faceThumbnails from "@/generated/face-thumbnails.json";
+import {
+  buildFaceDirectory,
+  loadPersonOverrides,
+  surfacePeople,
+} from "@/lib/people/overrides";
 import { MomentSearch } from "@/components/search/MomentSearch";
 
 /*
- * Which guests have a built face crop. Read here, in an authenticated server
- * component, and passed down as props: importing the manifest inside the
+ * Faces are resolved here, in an authenticated server component, and passed
+ * down as props: importing the committed face manifest inside the
  * "use client" PersonPicker compiled every guest's name slug and confidence
  * score into a /_next/static chunk, and src/proxy.ts serves that path without
  * authentication. Guest identities must only travel through gated data.
+ * buildFaceDirectory adds one photo query and ONE signing batch (~132 paths)
+ * on top of the facet read, so this page's load does not regress.
  */
-const FACE_SLUGS: readonly string[] = Object.keys(faceThumbnails.people);
 
 // Reads the live facet set (people confirmed in the catalog); never static.
 export const dynamic = "force-dynamic";
@@ -34,7 +39,13 @@ export const metadata: Metadata = {
 export default async function MyWeekendPage() {
   const client = createAdminClient();
   const source = createSupabaseGalleryDataSource(client);
-  const facets = await getGalleryFacets(source);
+  const [facets, overrides] = await Promise.all([
+    getGalleryFacets(source),
+    loadPersonOverrides(client),
+  ]);
+  // Hidden people drop out, renames apply, admin-added people join.
+  const people = surfacePeople(facets.people, overrides);
+  const faces = await buildFaceDirectory(client, people, overrides);
 
   return (
     <section className="atlas-guest-page">
@@ -47,10 +58,7 @@ export default async function MyWeekendPage() {
       </header>
 
       <div className="atlas-guest-body">
-        <MyWeekendClient
-          people={facets.people}
-          faceSlugs={FACE_SLUGS}
-        />
+        <MyWeekendClient people={people} faces={faces} />
       </div>
 
       {featureFlags.momentSearch ? (

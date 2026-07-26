@@ -2,6 +2,11 @@
 
 import { useMemo, useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
+import {
+  faceCropCss,
+  type ClientFaceDirectory,
+  type ClientPersonFace,
+} from "@/lib/people/face-types";
 
 export interface PersonPickerProps {
   people: ClientGalleryFacets["people"];
@@ -13,8 +18,10 @@ export interface PersonPickerProps {
    */
   variant?: "chips" | "faces";
   /**
-   * Slugs that have a built face crop, supplied by an authenticated server
-   * component.
+   * How to draw each guest's face, supplied by an authenticated server
+   * component (see buildFaceDirectory in src/lib/people/overrides.ts):
+   * a hand-picked crop of a signed preview beats the committed automatic
+   * crop at /faces/{slug}.webp; an absent entry falls back to initials.
    *
    * This deliberately does NOT import src/generated/face-thumbnails.json.
    * This is a "use client" module, so importing it compiled every guest's
@@ -23,7 +30,7 @@ export interface PersonPickerProps {
    * guest list was fetchable by anyone with the URL. Guest identities only
    * travel through gated server data.
    */
-  faceSlugs?: readonly string[];
+  faces?: ClientFaceDirectory;
 }
 
 /**
@@ -41,11 +48,10 @@ export function PersonPicker({
   selected,
   onSelect,
   variant = "chips",
-  faceSlugs,
+  faces: faceDirectory,
 }: PersonPickerProps) {
   const [query, setQuery] = useState("");
   const faces = variant === "faces";
-  const faceSet = useMemo(() => new Set(faceSlugs ?? []), [faceSlugs]);
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const base = needle
@@ -96,7 +102,7 @@ export function PersonPicker({
                 key={person.slug}
                 slug={person.slug}
                 name={person.displayName}
-                hasFace={faceSet.has(person.slug)}
+                face={faceDirectory?.[person.slug] ?? null}
                 active={selected === person.slug}
                 onClick={() => onSelect(person.slug)}
               />
@@ -131,20 +137,24 @@ export function PersonPicker({
 }
 
 /**
- * A guest's face, cropped at build time by scripts/build-face-thumbnails.mjs.
- * Guests the face pipeline never resolved fall back to their initials, so the
- * grid stays even rather than punching holes where the data is thin.
+ * A guest's face. A hand-picked override (chosen in /admin/faces) CSS-crops
+ * a signed preview at runtime -- Vercel's filesystem is read-only, so no
+ * image is ever written; the crop is pure geometry over the already-signed
+ * photo. Otherwise the committed automatic crop from
+ * scripts/build-face-thumbnails.mjs renders, and guests the face pipeline
+ * never resolved fall back to their initials, so the grid stays even rather
+ * than punching holes where the data is thin.
  */
 function FaceTile({
   slug,
   name,
-  hasFace,
+  face,
   active,
   onClick,
 }: {
   slug: string;
   name: string;
-  hasFace: boolean;
+  face: ClientPersonFace | null;
   active: boolean;
   onClick: () => void;
 }) {
@@ -162,8 +172,24 @@ function FaceTile({
       className="atlas-face-tile"
       data-active={active ? "true" : "false"}
     >
-      <span className="atlas-face-tile-image">
-        {hasFace ? (
+      <span
+        className="atlas-face-tile-image"
+        style={face?.kind === "crop" ? { position: "relative" } : undefined}
+      >
+        {face?.kind === "crop" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={face.url}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            style={{
+              position: "absolute",
+              maxWidth: "none",
+              ...faceCropCss(face.crop, face.aspectRatio),
+            }}
+          />
+        ) : face?.kind === "committed" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`/faces/${slug}.webp`}

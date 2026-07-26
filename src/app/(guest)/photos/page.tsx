@@ -13,6 +13,10 @@ import {
   GALLERY_SEARCH_URL_PARAM,
   type GalleryFilterState,
 } from "@/lib/gallery/client-types";
+import {
+  loadPersonOverrides,
+  surfaceGalleryFacets,
+} from "@/lib/people/overrides";
 import { GalleryShell } from "@/components/gallery/GalleryShell";
 
 export const dynamic = "force-dynamic";
@@ -85,14 +89,17 @@ export default async function PhotosPage({
     }
   }
 
-  const initialPage = await serializeGalleryPage(page, client);
+  const [initialPage, overrides] = await Promise.all([
+    serializeGalleryPage(page, client),
+    loadPersonOverrides(client),
+  ]);
 
   return (
     <section className="atlas-guest-page atlas-photos-page">
       <GalleryShell
         heading="The archive"
         initialPage={initialPage}
-        facets={facets}
+        facets={surfaceGalleryFacets(facets, overrides)}
         initialFilters={filterStateFromParams(params)}
         initialPhotoId={first(params.photo)}
       />
