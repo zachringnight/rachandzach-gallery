@@ -471,7 +471,7 @@ export function Lightbox({
       {stripFrames ? (
         <nav
           className="atlas-lightbox-filmstrip"
-          aria-label="Nearby photographs"
+          aria-label="Nearby photos"
           data-lightbox-chrome="true"
         >
           {stripFrames.map((frame) => {
@@ -486,8 +486,8 @@ export function Lightbox({
                 }}
                 aria-label={
                   active
-                    ? "Current photograph"
-                    : `Open photograph from ${frame.eventName}`
+                    ? "Current photo"
+                    : `Open photo from ${frame.eventName}`
                 }
                 aria-current={active ? "true" : undefined}
                 className="atlas-lightbox-frame"
@@ -539,7 +539,7 @@ export function Lightbox({
 
         {photo.people.length > 0 ? (
           <div className="atlas-lightbox-note-block">
-            <p className="atlas-kicker">In this photograph</p>
+            <p className="atlas-kicker">In this photo</p>
             <p className="atlas-lightbox-note-people">{caption}</p>
           </div>
         ) : null}

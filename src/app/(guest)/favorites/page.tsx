@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Favorites | Rach & Zach",
-  description: "Your private shortlist of favorite photographs.",
+  description: "Your private shortlist of favorite photos.",
 };
 
 export default function FavoritesPage() {

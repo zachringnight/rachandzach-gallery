@@ -31,7 +31,7 @@ export default async function MyWeekendPage() {
       <header className="atlas-page-bar">
         <h1>Find me</h1>
         <p className="atlas-page-bar-note">
-          Choose your name to open the photographs you are in. Your selection
+          Choose your name to open the photos you are in. Your selection
           stays private on this device.
         </p>
       </header>

@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "The Archive | Rach & Zach",
-  description: "Search, select, download, and save the original photographs.",
+  description: "Search, select, download, and save the original photos.",
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;

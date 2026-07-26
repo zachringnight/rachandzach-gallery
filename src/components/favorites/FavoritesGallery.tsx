@@ -94,7 +94,7 @@ function FavoritesPageBar({
       <h1>Favorites</h1>
       <p className="atlas-page-bar-count" aria-live="polite">
         <strong>{count.toLocaleString()}</strong>
-        {count === 1 ? " photograph" : " photographs"}
+        {count === 1 ? " photo" : " photos"}
       </p>
       {actions ? <div className="atlas-page-bar-actions">{actions}</div> : null}
     </header>
@@ -205,7 +205,7 @@ export function FavoritesGallery() {
           <div>
             <p className="atlas-kicker">A collection in the making</p>
             <p>
-              Tap the heart on any photograph and it lands here. Your shortlist
+              Tap the heart on any photo and it lands here. Your shortlist
               stays private and is ready whenever you return.
             </p>
             {/* An empty screen is an invitation to act, so the two ways in are

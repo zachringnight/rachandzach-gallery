@@ -306,7 +306,7 @@ export function GalleryShell({
           <h1>{heading}</h1>
           <p className="atlas-page-bar-count" aria-live="polite">
             <strong>{total.toLocaleString()}</strong>
-            {total === 1 ? " photograph" : " photographs"}
+            {total === 1 ? " photo" : " photos"}
           </p>
         </header>
       ) : null}

@@ -39,7 +39,7 @@ export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
          * stranded in a third column beside a tall empty quadrant.
          */}
         <p className="atlas-person-setup-intro">
-          Your photographs arrive grouped by event.
+          Your photos arrive grouped by event.
         </p>
       </div>
       <div className="atlas-person-setup-picker">

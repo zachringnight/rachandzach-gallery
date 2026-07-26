@@ -30,5 +30,9 @@ export default defineConfig([
     // that explodes lint output; test-results holds failure screenshots).
     "playwright-report/**",
     "test-results/**",
+    // Coding-agent git worktrees. These are full checkouts of this repo
+    // living inside it, so linting them reports every finding twice (and
+    // reports a sibling branch's in-progress code as if it were ours).
+    ".claude/worktrees/**",
   ]),
 ]);

@@ -47,3 +47,6 @@ models/
 .vercel
 # Supabase CLI link/cache metadata is machine-local and regenerated.
 supabase/.temp/
+
+# Coding-agent git worktrees (full checkouts of this repo, inside this repo)
+.claude/worktrees/

@@ -7,7 +7,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Private Photo Archive | Rach & Zach",
   description:
-    "Find, favorite, download, and save photographs from Rachel and Zach's private archive.",
+    "Find, favorite, download, and save photos from Rachel and Zach's private archive.",
 };
 
 export const viewport: Viewport = {
