@@ -186,7 +186,7 @@ export function Lightbox({
       <header className="atlas-lightbox-header">
         <div className="atlas-lightbox-title">
           <p>{photo.eventName}</p>
-          {caption ? <h2>{caption}</h2> : <h2>A moment from the weekend</h2>}
+          {caption ? <h2>{caption}</h2> : <h2>A photograph from the archive</h2>}
         </div>
 
         <div className="atlas-lightbox-tools">

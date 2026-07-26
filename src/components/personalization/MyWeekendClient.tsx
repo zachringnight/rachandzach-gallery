@@ -61,7 +61,7 @@ export function MyWeekendClient({ people }: MyWeekendClientProps) {
   }, []);
 
   if (personSlug === undefined) {
-    return <p className="atlas-personal-state">Loading your weekend…</p>;
+    return <p className="atlas-personal-state">Loading your photos…</p>;
   }
 
   if (personSlug === null) {

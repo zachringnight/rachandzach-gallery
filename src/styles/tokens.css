@@ -1,48 +1,45 @@
 /**
  * 0719 + co. design tokens.
  *
- * Palette approved from the wedding photography: wheat, cream, sand, tan,
- * dusty coral, charcoal ink. Dusty coral is an accent (the mark, small
- * highlights), never a page background or long-copy text color.
+ * Natural archive palette: layered ivory, wheat, parchment, limestone,
+ * espresso ink, and a restrained burnt-sienna accent. The warmth comes from
+ * the photographs and paper tones; interaction contrast remains deliberate.
  *
  * Structure: raw values live on --rz-* source variables (namespaced so the
  * legacy gallery CSS, which also defines --sand and --muted, cannot collide,
  * and so the Tailwind @theme mapping in globals.css never self-references).
  * The public token names below them are the packet contract.
  *
- * Accessible text pairings on cream (#F6F0E4):
- * - ink   #282521 -> 13.4:1 (body and headings)
- * - muted #6B645A ->  5.1:1 (secondary text, passes WCAG AA for normal text)
- * Accessible text pairings on sand (#E8DBC2):
- * - muted-on-sand #655E54 -> 4.7:1
- * - tan-text      #705D46 -> 4.6:1
- * Coral #D38377 (2.5:1) and tan #AA8D66 remain decorative-only colors.
+ * Espresso and muted text are tuned to remain readable on the lightest
+ * archive surfaces. Sienna and tan remain accents rather than body text.
  */
 :root {
   /* Raw sources */
-  --rz-cream: #f6f0e4;
-  --rz-sand: #e8dbc2;
-  --rz-wheat: #d8c8a8;
-  --rz-tan: #aa8d66;
-  --rz-ink: #282521;
-  --rz-coral: #d38377;
+  --rz-cream: #f6f1e7;
+  --rz-sand: #e9ddc8;
+  --rz-wheat: #d6c6aa;
+  --rz-tan: #9f8562;
+  --rz-ink: #241f18;
+  --rz-coral: #a44524;
   --rz-white: #ffffff;
   /* Muted ink derived from --rz-ink, tuned for >= 4.5:1 on --rz-cream. */
-  --rz-muted: #6b645a;
+  --rz-muted: #6a6257;
   /* Contextual editorial tones that remain AA-compliant on warm surfaces. */
-  --rz-muted-on-sand: #655e54;
-  --rz-tan-text: #705d46;
+  --rz-muted-on-sand: #5f574d;
+  --rz-tan-text: #735c40;
+  --rz-olive: #59604d;
+  --rz-limestone: #ded6c9;
 
   /*
    * Font variables are attached to <html> by next/font (see
    * src/components/brand/Wordmark.tsx for the loaded faces). The fallback
    * stacks keep type coherent before the root layout wires the variables.
    */
-  --rz-font-display: var(--font-display-face, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif);
+  --rz-font-display: var(--font-display-face, "Avenir Next", Avenir, ui-sans-serif, system-ui, sans-serif);
   --rz-font-body: var(--font-body-face, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
 
-  --rz-radius-card: 0.75rem;
-  --rz-shadow-soft: 0 20px 50px -24px rgba(40, 37, 33, 0.25);
+  --rz-radius-card: 0.25rem;
+  --rz-shadow-soft: 0 24px 64px -38px rgba(36, 31, 24, 0.34);
 
   /* Type scale (packet 00): fluid editorial sizes. Kicker is a fixed label
    * size (uppercase eyebrow text), the rest scale with the viewport. */

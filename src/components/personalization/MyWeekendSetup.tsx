@@ -31,11 +31,11 @@ export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
     <section className="atlas-person-setup" aria-labelledby="person-setup-title">
       <div className="atlas-person-setup-copy">
         <p className="atlas-kicker">Tell us who you are</p>
-        <h2 id="person-setup-title">Your own way through the weekend.</h2>
+        <h2 id="person-setup-title">Your photos, in one place.</h2>
       </div>
       <p className="atlas-person-setup-intro">
-        Pick your name to see your weekend, grouped by event. Your choice stays on this device
-        only. We never send it anywhere.
+        Pick your name to open the photographs you are in, grouped by event.
+        Your choice stays on this device only.
       </p>
       <div className="atlas-person-setup-picker">
         <PersonPicker people={people} selected={pending} onSelect={setPending} />
@@ -47,7 +47,7 @@ export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
           }}
           className="atlas-inline-action disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Show my weekend
+          Show my photos
         </button>
       </div>
     </section>

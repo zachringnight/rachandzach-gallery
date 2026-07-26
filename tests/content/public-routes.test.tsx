@@ -2,7 +2,6 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import HomePage, { metadata as homeMetadata } from "@/app/page";
-import WeekendPage, { metadata as weekendMetadata } from "@/app/(public)/weekend/page";
 import NotFound from "@/app/(public)/not-found";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
@@ -13,7 +12,7 @@ import { focalObjectPosition, storyPhotos, STORY_PHOTO_APPROVAL } from "@/conten
 afterEach(cleanup);
 
 /** Routes that require the guest session and must never be advertised to crawlers. */
-const PROTECTED_ROUTES = ["/photos", "/my-weekend", "/add-yours", "/admin"];
+const PROTECTED_ROUTES = ["/photos", "/my-weekend", "/favorites", "/add-yours", "/admin"];
 
 describe("public route titles", () => {
   it("gives the home page a Rachel and Zach Santa Barbara title", () => {
@@ -23,64 +22,45 @@ describe("public route titles", () => {
     expect(title).toContain("Santa Barbara");
   });
 
-  it("gives the weekend page a weekend title", () => {
-    expect(String(weekendMetadata.title)).toMatch(/weekend/i);
-  });
-
-  it("renders exactly one h1 per public page", () => {
+  it("renders exactly one h1 on the public home", () => {
     const home = render(<HomePage />);
     expect(home.container.querySelectorAll("h1")).toHaveLength(1);
-    cleanup();
-    const weekend = render(<WeekendPage />);
-    expect(weekend.container.querySelectorAll("h1")).toHaveLength(1);
   });
 });
 
 describe("home page", () => {
-  it("leads with the coast-to-dance-floor line and both actions", () => {
+  it("leads with the private archive promise and both primary actions", () => {
     render(<HomePage />);
     expect(
-      screen.getByRole("heading", { level: 1, name: /from the coast to the dance floor/i }),
+      screen.getByRole("heading", { level: 1, name: /the photographs are ready/i }),
     ).toBeDefined();
-    const findPhotos = screen.getByRole("link", { name: /find your photos/i });
-    expect(findPhotos.getAttribute("href")).toBe("/photos");
-    const browseWeekend = screen.getByRole("link", { name: /browse the weekend/i });
-    expect(browseWeekend.getAttribute("href")).toBe("/weekend");
+    const findPhotos = screen.getByRole("link", { name: /^find my photos$/i });
+    expect(findPhotos.getAttribute("href")).toBe("/my-weekend");
+    const openArchive = screen.getByRole("link", { name: /open the archive/i });
+    expect(openArchive.getAttribute("href")).toBe("/photos");
   });
 
-  it("tells the story in the five home chapters", () => {
+  it("replaces the recap with archive utilities", () => {
     const { container } = render(<HomePage />);
-    for (const id of ["coast", "ceremony", "dinner", "dancing", "after-party"]) {
-      expect(container.querySelector(`#${id}`), `missing chapter #${id}`).not.toBeNull();
-    }
-  });
-});
-
-describe("weekend story page", () => {
-  it("renders every weekend event with venue facts", () => {
-    render(<WeekendPage />);
-    expect(screen.getAllByText(/hotel californian/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/rincon pergola/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/studio sound room/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/municipal winemakers/i).length).toBeGreaterThan(0);
-  });
-
-  it("keeps the legacy faq and travel anchors alive", () => {
-    const { container } = render(<WeekendPage />);
-    expect(container.querySelector("#faq")).not.toBeNull();
-    expect(container.querySelector("#travel")).not.toBeNull();
+    expect(screen.getByRole("heading", { name: /a private archive that works for you/i }))
+      .toBeDefined();
+    expect(screen.getByRole("heading", { name: /take the originals with you/i }))
+      .toBeDefined();
+    expect(container.querySelector("#coast")).toBeNull();
+    expect(container.textContent).not.toMatch(/weekend as we remember it/i);
   });
 });
 
 describe("legacy redirects data", () => {
   it("maps every old route to its new home", () => {
     const map = new Map(legacyRedirects.map((r) => [r.source, r.destination]));
+    expect(map.get("/weekend")).toBe("/photos");
     expect(map.get("/overview")).toBe("/");
-    expect(map.get("/schedule-1")).toBe("/weekend");
+    expect(map.get("/schedule-1")).toBe("/photos");
     expect(map.get("/gallery")).toBe("/photos");
-    expect(map.get("/faq-1")).toBe("/weekend#faq");
-    expect(map.get("/travel")).toBe("/weekend#travel");
-    expect(legacyRedirects).toHaveLength(5);
+    expect(map.get("/faq-1")).toBe("/");
+    expect(map.get("/travel")).toBe("/");
+    expect(legacyRedirects).toHaveLength(6);
   });
 
   it("marks every legacy redirect permanent", () => {
@@ -108,10 +88,6 @@ describe("disabled modules stay hidden", () => {
     const home = render(<HomePage />);
     expect(within(home.container).queryByText(/playlist/i)).toBeNull();
     expect(within(home.container).queryByText(/marathon/i)).toBeNull();
-    cleanup();
-    const weekend = render(<WeekendPage />);
-    expect(within(weekend.container).queryByText(/playlist/i)).toBeNull();
-    expect(within(weekend.container).queryByText(/marathon/i)).toBeNull();
   });
 });
 
@@ -136,27 +112,18 @@ describe("image accessibility", () => {
   it("uses empty alt only for decorative images on the home page", () => {
     const { container } = render(<HomePage />);
     checkAltDiscipline(container);
-    // The marquee exists and is decorative end to end.
-    const marquee = container.querySelector('[data-marquee][aria-hidden="true"]');
-    expect(marquee).not.toBeNull();
-  });
-
-  it("uses empty alt only for decorative images on the weekend page", () => {
-    const { container } = render(<WeekendPage />);
-    checkAltDiscipline(container);
+    const study = container.querySelector('.archive-photo-study-grid[aria-hidden="true"]');
+    expect(study).not.toBeNull();
   });
 });
 
 describe("protected content stays out of public HTML", () => {
   it("never references gallery assets, generated data, or API routes", () => {
-    for (const page of [<HomePage key="home" />, <WeekendPage key="weekend" />]) {
-      const { container } = render(page);
-      const html = container.innerHTML;
-      expect(html).not.toContain("gallery-assets");
-      expect(html).not.toContain("/api/");
-      expect(html).not.toMatch(/supabase/i);
-      cleanup();
-    }
+    const { container } = render(<HomePage />);
+    const html = container.innerHTML;
+    expect(html).not.toContain("gallery-assets");
+    expect(html).not.toContain("/api/");
+    expect(html).not.toMatch(/supabase/i);
   });
 });
 
@@ -176,8 +143,8 @@ describe("robots and sitemap", () => {
     const entries = sitemap();
     const paths = entries.map((entry) => new URL(entry.url).pathname);
     expect(paths).toContain("/");
-    expect(paths).toContain("/weekend");
     expect(paths).toContain("/nyc");
+    expect(paths).not.toContain("/weekend");
     for (const path of paths) {
       for (const route of PROTECTED_ROUTES) {
         expect(path === route || path.startsWith(`${route}/`)).toBe(false);
@@ -187,10 +154,10 @@ describe("robots and sitemap", () => {
 });
 
 describe("not-found page", () => {
-  it("keeps the Funk Zone voice and routes back home", () => {
+  it("routes back to the working archive", () => {
     render(<NotFound />);
-    expect(screen.getByRole("heading", { name: /funk zone/i })).toBeDefined();
-    const home = screen.getByRole("link", { name: /go home/i });
+    expect(screen.getByRole("heading", { name: /out of frame/i })).toBeDefined();
+    const home = screen.getByRole("link", { name: /archive home/i });
     expect(home.getAttribute("href")).toBe("/");
   });
 });

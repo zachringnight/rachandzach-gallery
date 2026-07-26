@@ -28,7 +28,7 @@ import {
  *   than leaving content hidden.
  */
 
-type RevealTag = "div" | "section" | "li" | "span" | "figure";
+type RevealTag = "article" | "div" | "section" | "li" | "span" | "figure";
 
 export interface RevealProps {
   /** Element to render (all plain flow containers). Default "div". */

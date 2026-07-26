@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Favorites | Rach & Zach",
-  description: "Your favorite photos from the wedding weekend.",
+  description: "Your private shortlist of favorite photographs.",
 };
 
 export default function FavoritesPage() {
@@ -22,16 +22,15 @@ export default function FavoritesPage() {
     <section className="atlas-guest-page">
       <header className="atlas-guest-header">
         <div>
-          <p className="atlas-kicker">Your collection</p>
+          <p className="atlas-kicker">Private shortlist</p>
           <h1>Favorites</h1>
         </div>
         <p>
-          Every photo you have hearted, all in one place. Favorites are saved on this device
-          and follow you: tell us who you are on My Weekend and they sync to your name. Play
-          them as a slideshow, download the whole set as one file, or export a shortlist to
-          help plan a printed album.
+          Keep the photographs you want in one place. Play them as a slideshow,
+          download the whole set, save it to your cloud account, or export a
+          shortlist for a printed album.
         </p>
-        <span aria-hidden="true">Keep what you love</span>
+        <span aria-hidden="true">Keep · Save · Print</span>
       </header>
       <div className="atlas-guest-body">
         <FavoritesGallery />

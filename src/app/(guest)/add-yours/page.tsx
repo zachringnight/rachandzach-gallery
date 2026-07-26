@@ -33,14 +33,14 @@ export default async function AddYoursPage() {
     >
       <header className="atlas-guest-header">
         <div>
-          <p className="atlas-kicker">The weekend as you saw it</p>
+          <p className="atlas-kicker">Keep the archive growing</p>
           <h1>Add your photos</h1>
         </div>
         <p>
-          The photographer could not be everywhere. Your phone was. Share what
-          you caught over the weekend.
+          Contribute the photographs only you have. Every submission waits for
+          review before it joins the private archive.
         </p>
-        <span aria-hidden="true">Add another point of view</span>
+        <span aria-hidden="true">Your point of view</span>
       </header>
 
       <div className="atlas-guest-body atlas-upload-body">

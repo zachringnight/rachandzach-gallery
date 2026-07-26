@@ -26,8 +26,8 @@ export async function generateMetadata({
   const { personSlug } = await params;
   const person = await confirmedPerson(personSlug);
   return {
-    title: person ? `${person.displayName}'s Weekend | Rach & Zach` : "Your Weekend | Rach & Zach",
-    description: "A private collection of your photos from Rachel and Zach's wedding weekend.",
+    title: person ? `${person.displayName}'s Photos | Rach & Zach` : "Your Photos | Rach & Zach",
+    description: "A private collection of confirmed photographs that include you.",
     robots: { index: false, follow: false },
   };
 }
@@ -55,10 +55,10 @@ export default async function PersonGalleryPage({
           <h1>{person.displayName}</h1>
         </div>
         <p>
-          Every confirmed photo that includes you, gathered across the whole
-          weekend in one private place.
+          Every confirmed photograph that includes you, gathered in one
+          private place and ready to favorite, download, or save.
         </p>
-        <span aria-hidden="true">You were part of it</span>
+        <span aria-hidden="true">Made for you</span>
       </header>
 
       <div className="atlas-guest-body">

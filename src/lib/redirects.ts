@@ -18,11 +18,12 @@ export interface LegacyRedirect {
 }
 
 export const legacyRedirects: LegacyRedirect[] = [
+  { source: "/weekend", destination: "/photos", permanent: true },
   { source: "/overview", destination: "/", permanent: true },
-  { source: "/schedule-1", destination: "/weekend", permanent: true },
+  { source: "/schedule-1", destination: "/photos", permanent: true },
   { source: "/gallery", destination: "/photos", permanent: true },
-  { source: "/faq-1", destination: "/weekend#faq", permanent: true },
-  { source: "/travel", destination: "/weekend#travel", permanent: true },
+  { source: "/faq-1", destination: "/", permanent: true },
+  { source: "/travel", destination: "/", permanent: true },
 ];
 
 /**

@@ -1,12 +1,12 @@
 import type { FeatureFlagName } from "@/content/features";
 
 /**
- * Editorial and structural content for the 0719 + co. digital wedding home.
+ * Structural content for the 0719 + co. private photo archive.
  *
- * Facts and voice come from the original rachandzach.com copy. This module is
- * the single source of truth for names, dates, navigation, and the weekend
- * story. Do not add URLs, vendors, playlist names, marathon details, or
- * donation totals here; those arrive with their own packets.
+ * This module is the single source of truth for names, dates, navigation, and
+ * guest-facing utility copy. Historical event data remains available for
+ * internal photo grouping, but the public experience leads with what guests
+ * can do with the archive now.
  */
 
 export interface NavigationItem {
@@ -84,13 +84,11 @@ export const siteConfig: SiteConfig = {
     websiteUrl: "https://www.alibeck.co/",
   },
   navigation: [
-    { label: "Home", href: "/", enabled: true },
-    { label: "The Weekend", href: "/weekend", enabled: true },
-    { label: "Rach Runs NYC", href: "/nyc", enabled: true },
     { label: "Photos", href: "/photos", enabled: true },
-    { label: "My Weekend", href: "/my-weekend", enabled: true },
+    { label: "Find me", href: "/my-weekend", enabled: true },
     { label: "Favorites", href: "/favorites", enabled: true },
-    { label: "Add Yours", href: "/add-yours", enabled: true },
+    { label: "Add photos", href: "/add-yours", enabled: true },
+    { label: "NYC", href: "/nyc", enabled: true },
     { label: "Playlists", href: "/playlists", enabled: false, flag: "playlists" },
     { label: "The Marathon", href: "/marathon", enabled: false, flag: "marathon" },
   ],
@@ -140,13 +138,13 @@ export const siteConfig: SiteConfig = {
     },
   ],
   voice: {
-    eyebrow: "July 19, 2025 · Santa Barbara, CA",
-    heroTitle: "Rachel & Zach",
+    eyebrow: "Private photo archive",
+    heroTitle: "The photographs are ready.",
     heroBody:
-      "We got married in Santa Barbara, surrounded by all of our favorite people in one of our favorite places. We are still not over it.",
+      "Find the ones you are in, build a private shortlist, and save the originals wherever you keep them.",
     galleryIntro:
-      "Every photo from the weekend, from the coast to the dance floor, with happy tears and plenty of evidence in between.",
+      "Search, filter, select, download, or save the original photographs to your own cloud account.",
     uploadIntro:
-      "We want the weekend the way you saw it. If your camera roll survived the dance floor, add your photos here and we will fold them into the collection.",
+      "Contribute the photographs only you have. Every submission is reviewed before it joins the archive.",
   },
 };

@@ -53,15 +53,15 @@ export function DownloadMyWeekendButton({
 
   if (batches.length === 0) return null;
 
-  const baseFilename = `${personSlug || "weekend"}-weekend.zip`;
+  const baseFilename = `${personSlug || "guest"}-photos.zip`;
   const multipart = batches.length > 1;
 
   return (
     <div className={className ?? "flex flex-col gap-2"}>
       {multipart ? (
         <p className="text-xs text-muted">
-          {personName}&rsquo;s weekend is {photoIds.length} photos, more than one download can
-          hold, so it comes in {batches.length} parts.
+          {personName} has {photoIds.length} photos, more than one download can
+          hold, so the collection comes in {batches.length} parts.
         </p>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
@@ -72,7 +72,7 @@ export function DownloadMyWeekendButton({
               label={
                 multipart
                   ? `Download part ${index + 1} of ${batches.length}`
-                  : "Download my weekend"
+                  : "Download my photos"
               }
               zipFilename={
                 multipart ? partZipFilename(baseFilename, index, batches.length) : baseFilename

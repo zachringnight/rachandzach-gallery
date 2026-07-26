@@ -216,7 +216,7 @@ export function FilterBar({
           </legend>
           <div className="flex gap-2">
             <Toggle
-              label="Weekend order"
+              label="Chronological"
               active={filters.sort === "weekend"}
               onClick={() => onChange({ sort: "weekend" })}
             />

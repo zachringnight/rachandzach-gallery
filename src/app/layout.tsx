@@ -5,9 +5,9 @@ import { bodyFont, displayFont } from "@/components/brand/Wordmark";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Santa Barbara Wedding | Rach & Zach",
+  title: "Private Photo Archive | Rach & Zach",
   description:
-    "Rachel and Zach got married in Santa Barbara, California on July 19, 2025. The weekend story and photo gallery live here.",
+    "Find, favorite, download, and save photographs from Rachel and Zach's private archive.",
 };
 
 export const viewport: Viewport = {
@@ -20,7 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     // Packet 01 handoff: the next/font variables must ride <html> so the
     // token font stacks (--font-display / --font-body) resolve to the real
-    // Fraunces and Inter faces instead of their fallbacks.
+    // Manrope and Inter faces instead of their fallbacks.
     //
     // suppressHydrationWarning (this element only, not children): the js-gate
     // script below adds the `js` class to <html> before React hydrates, which

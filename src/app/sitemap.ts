@@ -15,12 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${SITE_ORIGIN}/weekend`,
-      lastModified: new Date("2025-07-19"),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
       url: `${SITE_ORIGIN}/nyc`,
       lastModified: new Date("2026-07-23"),
       changeFrequency: "weekly",

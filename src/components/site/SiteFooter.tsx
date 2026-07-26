@@ -4,10 +4,8 @@ import { BrandMark } from "@/components/brand/BrandMark";
 import { siteConfig } from "@/content/site";
 
 /**
- * Site footer: names, date, place, photographer credit, and a discreet admin
- * link. Photographer name, Instagram, and website are confirmed
- * (siteConfig.photographer); both credit links open in a new tab since they
- * leave the site.
+ * Site footer: the archive's utility map, photographer credit, and a discreet
+ * admin link. External credit links open in a new tab.
  */
 export function SiteFooter() {
   const { photographer } = siteConfig;
@@ -22,9 +20,9 @@ export function SiteFooter() {
           <p className="atlas-footer-names">
             {siteConfig.names.primary} &amp; {siteConfig.names.secondary}
           </p>
-          <p>July 19, 2025 · Santa Barbara, CA</p>
+          <p>Private photo archive · Santa Barbara</p>
           <p className="atlas-footer-love">
-            Made with love for the people we love.
+            Made for the people in it.
           </p>
         </div>
 

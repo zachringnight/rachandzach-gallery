@@ -44,42 +44,33 @@ function collectStrings(value: unknown, out: string[] = []): string[] {
 const { photographer: _photographerCredit, ...siteConfigWithoutPhotographer } = siteConfig;
 void _photographerCredit;
 const allCopy = collectStrings(siteConfigWithoutPhotographer);
-const allCopyJoined = allCopy.join("\n");
 
 describe("site identity", () => {
-  it("leads with Rachel and Zach", () => {
+  it("keeps Rachel and Zach as the archive owners", () => {
     expect(siteConfig.names.primary).toBe("Rachel");
     expect(siteConfig.names.secondary).toBe("Zach");
-    expect(siteConfig.voice.heroTitle).toContain("Rachel");
-    expect(siteConfig.voice.heroTitle).toContain("Zach");
+    expect(siteConfig.voice.heroTitle).toBe("The photographs are ready.");
   });
 
-  it("anchors on July 19, 2025 in Santa Barbara", () => {
+  it("retains the canonical date and Santa Barbara location", () => {
     expect(siteConfig.date).toBe("2025-07-19");
     expect(siteConfig.location).toBe("Santa Barbara, CA");
-    const anchor = `${siteConfig.voice.eyebrow} ${siteConfig.voice.heroBody}`;
-    expect(anchor).toContain("July 19, 2025");
-    expect(anchor).toContain("Santa Barbara");
   });
 });
 
-describe("required phrases", () => {
-  it('keeps "all of our favorite people"', () => {
-    expect(allCopyJoined.toLowerCase()).toContain("all of our favorite people");
+describe("archive-first voice", () => {
+  it("leads with the archive's current uses", () => {
+    const voice = collectStrings(siteConfig.voice).join("\n").toLowerCase();
+    expect(voice).toContain("private photo archive");
+    expect(voice).toContain("save the originals");
+    expect(voice).toContain("cloud account");
   });
 
-  it('keeps "from the coast to the dance floor"', () => {
-    expect(allCopyJoined.toLowerCase()).toContain("from the coast to the dance floor");
-  });
-
-  it('keeps "one last laugh, hug, and kiss" inside the weekend story', () => {
-    const weekendCopy = collectStrings(siteConfig.weekend).join("\n").toLowerCase();
-    expect(weekendCopy).toContain("one last laugh, hug, and kiss");
-  });
-
-  it('keeps "yes, even you" as a single playful accent, not a gimmick', () => {
-    const matches = allCopyJoined.toLowerCase().match(/yes, even you/g) ?? [];
-    expect(matches).toHaveLength(1);
+  it("keeps recap language out of the public voice fields", () => {
+    const voice = collectStrings(siteConfig.voice).join("\n").toLowerCase();
+    expect(voice).not.toContain("we are still not over it");
+    expect(voice).not.toContain("from the coast to the dance floor");
+    expect(voice).not.toContain("the weekend as we remember it");
   });
 });
 
@@ -128,9 +119,16 @@ describe("navigation", () => {
       expect(item.label.trim().length).toBeGreaterThan(0);
     }
   });
+
+  it("maps the visible navigation to archive utilities", () => {
+    const enabledLabels = siteConfig.navigation
+      .filter((item) => item.enabled)
+      .map((item) => item.label);
+    expect(enabledLabels).toEqual(["Photos", "Find me", "Favorites", "Add photos", "NYC"]);
+  });
 });
 
-describe("weekend story content", () => {
+describe("event metadata retained for photo grouping", () => {
   it("covers the full July 18-20 weekend", () => {
     expect(siteConfig.weekend.length).toBeGreaterThanOrEqual(4);
     for (const event of siteConfig.weekend) {

@@ -32,7 +32,6 @@ function describeViolations(violations: Awaited<ReturnType<typeof auditViolation
 test.describe("WCAG AA scans on real, database-free pages", () => {
   const publicPages: Array<[string, string]> = [
     ["home", "/"],
-    ["weekend", "/weekend"],
     ["login (enter)", "/enter"],
     ["login, invalid-password error state", "/enter?error=invalid"],
     ["login, rate-limited error state", "/enter?error=slow"],

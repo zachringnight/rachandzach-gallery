@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "TV Mode | Rach & Zach",
   description:
-    "A full-screen slideshow of the wedding weekend, made for a big screen at a gathering.",
+    "A full-screen slideshow of the private archive, made for a big screen.",
   // Belt-and-suspenders alongside the crawler policy in src/app/robots.ts
   // (not owned by this route; see this packet's report for the disallow-
   // list addition an integrate pass should make there).

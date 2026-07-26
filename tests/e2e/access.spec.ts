@@ -46,7 +46,7 @@ function appAlert(page: import("@playwright/test").Page) {
 const GUEST_ROUTES = ["/photos", "/my-weekend", "/add-yours", "/favorites"];
 
 test.describe("public routes stay open with no session", () => {
-  for (const path of ["/", "/weekend", "/enter", "/robots.txt", "/sitemap.xml"]) {
+  for (const path of ["/", "/enter", "/robots.txt", "/sitemap.xml"]) {
     test(`GET ${path} does not redirect anywhere`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response?.status(), path).toBeLessThan(400);
@@ -56,6 +56,13 @@ test.describe("public routes stay open with no session", () => {
       expect(new URL(page.url()).pathname, path).toBe(path);
     });
   }
+
+  test("the retired weekend route opens the protected photo archive", async ({ page }) => {
+    await page.goto("/weekend");
+    const url = new URL(page.url());
+    expect(url.pathname).toBe("/enter");
+    expect(url.searchParams.get("next")).toBe("/photos");
+  });
 });
 
 test.describe("guest routes require a session", () => {

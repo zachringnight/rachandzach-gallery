@@ -13,14 +13,13 @@ import { addGuestSession } from "./support/session";
  * gallery, lightbox, upload-in-progress, receipt, and admin-review all need
  * real content behind them and are test.fixme'd at the bottom.
  *
- * Note for whoever reviews these baselines: home.png and weekend.png
- * include real wedding photography (public/story/*.jpg, dev picks pending
+ * Note for whoever reviews these baselines: home.png includes real wedding
+ * photography (public/story/*.jpg, dev picks pending
  * Zach's visual approval per src/content/story-photos.ts). They are
  * generated here purely mechanically for pixel-diff regression tracking --
- * this suite never opens or inspects them, only Playwright's own pass/fail
+ * this suite never opens or inspects it, only Playwright's own pass/fail
  * comparison does. If that is not wanted as a stored baseline, delete
- * tests/e2e/visual.spec.ts-snapshots/home-* and weekend-* and skip those two
- * cases.
+ * tests/e2e/visual.spec.ts-snapshots/home-* and skip that case.
  */
 
 test.use({ colorScheme: "light" });
@@ -52,16 +51,6 @@ test.describe("public pages", () => {
     await page.goto("/");
     await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("home.png", {
-      fullPage: true,
-      animations: "disabled",
-      timeout: 15_000,
-    });
-  });
-
-  test("weekend", async ({ page }) => {
-    await page.goto("/weekend");
-    await prepareVisualCapture(page);
-    await expect(page).toHaveScreenshot("weekend.png", {
       fullPage: true,
       animations: "disabled",
       timeout: 15_000,

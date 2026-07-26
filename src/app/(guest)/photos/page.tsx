@@ -19,8 +19,8 @@ import { siteConfig } from "@/content/site";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Photos | Rach & Zach",
-  description: "Every photo from the wedding weekend.",
+  title: "The Archive | Rach & Zach",
+  description: "Search, select, download, and save the original photographs.",
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -92,11 +92,11 @@ export default async function PhotosPage({
     <section className="atlas-guest-page atlas-photos-page">
       <header className="atlas-guest-header">
         <div>
-          <p className="atlas-kicker">The full collection</p>
-          <h1>Photos</h1>
+          <p className="atlas-kicker">Browse and save</p>
+          <h1>The archive</h1>
         </div>
         <p>{siteConfig.voice.galleryIntro}</p>
-        <span aria-hidden="true">Every frame</span>
+        <span aria-hidden="true">Search · Select · Save</span>
       </header>
 
       <GalleryShell

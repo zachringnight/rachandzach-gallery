@@ -11,7 +11,7 @@ export default function TvLoading() {
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink text-cream"
     >
       <p className="text-xs uppercase tracking-wider text-cream/70">
-        Gathering the weekend&hellip;
+        Gathering the archive&hellip;
       </p>
     </div>
   );

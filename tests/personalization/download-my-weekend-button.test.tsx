@@ -52,7 +52,7 @@ describe("DownloadMyWeekendButton visibility", () => {
     render(
       <DownloadMyWeekendButton personName="Rachel" personSlug="rachel" photoIds={ids(1)} />,
     );
-    expect(screen.getByRole("button", { name: /download my weekend/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /download my photos/i })).toBeDefined();
   });
 });
 
@@ -70,11 +70,11 @@ describe("DownloadMyWeekendButton empty person", () => {
 // --- Batching math rendered as sequential, labeled parts -------------------
 
 describe("DownloadMyWeekendButton batching", () => {
-  it("under the cap renders a single 'Download my weekend' control, no part labeling", () => {
+  it("under the cap renders a single 'Download my photos' control, no part labeling", () => {
     render(
       <DownloadMyWeekendButton personName="Rachel" personSlug="rachel" photoIds={ids(12)} />,
     );
-    expect(screen.getByRole("button", { name: /^download my weekend/i })).toBeDefined();
+    expect(screen.getByRole("button", { name: /^download my photos/i })).toBeDefined();
     expect(screen.queryByText(/part 1 of/i)).toBeNull();
   });
 

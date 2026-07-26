@@ -172,12 +172,12 @@ export function MyWeekendGallery({
       <div className="atlas-weekend-collection-header">
         <div className="atlas-weekend-collection-heading">
           <div>
-            <p className="atlas-kicker">My Weekend</p>
-            <h2>{personName}&rsquo;s weekend</h2>
+            <p className="atlas-kicker">Find me</p>
+            <h2>{personName}&rsquo;s photos</h2>
             {state === "ready" ? (
               <p className="atlas-weekend-photo-count">
                 {photos.length.toLocaleString()}{" "}
-                {photos.length === 1 ? "photo" : "photos"} of your weekend
+                {photos.length === 1 ? "photo" : "photos"} in your collection
               </p>
             ) : null}
           </div>
@@ -220,16 +220,17 @@ export function MyWeekendGallery({
       </div>
 
       {state === "loading" ? (
-        <p className="atlas-personal-state">Gathering your weekend…</p>
+        <p className="atlas-personal-state">Gathering your photos…</p>
       ) : null}
       {state === "error" ? (
         <p className="atlas-personal-state">
-          We could not load your weekend right now. Refresh to try again.
+          We could not load your photos right now. Refresh to try again.
         </p>
       ) : null}
       {state === "empty" ? (
         <p className="atlas-personal-state">
-          No photos of {personName} here yet. Check back as more of the weekend gets tagged.
+          No confirmed photos of {personName} are in the archive yet. Check back
+          as more photographs are tagged.
         </p>
       ) : null}
 
@@ -296,7 +297,7 @@ export function MyWeekendGallery({
           // shape this component ever has, fetched from /api/gallery) is
           // passed through as-is, with no cast.
           photos={photos}
-          modeLabel={`${personName}'s weekend`}
+          modeLabel={`${personName}'s photos`}
           onClose={() => setSlideshowOpen(false)}
         />
       ) : null}

@@ -55,9 +55,9 @@ export function EventScrubber({
   };
 
   return (
-    <nav className="atlas-event-scrubber" aria-label="Jump through the weekend">
+    <nav className="atlas-event-scrubber" aria-label="Jump through the archive by event">
       <div className="atlas-event-scrubber-heading">
-        <span>Weekend index</span>
+        <span>Archive index</span>
         <strong aria-live="polite">{active.name}</strong>
       </div>
 

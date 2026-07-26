@@ -3,7 +3,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
 import { getGalleryFacets } from "@/lib/gallery/query";
 import { featureFlags } from "@/content/features";
-import { siteConfig } from "@/content/site";
 import { MyWeekendClient } from "@/components/personalization/MyWeekendClient";
 import { MomentSearch } from "@/components/search/MomentSearch";
 
@@ -11,8 +10,8 @@ import { MomentSearch } from "@/components/search/MomentSearch";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "My Weekend | Rach & Zach",
-  description: "Find your own photos from the wedding weekend, and search for a moment.",
+  title: "Find Me | Rach & Zach",
+  description: "Choose your name to open your private photo collection.",
 };
 
 /**
@@ -31,14 +30,14 @@ export default async function MyWeekendPage() {
     <section className="atlas-guest-page">
       <header className="atlas-guest-header">
         <div>
-          <p className="atlas-kicker">Just for you</p>
-          <h1>My Weekend</h1>
+          <p className="atlas-kicker">Find me</p>
+          <h1>Your photos</h1>
         </div>
         <p>
-          Tell us who you are and we will gather every photo of {siteConfig.names.primary}{" "}
-          and {siteConfig.names.secondary}&rsquo;s weekend that includes you.
+          Choose your name to open the confirmed photographs you are in. Your
+          selection stays private and is ready whenever you return.
         </p>
-        <span aria-hidden="true">Find your way back</span>
+        <span aria-hidden="true">One private collection</span>
       </header>
 
       <div className="atlas-guest-body">

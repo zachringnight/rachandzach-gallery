@@ -171,8 +171,8 @@ export function FavoritesGallery() {
           <p className="atlas-kicker">A collection in the making</p>
           <h2>Keep the frames you love close.</h2>
           <p>
-            You have not favorited any photos yet. Play a slideshow from My Weekend and tap the
-            heart on the ones you love.
+            You have not favorited any photos yet. Open Find me or the full
+            archive, then tap the heart on the ones you want to keep.
           </p>
         </div>
       </section>

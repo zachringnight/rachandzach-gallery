@@ -54,7 +54,7 @@ export default async function EnterPage({ searchParams }: EnterPageProps) {
           />
         </picture>
         <figcaption>
-          <span>For our favorite people</span>
+          <span>Private to invited guests</span>
           <span>Santa Barbara · 0719</span>
         </figcaption>
       </figure>
@@ -69,14 +69,14 @@ export default async function EnterPage({ searchParams }: EnterPageProps) {
           <p className="atlas-kicker">{siteConfig.voice.eyebrow}</p>
           <h1>{siteConfig.voice.heroTitle}</h1>
           <p>
-          This part of the site is just for the people who shared the weekend
-          with us. Enter the password from your invite and come on in.
+            This archive is private to invited guests. Enter the password from
+            your invitation to search, favorite, download, and save photographs.
           </p>
           <AccessForm nextPath={nextPath} errorMessage={errorMessage} />
         </div>
 
         <Link href="/" className="atlas-access-home">
-          Back to the weekend
+          Back to the archive home
         </Link>
       </section>
     </main>
