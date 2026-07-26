@@ -34,7 +34,19 @@ export interface LightBarProps {
  * Accessibility mirrors the retired EventScrubber's pattern: the visible
  * rail is pointer-friendly, an invisible labelled range input spans it for
  * keyboard scrubbing, and a visually hidden select lists the events.
+ *
+ * Pointer routing: the range sits ABOVE the segments (it is what makes
+ * drag-scrubbing and keyboard scrubbing work), so segment buttons never see
+ * a mouse click -- document.elementFromPoint over a segment returns the
+ * range. The rail therefore watches the pointer itself: a press that stays
+ * within the click slop is a click on the named segment under it and jumps
+ * to that segment's START (exactly what the button's own handler does; the
+ * button remains the keyboard path), while a press that travels is a drag
+ * and is left to the range's native scrubbing.
  */
+
+/** Pointer travel (px) beyond which a press counts as a drag, not a click. */
+const CLICK_SLOP_PX = 8;
 export function LightBar({
   timeline,
   photos,
@@ -56,6 +68,13 @@ export function LightBar({
   const [hoverAt, setHoverAt] = useState<number | null>(null);
   const railRef = useRef<HTMLDivElement | null>(null);
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Live press being judged click-vs-drag (see pointer routing above). */
+  const pressRef = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+    moved: boolean;
+  } | null>(null);
   useEffect(
     () => () => {
       if (commitTimer.current) clearTimeout(commitTimer.current);
@@ -93,14 +112,55 @@ export function LightBar({
         )
       : null;
 
-  const trackPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+  /** Fraction of the day under a pointer position, respecting the axis. */
+  const railFraction = (clientX: number, clientY: number): number | null => {
     const rect = railRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect || rect.width === 0 || rect.height === 0) return null;
     const vertical = rect.height >= rect.width;
     const fraction = vertical
-      ? (event.clientY - rect.top) / rect.height
-      : (event.clientX - rect.left) / rect.width;
-    setHoverAt(Math.max(0, Math.min(0.999, fraction)));
+      ? (clientY - rect.top) / rect.height
+      : (clientX - rect.left) / rect.width;
+    return Math.max(0, Math.min(0.999, fraction));
+  };
+
+  const trackPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    const press = pressRef.current;
+    if (press && press.pointerId === event.pointerId && !press.moved) {
+      const dx = event.clientX - press.x;
+      const dy = event.clientY - press.y;
+      if (dx * dx + dy * dy > CLICK_SLOP_PX * CLICK_SLOP_PX) {
+        press.moved = true;
+      }
+    }
+    const fraction = railFraction(event.clientX, event.clientY);
+    if (fraction !== null) setHoverAt(fraction);
+  };
+
+  const beginPress = (event: React.PointerEvent<HTMLDivElement>) => {
+    pressRef.current = {
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+    };
+  };
+
+  const endPress = (event: React.PointerEvent<HTMLDivElement>) => {
+    const press = pressRef.current;
+    pressRef.current = null;
+    if (!press || press.pointerId !== event.pointerId || press.moved) return;
+    const fraction = railFraction(event.clientX, event.clientY);
+    if (fraction === null) return;
+    const segment = findSegment(
+      segments,
+      Math.min(total - 1, Math.floor(fraction * total)),
+    );
+    if (!segment) return;
+    // A clean click, not a scrub: drop the approximate scrub the range's
+    // own pointerdown already queued, and jump to the segment's start.
+    if (commitTimer.current) clearTimeout(commitTimer.current);
+    setScrubValue(null);
+    onJump(segment.start);
   };
 
   return (
@@ -112,6 +172,11 @@ export function LightBar({
       <div
         ref={railRef}
         className="atlas-light-bar-rail"
+        onPointerDown={beginPress}
+        onPointerUp={endPress}
+        onPointerCancel={() => {
+          pressRef.current = null;
+        }}
         onPointerMove={trackPointer}
         onPointerLeave={() => setHoverAt(null)}
       >
