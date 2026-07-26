@@ -3626,6 +3626,7 @@ button {
 
 .atlas-lightbox-title {
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 /* Caption data in the archive's utility voice, never a headline (P2). */
@@ -3654,9 +3655,28 @@ button {
   opacity: 0.55;
 }
 
+/* Names read as names, not as a label. One line; Notes carries the full set. */
+.atlas-lightbox-people {
+  overflow: hidden;
+  margin: 0.1rem 0 0;
+  color: color-mix(in srgb, var(--rz-cream) 72%, transparent);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * The tools stay on one row and never shrink. Wrapping them dropped Notes and
+ * Close onto a second line whenever the caption was long (a ten-person group
+ * frame did it at 1440px), which collided with the title block. The title
+ * truncates instead -- chrome yields to the photograph, not the other way.
+ */
 .atlas-lightbox-tools {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.35rem;
@@ -3874,6 +3894,26 @@ button {
   text-transform: uppercase;
 }
 
+/* The full people list, since the header line truncates. */
+.atlas-lightbox-note-block {
+  margin: 0 0 1rem;
+  padding: 0.35rem 0 0.8rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--rz-cream) 12%, transparent);
+}
+
+.atlas-lightbox-note-block .atlas-kicker {
+  color: color-mix(in srgb, var(--rz-cream) 58%, transparent);
+}
+
+.atlas-lightbox-note-people {
+  max-width: 52rem;
+  margin: 0.45rem 0 0;
+  color: var(--rz-cream);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
 .atlas-lightbox-uploader-caption {
   max-width: 52rem;
   margin: 0 0 1rem;
@@ -4073,12 +4113,17 @@ button {
   background: color-mix(in srgb, var(--rz-sand) 48%, transparent);
 }
 
+/*
+ * Two columns, not three. Picking your name is this page's whole job, so the
+ * picker gets the dominant column instead of sharing the row with two columns
+ * of copy that said the same thing twice.
+ */
 .atlas-person-setup {
   display: grid;
-  grid-template-columns: minmax(15rem, 0.7fr) minmax(16rem, 0.8fr) minmax(20rem, 1.25fr);
-  gap: clamp(2rem, 6vw, 7rem);
+  grid-template-columns: minmax(15rem, 0.6fr) minmax(24rem, 1.4fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
   align-items: start;
-  padding: 0 0 clamp(4rem, 8vw, 8rem);
+  padding: 0 0 clamp(3rem, 6vw, 5.5rem);
 }
 
 /* Section headings sit well below the single page headline (P1). */
@@ -4105,8 +4150,14 @@ button {
   background: color-mix(in srgb, var(--rz-sand) 35%, transparent);
 }
 
-.atlas-person-setup-picker section > div {
-  max-height: 18rem !important;
+/*
+ * No inner scroll here. The capped height clipped a chip row through its
+ * middle, which read as a rendering fault rather than as "there is more".
+ * The full guest list is short enough to sit on the page.
+ */
+.atlas-person-setup-picker .atlas-picker-options {
+  max-height: none;
+  overflow-y: visible;
 }
 
 .atlas-person-setup-picker .atlas-inline-action {
@@ -4204,12 +4255,25 @@ button {
   line-height: 1.65;
 }
 
+/*
+ * The empty shortlist used to open a dead band roughly 260px tall under a
+ * paragraph that named Find me and the archive without linking either. Tighter
+ * block, real controls.
+ */
 .atlas-favorites-empty {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
   justify-items: start;
   max-width: 34rem;
-  padding: clamp(2.5rem, 6vw, 4.5rem) 0;
+  padding: clamp(1.75rem, 4vw, 2.75rem) 0 clamp(2rem, 4vw, 3rem);
+}
+
+.atlas-favorites-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.75rem;
+  margin-top: 1.6rem;
 }
 
 .atlas-favorites-empty > svg {
@@ -4484,11 +4548,7 @@ button {
 
 @media (max-width: 900px) {
   .atlas-person-setup {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .atlas-person-setup-picker {
-    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
   }
 
   .atlas-favorites-actions {

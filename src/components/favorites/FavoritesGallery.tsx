@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { Heart } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, Heart } from "lucide-react";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { favoriteStore } from "@/lib/favorites/store";
 import { ensureFavoritesSync } from "@/lib/favorites/sync";
@@ -204,9 +205,21 @@ export function FavoritesGallery() {
           <div>
             <p className="atlas-kicker">A collection in the making</p>
             <p>
-              You have not favorited any photos yet. Open Find me or the full
-              archive, then tap the heart on the ones you want to keep.
+              Tap the heart on any photograph and it lands here. Your shortlist
+              stays private and is ready whenever you return.
             </p>
+            {/* An empty screen is an invitation to act, so the two ways in are
+             * controls rather than the names of pages mentioned in prose. */}
+            <div className="atlas-favorites-empty-actions">
+              <Link href="/my-weekend" className="atlas-primary-link">
+                Find my photos
+                <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.5} />
+              </Link>
+              <Link href="/photos" className="archive-outline-link">
+                Open the archive
+                <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.5} />
+              </Link>
+            </div>
           </div>
         </section>
       </div>

@@ -385,8 +385,18 @@ export function Lightbox({
           <p className="atlas-lightbox-meta">
             <span>{photo.eventName}</span>
             {captureTime ? <span>{captureTime}</span> : null}
-            {caption ? <span>{caption}</span> : null}
           </p>
+          {/*
+           * People sit on their own line in sentence case: a group frame can
+           * carry ten names, and setting those in the uppercase utility voice
+           * shouted over the photograph. The line truncates to keep the header
+           * one row tall; the full list is in the Notes panel.
+           */}
+          {caption ? (
+            <p className="atlas-lightbox-people" title={caption}>
+              {caption}
+            </p>
+          ) : null}
         </div>
 
         <div className="atlas-lightbox-tools">
@@ -525,6 +535,13 @@ export function Lightbox({
               <footer>Shared by {photo.approvedCaption.byline}</footer>
             ) : null}
           </blockquote>
+        ) : null}
+
+        {photo.people.length > 0 ? (
+          <div className="atlas-lightbox-note-block">
+            <p className="atlas-kicker">In this photograph</p>
+            <p className="atlas-lightbox-note-people">{caption}</p>
+          </div>
         ) : null}
 
         {photo.keywords.length > 0 ? (
