@@ -88,6 +88,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <nav className="flex items-center gap-4 text-sm" style={{ color: "var(--color-ink)" }}>
           <Link href="/admin/review">Review queue</Link>
           <Link href="/admin/catalog">Catalog tags</Link>
+          <Link href="/admin/faces">Guests &amp; faces</Link>
           <Link href="/admin/memories">Memory notes</Link>
           <span style={{ color: "var(--color-muted)" }}>{admin.email}</span>
         </nav>
