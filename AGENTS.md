@@ -77,8 +77,17 @@ them.
 
 - Keep product claims exact: implemented is not reviewed, deployed is not
   accepted, and provider readiness is not a consented file transfer.
-- Preserve the modern sans-serif, photo-first layout and forward-looking copy.
-  Do not reintroduce event-summary or weekend-recap sections.
+- Preserve the photo-first layout and forward-looking copy. Do not reintroduce
+  event-summary or weekend-recap sections.
+- Typography is a three-role system, set in `src/components/brand/Wordmark.tsx`
+  and exposed through `src/styles/tokens.css`: Fraunces for display, Inter for
+  body and controls, IBM Plex Mono for archive data (counts, times, positions,
+  eyebrows). This replaced a Manrope/Inter pairing on 2026-07-26 at Zach's
+  explicit direction, superseding the earlier "preserve the modern sans-serif"
+  rule: the `0719 + co.` mark has always been a serif, and the headlines now
+  match it. Body copy must not borrow `--rz-font-display`; `/nyc` is the one
+  deliberate exception, where Rachel's letter is long-form prose set as an
+  essay.
 - For a bounded code change, run the closest focused test first, then:
 
   ```bash
