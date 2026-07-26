@@ -13,7 +13,7 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Current production head | `4fdb61baa9c5427458ed688111417befe6d19d5d` |
+| Deployed application release | `4fdb61baa9c5427458ed688111417befe6d19d5d` |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
@@ -75,7 +75,8 @@ The redesigned release was verified on `main` before deployment:
 - Post-merge `main` CI
   [run 30137350273](https://github.com/zachringnight/rachandzach-gallery/actions/runs/30137350273)
   passed against `4455ba95d15259ef210ebd64f8283bc80fe005da`
-- The Vercel production deployment for `4fdb61b` is `READY`; use
+- The Vercel production deployment containing application release `4fdb61b`
+  is `READY`; use
   `npx vercel inspect https://rachandzach.com` for its current immutable ID
 - The Vercel branch guard is present in the deployment bundle and correctly
   selected `main` for build
