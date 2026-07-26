@@ -98,6 +98,36 @@ export function wallClockMs(capturedAt: string | null): number | null {
 }
 
 /**
+ * Format a capture timestamp as the wall clock it was stamped with.
+ *
+ * Must pair with wallClockMs above. That function deliberately ignores the
+ * UTC offset because a second camera in this catalog stamped -08:00 during a
+ * -07:00 weekend; the sort order and burst grouping both follow the stamped
+ * wall clock. Formatting the same value as an instant in Los Angeles would
+ * honour that bad offset and add an hour, so a photo the archive orders (and
+ * groups) at 1:54 PM would be captioned 2:54 PM.
+ *
+ * Reading the wall-clock portion and formatting it in UTC gives back exactly
+ * the digits the camera stamped, which is what every other surface uses.
+ */
+export function formatWallClock(
+  capturedAt: string | null,
+  options: Intl.DateTimeFormatOptions,
+): string | null {
+  const ms = wallClockMs(capturedAt);
+  if (ms === null) return null;
+  try {
+    return new Intl.DateTimeFormat("en-US", { ...options, timeZone: "UTC" }).format(
+      new Date(ms),
+    );
+  } catch {
+    // A runtime without the requested formatting options must not take a
+    // caption or a chapter label down with it.
+    return null;
+  }
+}
+
+/**
  * Hamming distance between two 64-bit hex hashes, computed 32 bits at a
  * time (the build target predates BigInt literals).
  */

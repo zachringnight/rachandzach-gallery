@@ -8,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { formatWallClock } from "@/lib/gallery/archive-light";
 import {
   useCallback,
   useEffect,
@@ -94,19 +95,14 @@ function usePrefersReducedMotion(): boolean {
  * client render identical text.
  */
 function formatCaptureTime(capturedAt: string | null): string | null {
-  if (!capturedAt) return null;
-  const date = new Date(capturedAt);
-  if (Number.isNaN(date.getTime())) return null;
-  try {
-    return new Intl.DateTimeFormat("en-US", {
-      weekday: "long",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: "America/Los_Angeles",
-    }).format(date);
-  } catch {
-    return null;
-  }
+  // Wall clock as stamped, not as an instant: see formatWallClock. A second
+  // camera stamped -08:00 during a -07:00 weekend, so converting would show
+  // those photos an hour later than the archive orders them.
+  return formatWallClock(capturedAt, {
+    weekday: "long",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function smallestPreview(photo: ClientPhoto) {
