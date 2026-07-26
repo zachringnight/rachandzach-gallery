@@ -1196,7 +1196,9 @@ function CropStep({
   );
 
   const onPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLElement>, mode: "move" | "resize") => {
+    (event: React.PointerEvent<HTMLElement>, mode: "move" | "resize",
+      startCrop?: FaceCrop,
+    ) => {
       event.preventDefault();
       event.stopPropagation();
       dragRef.current = {
@@ -1204,7 +1206,10 @@ function CropStep({
         mode,
         startX: event.clientX,
         startY: event.clientY,
-        startCrop: crop,
+        // startCrop may be pinned by the caller: a press outside the square
+        // recenters it first, and `crop` in this closure is still the value
+        // from before that recentre.
+        startCrop: startCrop ?? crop,
       };
       stageRef.current?.setPointerCapture?.(event.pointerId);
     },
@@ -1218,12 +1223,20 @@ function CropStep({
       if (!rect || rect.width === 0 || rect.height === 0) return;
       const fx = (event.clientX - rect.left) / rect.width;
       const fy = (event.clientY - rect.top) / rect.height;
-      applyCrop({
-        x: fx - sideOfWidth(crop.size) / 2,
-        y: fy - sideOfHeight(crop.size) / 2,
-        size: crop.size,
-      });
-      onPointerDown(event, "move");
+      // Normalize here rather than relying on the state applyCrop schedules:
+      // that has not committed yet when the drag starts, so the first pointer
+      // move would otherwise be measured from the pre-recentre position and
+      // snap the square back.
+      const recentered = normalizeFaceCrop(
+        {
+          x: fx - sideOfWidth(crop.size) / 2,
+          y: fy - sideOfHeight(crop.size) / 2,
+          size: crop.size,
+        },
+        a,
+      );
+      if (recentered) onCropChange(recentered);
+      onPointerDown(event, "move", recentered ?? crop);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [applyCrop, crop, onPointerDown, a],
