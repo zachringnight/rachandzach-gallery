@@ -82,6 +82,24 @@ const VISIBLE_TOP_OFFSET = 170;
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
+/**
+ * True only for the first moment after mount.
+ *
+ * The entrance stagger has to be scoped in time, not just in selector: rows
+ * are virtualized, so cards mount continuously as a guest scrolls, and a
+ * purely CSS rule would re-run the animation on every row that scrolls into
+ * view. Dropping the class once the opening rows have played means later rows
+ * appear instantly, which is what you want while scrolling anyway.
+ */
+function useFirstPaint(durationMs = 700): boolean {
+  const [firstPaint, setFirstPaint] = useState(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setFirstPaint(false), durationMs);
+    return () => window.clearTimeout(timer);
+  }, [durationMs]);
+  return firstPaint;
+}
+
 function useContainerWidth(): [React.RefObject<HTMLDivElement | null>, number] {
   const ref = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
@@ -129,6 +147,7 @@ export const VirtualPhotoGrid = forwardRef<
   forwardedRef,
 ) {
   const [containerRef, containerWidth] = useContainerWidth();
+  const firstPaint = useFirstPaint();
 
   const displayItems = useMemo(
     () => buildDisplayList(photos, expandedBursts),
@@ -238,7 +257,12 @@ export const VirtualPhotoGrid = forwardRef<
   ]);
 
   return (
-    <div ref={containerRef} className="w-full">
+    <div
+      ref={containerRef}
+      className={
+        firstPaint ? "w-full atlas-photo-grid-first-paint" : "w-full"
+      }
+    >
       {containerWidth > 0 && layout.rows.length > 0 ? (
         <div
           style={{ height: virtualizer.getTotalSize(), position: "relative" }}

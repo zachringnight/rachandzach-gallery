@@ -352,6 +352,23 @@ export function GalleryShell({
   // Lightbox open/close with browser history.
   const openPhoto = useCallback(
     (photoId: string) => {
+      // Hand the lightbox the rect of the card that was clicked so it can
+      // expand out of that frame rather than materialising over it. Read
+      // synchronously here: once state changes the card may be unmounted by
+      // the virtualizer.
+      const card = document.querySelector<HTMLElement>(
+        `[data-photo-id="${CSS.escape(photoId)}"]`,
+      );
+      if (card) {
+        const r = card.getBoundingClientRect();
+        const root = document.documentElement;
+        root.style.setProperty("--rz-open-x", `${Math.round(r.left + r.width / 2)}px`);
+        root.style.setProperty("--rz-open-y", `${Math.round(r.top + r.height / 2)}px`);
+        root.style.setProperty(
+          "--rz-open-scale",
+          `${Math.max(0.12, Math.min(r.width / window.innerWidth, 0.9)).toFixed(3)}`,
+        );
+      }
       window.history.pushState({}, "", pageUrl(filters, photoId));
       setActivePhotoId(photoId);
     },

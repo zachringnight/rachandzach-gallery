@@ -7580,3 +7580,91 @@ button {
       box-shadow !important;
   }
 }
+
+/*
+ * Opening motion (P8).
+ *
+ * The lightbox used to materialise over the grid, which gave a guest no sense
+ * of which frame they had just opened. It now expands out of the clicked
+ * card: GalleryShell writes that card's centre and relative width onto the
+ * root as --rz-open-x / --rz-open-y / --rz-open-scale before the state
+ * change, and the stage grows from that origin. The backdrop fades on its own
+ * shorter curve so the photograph arrives before the darkness finishes.
+ *
+ * Falls back to a centred zoom when the origin variables are absent (deep
+ * link straight to /photos/[id], or a card the virtualizer had unmounted).
+ */
+@keyframes rz-lightbox-in {
+  from {
+    opacity: 0;
+    transform: translate(
+        calc((var(--rz-open-x, 50vw) - 50vw) * 0.85),
+        calc((var(--rz-open-y, 50vh) - 50vh) * 0.85)
+      )
+      scale(var(--rz-open-scale, 0.86));
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes rz-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.atlas-lightbox {
+  animation: rz-backdrop-in var(--rz-dur-fast) var(--rz-ease-out) both;
+}
+
+.atlas-lightbox-stage {
+  animation: rz-lightbox-in var(--rz-dur-med) var(--rz-ease-out) both;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+/*
+ * Grid entrance: the first screenful rises in a short stagger so the archive
+ * assembles rather than snapping in. Strictly capped at the first twelve
+ * cards -- every later row is already on screen by the time a guest scrolls
+ * to it, and animating 1,721 cards would put work on the scroll path.
+ *
+ * The delay is presentational only: cards are visible and clickable from
+ * frame one (opacity animates from 0.001, not 0), so nothing here sits on the
+ * critical path to the first photograph.
+ */
+@keyframes rz-card-in {
+  from {
+    opacity: 0.001;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.atlas-photo-grid-first-paint .atlas-photo-card:nth-child(-n + 12) {
+  animation: rz-card-in var(--rz-dur-med) var(--rz-ease-out) both;
+}
+
+.atlas-photo-grid-first-paint .atlas-photo-card:nth-child(3n + 2) {
+  animation-delay: 60ms;
+}
+
+.atlas-photo-grid-first-paint .atlas-photo-card:nth-child(3n + 3) {
+  animation-delay: 120ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-lightbox,
+  .atlas-lightbox-stage,
+  .atlas-photo-grid-first-paint .atlas-photo-card:nth-child(-n + 12) {
+    animation: none !important;
+  }
+}
