@@ -2319,7 +2319,7 @@ button {
 
 .atlas-empty-state > p:first-child {
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.8rem;
 }
 
@@ -2434,7 +2434,7 @@ button {
 }
 
 .atlas-upload-dropzone > p:first-of-type {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(2rem, 4vw, 4rem);
   letter-spacing: -0.045em;
 }
@@ -2624,7 +2624,7 @@ button {
   max-width: 31rem;
   margin: 1.75rem 0 0;
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.05rem;
   line-height: 1.65;
 }
@@ -6254,7 +6254,7 @@ button {
 
 .atlas-catalog-empty p {
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.8rem;
 }
 

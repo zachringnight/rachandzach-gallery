@@ -151,7 +151,7 @@ test.describe("a validly-signed guest session opens the guest gate", () => {
     expect(new URL(page.url()).pathname).toBe("/favorites");
     await expect(page.getByRole("heading", { name: "Favorites" })).toBeVisible();
     await expect(
-      page.getByText("Tap the heart on any photograph and it lands here"),
+      page.getByText("Tap the heart on any photo and it lands here"),
     ).toBeVisible();
   });
 

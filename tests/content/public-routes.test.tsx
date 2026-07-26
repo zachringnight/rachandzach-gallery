@@ -32,7 +32,7 @@ describe("home page", () => {
   it("leads with the private archive promise and both primary actions", () => {
     render(<HomePage />);
     expect(
-      screen.getByRole("heading", { level: 1, name: /the photographs are ready/i }),
+      screen.getByRole("heading", { level: 1, name: /the photo gallery/i }),
     ).toBeDefined();
     const findPhotos = screen.getByRole("link", { name: /^find my photos$/i });
     expect(findPhotos.getAttribute("href")).toBe("/my-weekend");

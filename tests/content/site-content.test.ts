@@ -49,7 +49,7 @@ describe("site identity", () => {
   it("keeps Rachel and Zach as the archive owners", () => {
     expect(siteConfig.names.primary).toBe("Rachel");
     expect(siteConfig.names.secondary).toBe("Zach");
-    expect(siteConfig.voice.heroTitle).toBe("The photographs are ready.");
+    expect(siteConfig.voice.heroTitle).toBe("The photo gallery.");
   });
 
   it("retains the canonical date and Santa Barbara location", () => {

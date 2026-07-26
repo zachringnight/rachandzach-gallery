@@ -115,7 +115,7 @@ test.describe("favorites discovery mode: real, database-free empty state", () =>
     // file's comment for the full explanation.
     await page.goto("/favorites");
     await expect(
-      page.getByText("Tap the heart on any photograph and it lands here"),
+      page.getByText("Tap the heart on any photo and it lands here"),
     ).toBeVisible();
     // These only render once there is at least one favorited photo
     // (FavoritesGallery returns early on an empty list); their absence is
