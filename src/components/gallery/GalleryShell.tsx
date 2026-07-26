@@ -13,6 +13,10 @@ import {
   GALLERY_SEARCH_URL_PARAM,
 } from "@/lib/gallery/client-types";
 import { collectWholeBurstIds } from "@/lib/gallery/grouping";
+import {
+  createJumpController,
+  type JumpController,
+} from "@/lib/gallery/jump";
 import { FilterBar } from "@/components/gallery/FilterBar";
 import { LightBar } from "@/components/gallery/LightBar";
 import { SelectionBar } from "@/components/gallery/SelectionBar";
@@ -263,61 +267,41 @@ export function GalleryShell({
   /**
    * Light Bar scrub target (P3). Anything already loaded scrolls
    * immediately; a farther target pages toward it first, keeping the
-   * loaded list a contiguous prefix of the archive order.
+   * loaded list a contiguous prefix of the archive order. Rapid re-scrubs
+   * overlap, so the paging loops live in a generation-tokened controller
+   * (see src/lib/gallery/jump.ts): only the guest's LATEST jump may land,
+   * cancel, or idle the rail -- an earlier loop that finishes late can no
+   * longer clear the newer target and strand the grid at a stale index.
    */
-  const pendingJumpRef = useRef<number | null>(null);
-  // Land a deferred jump only after the grid has committed the rows that
-  // contain it (scrolling before the re-render would target stale layout).
+  // Created lazily in an effect (never during render: the io closures read
+  // live refs). Jumps only start from pointer/keyboard handlers, which
+  // cannot fire before the first effect pass.
+  const jumpControllerRef = useRef<JumpController | null>(null);
   useEffect(() => {
-    const target = pendingJumpRef.current;
-    if (target !== null && photos.length > target) {
-      pendingJumpRef.current = null;
-      requestAnimationFrame(() => gridRef.current?.scrollToIndex(target));
-    }
+    jumpControllerRef.current ??= createJumpController({
+      loadedCount: () => photosCountRef.current,
+      hasMore: () => cursorRef.current !== null,
+      requestSeq: () => requestSeq.current,
+      fetchNextPage: () => fetchNextPage(JUMP_PAGE_LIMIT),
+      waitForWire: () => new Promise((resolve) => setTimeout(resolve, 150)),
+      scrollTo: (photoIndex) => gridRef.current?.scrollToIndex(photoIndex),
+      // Land a deferred jump only after the grid has committed the rows
+      // that contain it (scrolling before the re-render would target
+      // stale layout).
+      scrollAfterCommit: (photoIndex) =>
+        requestAnimationFrame(() =>
+          gridRef.current?.scrollToIndex(photoIndex),
+        ),
+      setBusy: setJumping,
+    });
+  }, [fetchNextPage]);
+  useEffect(() => {
+    jumpControllerRef.current?.notifyLoaded();
   }, [photos.length]);
 
-  const jumpToIndex = useCallback(
-    async (photoIndex: number) => {
-      if (photoIndex < photosCountRef.current) {
-        pendingJumpRef.current = null;
-        gridRef.current?.scrollToIndex(photoIndex);
-        return;
-      }
-      const seq = requestSeq.current;
-      pendingJumpRef.current = photoIndex;
-      setJumping(true);
-      try {
-        while (
-          seq === requestSeq.current &&
-          photosCountRef.current <= photoIndex &&
-          cursorRef.current
-        ) {
-          const outcome = await fetchNextPage(JUMP_PAGE_LIMIT);
-          if (outcome.status === "busy") {
-            // Another request (e.g. tail-loading) holds the wire; let it
-            // land, then keep paging toward the target.
-            await new Promise((resolve) => setTimeout(resolve, 150));
-            continue;
-          }
-          if (outcome.status !== "appended") break;
-        }
-      } finally {
-        setJumping(false);
-      }
-      if (seq !== requestSeq.current) {
-        pendingJumpRef.current = null;
-        return;
-      }
-      // Ran out of archive before the target (or the effect above already
-      // landed it): settle on the last loaded photograph.
-      if (pendingJumpRef.current !== null && photosCountRef.current > 0) {
-        const target = Math.min(photoIndex, photosCountRef.current - 1);
-        pendingJumpRef.current = null;
-        requestAnimationFrame(() => gridRef.current?.scrollToIndex(target));
-      }
-    },
-    [fetchNextPage],
-  );
+  const jumpToIndex = useCallback((photoIndex: number) => {
+    void jumpControllerRef.current?.jumpTo(photoIndex);
+  }, []);
 
   const toggleBurst = useCallback((burstId: string) => {
     setExpandedBursts((current) => {
@@ -585,7 +569,7 @@ export function GalleryShell({
               timeline={timeline}
               photos={photos}
               currentIndex={currentIndex}
-              onJump={(photoIndex) => void jumpToIndex(photoIndex)}
+              onJump={jumpToIndex}
               jumping={jumping}
             />
 
