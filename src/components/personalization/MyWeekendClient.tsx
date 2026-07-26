@@ -83,10 +83,10 @@ export function MyWeekendClient({ people, faces }: MyWeekendClientProps) {
       personSlug={personSlug}
       personName={person?.displayName ?? "Guest"}
       onChangePerson={handleChangePerson}
-      // Omitted for override-only people: the dynamic route resolves from the
-      // catalog, so the link would 404 for someone who exists only as an
-      // admin addition.
-      personalPageHref={person?.overrideOnly ? undefined : `/${personSlug}`}
+      // Every surfaced person is a catalog identity (admin additions get a
+      // rachandzach_people row at creation), so the personalized route
+      // resolves for all of them.
+      personalPageHref={`/${personSlug}`}
     />
   );
 }

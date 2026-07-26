@@ -98,13 +98,6 @@ export interface SurfacedPerson {
   slug: string;
   displayName: string;
   count: number;
-  /**
-   * True for a person who exists only as an admin addition, with no
-   * rachandzach_people row. They can be picked and given a face, but
-   * /[personSlug] resolves identities from the catalog, so guest surfaces
-   * must not offer them that route.
-   */
-  overrideOnly?: boolean;
 }
 
 /**
@@ -112,6 +105,14 @@ export interface SurfacedPerson {
  * applied, plus admin-added people (count 0, appended alphabetically). This
  * feeds pickers only -- filtering photos by a hidden person's slug and their
  * personalized route continue to work.
+ *
+ * Added people are full catalog identities (addPerson creates their
+ * rachandzach_people row; a backfill migration upgraded older additions),
+ * but facets only carry people with at least one confirmed photo, so an
+ * added person who has not been tagged yet arrives through the appended
+ * branch. Once their first tag lands they flow through the facets like
+ * everyone else, and the catalog-slug check keeps them from appearing
+ * twice. Every surfaced person resolves at /{slug}.
  */
 export function surfacePeople(
   people: readonly SurfacedPerson[],
@@ -140,10 +141,6 @@ export function surfacePeople(
       slug: override.personSlug,
       displayName: override.displayName as string,
       count: 0,
-      // Flagged so guest surfaces do not offer this person a personalized
-      // route: /[personSlug] resolves identities from the catalog, and an
-      // override-only person has no catalog row, so the link 404s.
-      overrideOnly: true as const,
     }))
     .sort((a, b) => a.displayName.localeCompare(b.displayName, "en-US"));
   return [...surfaced, ...additions];

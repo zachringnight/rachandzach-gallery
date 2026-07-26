@@ -105,12 +105,6 @@ export interface ClientGalleryFacets {
     slug: string;
     displayName: string;
     count: number;
-    /**
-     * Present only for admin-added people, who have no rachandzach_people
-     * row. Guest surfaces must not link them to /[personSlug]: that route
-     * resolves from the catalog and would 404.
-     */
-    overrideOnly?: boolean;
   }[];
 }
 

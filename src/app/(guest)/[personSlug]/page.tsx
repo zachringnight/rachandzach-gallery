@@ -3,19 +3,48 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { PersonGalleryClient } from "@/components/personalization/PersonGalleryClient";
-import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
-import { getGalleryFacets } from "@/lib/gallery/query";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Identity resolves from the catalog (rachandzach_people), not from the
+ * facet set: a catalog person with zero confirmed photos -- an admin-added
+ * guest who has not been tagged yet -- still owns their page (it renders
+ * the gallery's empty state until tags land). An admin rename override
+ * shadows the catalog display name here exactly as it does in pickers.
+ * Hidden people deliberately keep the route; hiding only affects pickers.
+ */
 const confirmedPerson = cache(async (personSlug: string) => {
   const client = createAdminClient();
-  const source = createSupabaseGalleryDataSource(client);
-  const facets = await getGalleryFacets(source);
-  return (
-    facets.people.find((person) => person.slug === personSlug) ?? null
-  );
+  const [personResult, overrideResult] = await Promise.all([
+    client
+      .from("rachandzach_people")
+      .select("slug, display_name")
+      .eq("slug", personSlug)
+      .maybeSingle(),
+    client
+      .from("rachandzach_person_overrides")
+      .select("display_name")
+      .eq("person_slug", personSlug)
+      .maybeSingle(),
+  ]);
+  if (personResult.error) {
+    throw new Error(
+      `Person route query failed: ${personResult.error.message}`,
+    );
+  }
+  if (overrideResult.error) {
+    throw new Error(
+      `Person route override query failed: ${overrideResult.error.message}`,
+    );
+  }
+  if (!personResult.data) return null;
+  return {
+    slug: personResult.data.slug,
+    displayName:
+      overrideResult.data?.display_name ?? personResult.data.display_name,
+  };
 });
 
 export async function generateMetadata({
@@ -33,9 +62,9 @@ export async function generateMetadata({
 }
 
 /**
- * A private, human-readable guest keepsake at /{confirmed-person-slug}.
- * Static routes win before this dynamic segment, and an unknown or
- * non-confirmed identity is a plain 404. The route remains inside the guest
+ * A private, human-readable guest keepsake at /{catalog-person-slug}.
+ * Static routes win before this dynamic segment, and a slug with no
+ * rachandzach_people row is a plain 404. The route remains inside the guest
  * layout, so every visit must pass the shared-password gate.
  */
 export default async function PersonGalleryPage({
