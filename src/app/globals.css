@@ -7545,3 +7545,38 @@ button {
     transition: none;
   }
 }
+
+/*
+ * Reduced-motion backstop (P8).
+ *
+ * The site had seven scoped prefers-reduced-motion blocks, but an audit of
+ * the rendered pages found 74 elements on /photos still animating transform
+ * with the preference set: the photo card lift, its inner image scale, and
+ * the hero's primary link. Those rules were added over time and each missed
+ * the opt-out.
+ *
+ * This block is deliberately last in the file and deliberately blunt: it
+ * kills movement only. Colour, border and opacity transitions are left alone
+ * on purpose -- the preference is about motion, and making every hover state
+ * snap is a worse experience than a 200ms tint, not a better one.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .atlas-photo-card,
+  .atlas-photo-card:hover,
+  .atlas-photo-card:focus-within,
+  /* Matches the specificity of `.atlas-photo-card img`, which carries its
+   * own !important transition: an important declaration only loses to a
+   * more specific important one, so a bare class cannot override it. */
+  .atlas-photo-card img,
+  .atlas-photo-card:hover img,
+  .atlas-photo-image-target,
+  .atlas-photo-image-placeholder,
+  .atlas-primary-link,
+  .atlas-secondary-link,
+  .atlas-text-link,
+  .archive-outline-link {
+    transform: none !important;
+    transition-property: opacity, color, background-color, border-color,
+      box-shadow !important;
+  }
+}
