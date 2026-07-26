@@ -33,7 +33,12 @@ export interface AdminRosterPerson {
    */
   hasCommittedFace: boolean;
   /** Present when faceKind is "override": how to draw the current crop. */
-  face?: { url: string; aspectRatio: number; crop: FaceCrop };
+  /**
+   * Present when faceKind is "override". `photoId` is the stable identifier;
+   * `url` is a signed preview that is re-minted on every load, so it must
+   * never be used to decide which photo this is.
+   */
+  face?: { photoId: string; url: string; aspectRatio: number; crop: FaceCrop };
   /** Last override write, if any. */
   updatedAt: string | null;
 }

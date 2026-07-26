@@ -105,6 +105,13 @@ export interface GalleryPreviewObject {
 export interface GalleryPersonLink {
   slug: string;
   displayName: string;
+  /**
+   * The catalog name this person had before an admin rename, when one
+   * applies. Server-side only, and used solely so keyword dedupe can still
+   * recognise a photo keyword carrying the old name -- without it a rename
+   * leaves the obsolete name showing as a keyword beside the corrected one.
+   */
+  previousDisplayName?: string;
   /** Only 'confirmed' links are shown or filterable; the rest are ignored. */
   confidence: "confirmed" | "uncertain" | "background";
 }
@@ -565,6 +572,12 @@ function dedupeKeywordsAgainstPeople(
   for (const person of people) {
     personTokens.add(normalizeForCompare(person.displayName));
     personTokens.add(normalizeForCompare(person.slug));
+    // A renamed person still has photos whose embedded keywords carry the
+    // original catalog name; match those too, or the Notes panel shows the
+    // corrected name and the obsolete one side by side.
+    if (person.previousDisplayName) {
+      personTokens.add(normalizeForCompare(person.previousDisplayName));
+    }
   }
   return keywords.filter(
     (keyword) => !personTokens.has(normalizeForCompare(keyword)),

@@ -197,7 +197,15 @@ export function createSupabaseGalleryDataSource(
         ...row,
         people: row.people.map((person) => {
           const renamed = renames.get(person.slug);
-          return renamed ? { ...person, displayName: renamed } : person;
+          // Keep the catalog name so keyword dedupe can still match photo
+          // keywords that carry it.
+          return renamed
+            ? {
+                ...person,
+                displayName: renamed,
+                previousDisplayName: person.displayName,
+              }
+            : person;
         }),
       }));
     },

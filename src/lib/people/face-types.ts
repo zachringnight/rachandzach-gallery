@@ -29,6 +29,11 @@ export type ClientPersonFace =
   /** A hand-picked override: CSS-crop this signed preview URL. */
   | {
       kind: "crop";
+      /**
+       * Stable photo identifier. The signed `url` below is re-minted on every
+       * load, so anything deciding WHICH photo this is must compare this.
+       */
+      photoId: string;
       url: string;
       /** Photo width / height, needed to place a normalized rect with CSS. */
       aspectRatio: number;

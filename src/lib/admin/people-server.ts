@@ -107,6 +107,7 @@ export async function loadGuestRoster(
     if (face?.kind === "crop") {
       person.faceKind = "override";
       person.face = {
+        photoId: face.photoId,
         url: face.url,
         aspectRatio: face.aspectRatio,
         crop: face.crop,

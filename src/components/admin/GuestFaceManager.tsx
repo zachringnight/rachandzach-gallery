@@ -541,8 +541,11 @@ function PersonEditor({
         setPhoto((current) => {
           if (current) return current;
           // Re-editing an existing hand-pick: reopen on its photo.
+          // Match on the stable photo id. The signed preview URL is re-minted
+          // on every load, so comparing URLs failed to reopen the source frame
+          // and dropped the admin back to the candidate picker.
           const existing = person.face
-            ? body.photos.find((p) => hasSamePreview(p, person.face!.url))
+            ? (body.photos.find((p) => p.id === person.face!.photoId) ?? null)
             : null;
           return existing ?? null;
         });
@@ -595,7 +598,9 @@ function PersonEditor({
     (candidate: ClientPhoto) => {
       setPhoto(candidate);
       setCrop(
-        person.face && hasSamePreview(candidate, person.face.url)
+        // Same stable-id rule as reopening: picking the photo the existing
+        // face came from restores that crop rather than resetting to centre.
+        person.face && candidate.id === person.face.photoId
           ? person.face.crop
           : centeredCrop(candidate.aspectRatio),
       );
@@ -630,7 +635,12 @@ function PersonEditor({
         onUpdated(person.slug, {
           faceKind: "override",
           face: preview
-            ? { url: preview.url, aspectRatio: photo.aspectRatio, crop: normalized }
+            ? {
+                photoId: photo.id,
+                url: preview.url,
+                aspectRatio: photo.aspectRatio,
+                crop: normalized,
+              }
             : undefined,
           updatedAt: new Date().toISOString(),
         });
@@ -902,9 +912,6 @@ function committedLikely(person: AdminRosterPerson): boolean {
   return person.hasCommittedFace;
 }
 
-function hasSamePreview(photo: ClientPhoto, url: string): boolean {
-  return photo.previews.some((preview) => preview.url === url);
-}
 
 function centeredCrop(aspectRatio: number): FaceCrop {
   // Centered square over 60% of the shorter axis, nudged up: faces usually

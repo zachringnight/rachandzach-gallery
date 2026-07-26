@@ -211,7 +211,13 @@ export async function buildFaceDirectory(
 
   const chosen = new Map<
     string,
-    { objectPath: string; bucket: string; aspectRatio: number; crop: FaceCrop }
+    {
+      photoId: string;
+      objectPath: string;
+      bucket: string;
+      aspectRatio: number;
+      crop: FaceCrop;
+    }
   >();
   for (const [slug, override] of cropWanted) {
     const photo = photos.get(override.facePhotoId as string);
@@ -229,6 +235,7 @@ export async function buildFaceDirectory(
     const width = photo.width ?? 0;
     const height = photo.height ?? 0;
     chosen.set(slug, {
+      photoId: photo.id,
       objectPath: preview.object_path,
       bucket: preview.bucket,
       aspectRatio: width > 0 && height > 0 ? width / height : 1,
@@ -252,6 +259,7 @@ export async function buildFaceDirectory(
     }
     const face: ClientPersonFace = {
       kind: "crop",
+      photoId: entry.photoId,
       url,
       aspectRatio: entry.aspectRatio,
       crop: entry.crop,
