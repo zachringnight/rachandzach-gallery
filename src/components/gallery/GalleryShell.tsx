@@ -124,11 +124,14 @@ export function GalleryShell({
   const [activePhotoId, setActivePhotoId] = useState<string | null>(
     initialPhotoId,
   );
-  // The archive's light timeline (P3).
+  // The archive's light timeline (P3) and contact-sheet state (P4).
   const [timeline, setTimeline] = useState<ClientTimeline | null>(
     initialPage.timeline ?? null,
   );
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [expandedBursts, setExpandedBursts] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
   const [jumping, setJumping] = useState(false);
   const gridRef = useRef<VirtualPhotoGridHandle | null>(null);
   const selection = useSelection();
@@ -174,6 +177,7 @@ export function GalleryShell({
         setTotal(body.total);
         setExpiresAt(body.signedUrlExpiresAt);
         setTimeline(body.timeline ?? null);
+        setExpandedBursts(new Set<string>());
         setCurrentIndex(0);
         requestBusyRef.current = false;
         setState("idle");
@@ -302,6 +306,28 @@ export function GalleryShell({
       }
     },
     [fetchNextPage],
+  );
+
+  const toggleBurst = useCallback((burstId: string) => {
+    setExpandedBursts((current) => {
+      const next = new Set(current);
+      if (next.has(burstId)) next.delete(burstId);
+      else next.add(burstId);
+      return next;
+    });
+  }, []);
+
+  /** Selecting a stack selects its loaded frames; again deselects them. */
+  const toggleBurstSelection = useCallback(
+    (photoIds: string[]) => {
+      const allSelected =
+        photoIds.length > 0 &&
+        photoIds.every((id) => selection.selected.has(id));
+      for (const id of photoIds) {
+        if (allSelected || !selection.selected.has(id)) selection.toggle(id);
+      }
+    },
+    [selection],
   );
 
   const applyFilters = useCallback(
@@ -512,6 +538,9 @@ export function GalleryShell({
               selected={selection.selected}
               onToggleSelection={selection.toggle}
               onStartSelection={(photoId) => selection.toggle(photoId)}
+              expandedBursts={expandedBursts}
+              onToggleBurst={toggleBurst}
+              onToggleBurstSelection={toggleBurstSelection}
               onFirstVisiblePhotoChange={setCurrentIndex}
             />
           </>

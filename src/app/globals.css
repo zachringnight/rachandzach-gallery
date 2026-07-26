@@ -3543,6 +3543,118 @@ button {
   }
 }
 
+/*
+ * P4 contact-sheet stack: the burst's first frame with layered film edges
+ * behind it and the frame count in the utility voice. Expanded frames get
+ * a hairline contact-sheet border and a collapse control on the leader.
+ */
+.atlas-stack-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.atlas-stack-card::before,
+.atlas-stack-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-sand);
+}
+
+.atlas-stack-card::before {
+  transform: translate(4px, -4px);
+}
+
+.atlas-stack-card::after {
+  transform: translate(8px, -8px);
+  opacity: 0.55;
+}
+
+.atlas-stack-open {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: var(--rz-wheat);
+  cursor: pointer;
+}
+
+.atlas-stack-open:focus-visible {
+  outline: 3px solid var(--rz-coral);
+  outline-offset: -3px;
+}
+
+.atlas-stack-card:hover .atlas-photo-image-target {
+  transform: scale(1.018);
+}
+
+.atlas-stack-count {
+  position: absolute;
+  z-index: 6;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  padding: 0.24rem 0.5rem;
+  background: color-mix(in srgb, var(--rz-ink) 78%, transparent);
+  color: var(--rz-cream);
+  font-size: 0.56rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.atlas-stack-select {
+  opacity: 0;
+}
+
+.atlas-stack-card:hover .atlas-stack-select,
+.atlas-stack-card:focus-within .atlas-stack-select,
+.atlas-stack-card[data-selecting="true"] .atlas-stack-select {
+  opacity: 1;
+}
+
+.atlas-stack-card[data-selected="true"] {
+  outline: 3px solid var(--rz-coral);
+  outline-offset: -3px;
+}
+
+.atlas-stack-card[data-partial="true"] .atlas-stack-select {
+  border-color: var(--rz-coral);
+  color: var(--rz-coral);
+  opacity: 1;
+}
+
+.atlas-burst-frame {
+  box-shadow: 0 0 0 1px var(--rz-wheat);
+}
+
+.atlas-stack-collapse {
+  position: absolute;
+  z-index: 6;
+  top: 0.6rem;
+  left: 0.6rem;
+  display: inline-flex;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--rz-cream) 55%, transparent);
+  background: color-mix(in srgb, var(--rz-ink) 72%, transparent);
+  color: var(--rz-cream);
+  backdrop-filter: blur(12px);
+  transition: background var(--rz-dur-fast) ease;
+}
+
+.atlas-stack-collapse:hover {
+  background: var(--rz-ink);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .atlas-light-bar-rail,

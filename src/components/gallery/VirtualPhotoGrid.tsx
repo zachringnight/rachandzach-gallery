@@ -10,12 +10,20 @@ import {
   useRef,
   useState,
 } from "react";
+import { Layers } from "lucide-react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   computeJustifiedLayout,
   type JustifiedItem,
 } from "@/lib/gallery/layout";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
+import {
+  buildDisplayList,
+  displayIndexForPhotoIndex,
+  displayItemPhotoIds,
+  type DisplayItem,
+} from "@/lib/gallery/grouping";
+import { ContactStackCard } from "@/components/gallery/ContactStackCard";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
 
 export interface VirtualPhotoGridProps {
@@ -28,6 +36,11 @@ export interface VirtualPhotoGridProps {
   selected?: ReadonlySet<string>;
   onToggleSelection?: (photoId: string) => void;
   onStartSelection?: (photoId: string) => void;
+  /** Contact-sheet stacks currently fanned out inline (P4). */
+  expandedBursts?: ReadonlySet<string>;
+  onToggleBurst?: (burstId: string) => void;
+  /** Toggle selection for every loaded frame of a burst at once. */
+  onToggleBurstSelection?: (photoIds: string[]) => void;
   /**
    * Reports the index (into `photos`) of the first photograph on screen as
    * the guest scrolls; drives the Light Bar and chapter label (P3).
@@ -63,9 +76,15 @@ function useContainerWidth(): [React.RefObject<HTMLDivElement | null>, number] {
   return [ref, width];
 }
 
+function itemAspect(item: DisplayItem): number {
+  const photo = item.kind === "stack" ? item.photos[0] : item.photo;
+  return photo.aspectRatio;
+}
+
 /**
- * Virtualized justified-row grid. Layout is computed deterministically for the
- * full photo list; only the visible rows mount (window virtualization by row).
+ * Virtualized justified-row grid. Layout is computed deterministically for
+ * the full display list (photos plus collapsed contact-sheet stacks); only
+ * the visible rows mount (window virtualization by row).
  */
 export const VirtualPhotoGrid = forwardRef<
   VirtualPhotoGridHandle,
@@ -81,19 +100,27 @@ export const VirtualPhotoGrid = forwardRef<
     selected = new Set<string>(),
     onToggleSelection,
     onStartSelection,
+    expandedBursts = new Set<string>(),
+    onToggleBurst,
+    onToggleBurstSelection,
     onFirstVisiblePhotoChange,
   },
   forwardedRef,
 ) {
   const [containerRef, containerWidth] = useContainerWidth();
 
+  const displayItems = useMemo(
+    () => buildDisplayList(photos, expandedBursts),
+    [photos, expandedBursts],
+  );
+
   const items: JustifiedItem[] = useMemo(
     () =>
-      photos.map((photo) => ({
-        id: photo.id,
-        aspectRatio: photo.aspectRatio,
+      displayItems.map((item) => ({
+        id: item.key,
+        aspectRatio: itemAspect(item),
       })),
-    [photos],
+    [displayItems],
   );
 
   const layout = useMemo(
@@ -106,11 +133,7 @@ export const VirtualPhotoGrid = forwardRef<
     [items, containerWidth],
   );
 
-  const photoById = useMemo(
-    () => new Map(photos.map((p) => [p.id, p])),
-    [photos],
-  );
-  const boxById = useMemo(
+  const boxByKey = useMemo(
     () => new Map(layout.boxes.map((b) => [b.id, b])),
     [layout],
   );
@@ -133,16 +156,17 @@ export const VirtualPhotoGrid = forwardRef<
 
   const scrollToPhotoIndex = useCallback(
     (photoIndex: number) => {
-      const photo = photos[Math.max(0, Math.min(photoIndex, photos.length - 1))];
-      if (!photo) return;
-      const box = boxById.get(photo.id);
+      const bounded = Math.max(0, Math.min(photoIndex, photos.length - 1));
+      const displayIndex = displayIndexForPhotoIndex(displayItems, bounded);
+      if (displayIndex < 0) return;
+      const box = boxByKey.get(displayItems[displayIndex].key);
       if (!box) return;
       virtualizer.scrollToIndex(box.rowIndex, { align: "start" });
       // Pull the row out from under the sticky chrome (header + control
       // bar + chapter strip), keeping a small breath above it.
       window.scrollBy(0, -(VISIBLE_TOP_OFFSET - 12));
     },
-    [boxById, photos, virtualizer],
+    [boxByKey, displayItems, photos.length, virtualizer],
   );
 
   useImperativeHandle(
@@ -179,13 +203,14 @@ export const VirtualPhotoGrid = forwardRef<
         break;
       }
     }
-    const photoIndex = firstRow.itemIndexes[0];
-    if (photoIndex === undefined) return;
-    if (photoIndex !== lastReportedIndex.current) {
-      lastReportedIndex.current = photoIndex;
-      onFirstVisiblePhotoChange(photoIndex);
+    const item = displayItems[firstRow.itemIndexes[0]];
+    if (!item) return;
+    if (item.photoIndex !== lastReportedIndex.current) {
+      lastReportedIndex.current = item.photoIndex;
+      onFirstVisiblePhotoChange(item.photoIndex);
     }
   }, [
+    displayItems,
     layout.rows,
     onFirstVisiblePhotoChange,
     scrollMargin,
@@ -215,13 +240,55 @@ export const VirtualPhotoGrid = forwardRef<
                 }}
               >
                 {row.itemIndexes.map((itemIndex) => {
-                  const photo = photos[itemIndex];
-                  if (!photo) return null;
-                  const box = boxById.get(photo.id);
+                  const item = displayItems[itemIndex];
+                  if (!item) return null;
+                  const box = boxByKey.get(item.key);
                   if (!box) return null;
+
+                  if (item.kind === "stack") {
+                    const ids = displayItemPhotoIds(item);
+                    const selectedCount = ids.filter((id) =>
+                      selected.has(id),
+                    ).length;
+                    return (
+                      <div
+                        key={item.key}
+                        style={{
+                          position: "absolute",
+                          left: box.left,
+                          top: 0,
+                          width: box.width,
+                          height: box.height,
+                        }}
+                      >
+                        <ContactStackCard
+                          photos={item.photos}
+                          size={item.size}
+                          width={box.width}
+                          height={box.height}
+                          onExpand={() => onToggleBurst?.(item.burstId)}
+                          selecting={selecting}
+                          selected={
+                            ids.length > 0 && selectedCount === ids.length
+                          }
+                          partiallySelected={
+                            selectedCount > 0 && selectedCount < ids.length
+                          }
+                          onToggleSelection={
+                            onToggleBurstSelection
+                              ? () => onToggleBurstSelection(ids)
+                              : undefined
+                          }
+                        />
+                      </div>
+                    );
+                  }
+
+                  const photo = item.photo;
+                  const isBurstFrame = item.kind === "burst-frame";
                   return (
                     <div
-                      key={photo.id}
+                      key={item.key}
                       style={{
                         position: "absolute",
                         left: box.left,
@@ -229,9 +296,11 @@ export const VirtualPhotoGrid = forwardRef<
                         width: box.width,
                         height: box.height,
                       }}
+                      data-burst-frame={isBurstFrame ? "true" : undefined}
+                      className={isBurstFrame ? "atlas-burst-frame" : undefined}
                     >
                       <PhotoCard
-                        photo={photoById.get(photo.id) ?? photo}
+                        photo={photo}
                         width={box.width}
                         height={box.height}
                         onOpen={onOpenPhoto}
@@ -240,6 +309,19 @@ export const VirtualPhotoGrid = forwardRef<
                         onToggleSelection={onToggleSelection}
                         onStartSelection={onStartSelection}
                       />
+                      {isBurstFrame && item.leader && onToggleBurst ? (
+                        <button
+                          type="button"
+                          className="atlas-stack-collapse"
+                          aria-label={`Collapse these ${
+                            photo.burst?.size ?? 0
+                          } frames back into one stack`}
+                          title="Collapse stack"
+                          onClick={() => onToggleBurst(item.burstId)}
+                        >
+                          <Layers aria-hidden="true" size={14} strokeWidth={1.8} />
+                        </button>
+                      ) : null}
                     </div>
                   );
                 })}
