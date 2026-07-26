@@ -54,6 +54,27 @@ export interface VirtualPhotoGridHandle {
 
 const TARGET_ROW_HEIGHT = 240;
 const GAP = 12;
+
+/**
+ * Row height and gutter scale with the viewport (P6). A justified grid packs
+ * a row until it fills the width, so a fixed 240px target put exactly one
+ * landscape frame on a 390px phone: the archive read as a single-file column
+ * and a guest scrolled 1,721 times to see it. Shorter rows on narrow screens
+ * put two frames side by side, which is what makes a phone feel like a
+ * contact sheet instead of a feed.
+ *
+ * Desktop is unchanged: at >=900px this returns the original 240/12.
+ */
+function gridMetricsFor(containerWidth: number): {
+  targetRowHeight: number;
+  gap: number;
+} {
+  if (containerWidth <= 0) return { targetRowHeight: TARGET_ROW_HEIGHT, gap: GAP };
+  if (containerWidth < 480) return { targetRowHeight: 132, gap: 6 };
+  if (containerWidth < 700) return { targetRowHeight: 168, gap: 8 };
+  if (containerWidth < 900) return { targetRowHeight: 200, gap: 10 };
+  return { targetRowHeight: TARGET_ROW_HEIGHT, gap: GAP };
+}
 /** Sticky chrome (header + control bar + chapter strip) above the grid. */
 const VISIBLE_TOP_OFFSET = 170;
 
@@ -127,8 +148,7 @@ export const VirtualPhotoGrid = forwardRef<
     () =>
       computeJustifiedLayout(items, {
         containerWidth,
-        targetRowHeight: TARGET_ROW_HEIGHT,
-        gap: GAP,
+        ...gridMetricsFor(containerWidth),
       }),
     [items, containerWidth],
   );
