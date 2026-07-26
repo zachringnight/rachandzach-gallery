@@ -12,6 +12,7 @@ import {
   EMPTY_FILTER_STATE,
   GALLERY_SEARCH_URL_PARAM,
 } from "@/lib/gallery/client-types";
+import { collectWholeBurstIds } from "@/lib/gallery/grouping";
 import { FilterBar } from "@/components/gallery/FilterBar";
 import { LightBar } from "@/components/gallery/LightBar";
 import { SelectionBar } from "@/components/gallery/SelectionBar";
@@ -47,6 +48,10 @@ const JUMP_PAGE_LIMIT = 100;
 const RENEW_LEAD_MS = 60_000;
 
 type LoadState = "idle" | "loading" | "error-session" | "error-network";
+
+type PageFetchResult =
+  | { status: "appended"; photos: ClientPhoto[] }
+  | { status: "busy" | "end" | "stale" };
 
 function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
   const params = new URLSearchParams();
@@ -144,12 +149,15 @@ export function GalleryShell({
   const requestSeq = useRef(0);
   const requestBusyRef = useRef(false);
   const filtersRef = useRef(filters);
-  // Live mirrors for the Light Bar's paging jump loop.
+  // Live mirrors for the Light Bar's paging jump loop and the contact-sheet
+  // burst completer.
   const photosCountRef = useRef(photos.length);
+  const photosRef = useRef<ClientPhoto[]>(photos);
   const cursorRef = useRef(cursor);
   useEffect(() => {
     photosCountRef.current = photos.length;
-  }, [photos.length]);
+    photosRef.current = photos;
+  }, [photos]);
   useEffect(() => {
     cursorRef.current = cursor;
   }, [cursor]);
@@ -172,6 +180,8 @@ export function GalleryShell({
         const body: ClientGalleryPage = await res.json();
         if (seq !== requestSeq.current) return;
         setPhotos(body.photos);
+        photosRef.current = body.photos;
+        photosCountRef.current = body.photos.length;
         setCursor(body.nextCursor);
         cursorRef.current = body.nextCursor;
         setTotal(body.total);
@@ -198,10 +208,10 @@ export function GalleryShell({
    * changes and failures (both end a jump).
    */
   const fetchNextPage = useCallback(
-    async (limit: number): Promise<"appended" | "busy" | "end" | "stale"> => {
+    async (limit: number): Promise<PageFetchResult> => {
       const nextCursor = cursorRef.current;
-      if (!nextCursor) return "end";
-      if (requestBusyRef.current) return "busy";
+      if (!nextCursor) return { status: "end" };
+      if (requestBusyRef.current) return { status: "busy" };
       const seq = requestSeq.current;
       requestBusyRef.current = true;
       setState("loading");
@@ -215,15 +225,16 @@ export function GalleryShell({
             requestBusyRef.current = false;
             setState("error-session");
           }
-          return "stale";
+          return { status: "stale" };
         }
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: ClientGalleryPage = await res.json();
-        if (seq !== requestSeq.current) return "stale"; // filters changed
+        if (seq !== requestSeq.current) return { status: "stale" }; // filters changed
         setPhotos((prev) => {
           const seen = new Set(prev.map((p) => p.id));
           const next = [...prev, ...body.photos.filter((p) => !seen.has(p.id))];
           photosCountRef.current = next.length;
+          photosRef.current = next;
           return next;
         });
         setCursor(body.nextCursor);
@@ -233,13 +244,13 @@ export function GalleryShell({
         if (body.timeline) setTimeline(body.timeline);
         requestBusyRef.current = false;
         setState("idle");
-        return "appended";
+        return { status: "appended", photos: body.photos };
       } catch {
         if (seq === requestSeq.current) {
           requestBusyRef.current = false;
           setState("error-network");
         }
-        return "stale";
+        return { status: "stale" };
       }
     },
     [],
@@ -282,13 +293,13 @@ export function GalleryShell({
           cursorRef.current
         ) {
           const outcome = await fetchNextPage(JUMP_PAGE_LIMIT);
-          if (outcome === "busy") {
+          if (outcome.status === "busy") {
             // Another request (e.g. tail-loading) holds the wire; let it
             // land, then keep paging toward the target.
             await new Promise((resolve) => setTimeout(resolve, 150));
             continue;
           }
-          if (outcome !== "appended") break;
+          if (outcome.status !== "appended") break;
         }
       } finally {
         setJumping(false);
@@ -317,17 +328,51 @@ export function GalleryShell({
     });
   }, []);
 
-  /** Selecting a stack selects its loaded frames; again deselects them. */
+  /**
+   * Selecting a stack selects the WHOLE burst; selecting it again deselects.
+   * A burst that crosses a pagination boundary only has its leading frames
+   * loaded, while the stack card promises the full size -- so before such a
+   * stack counts as selected, page the rest of the burst in and select every
+   * frame at once. If paging fails, nothing is selected (the network error
+   * state surfaces); the selected count must never exceed what download,
+   * ZIP, Drive, and Dropbox will actually receive.
+   */
   const toggleBurstSelection = useCallback(
-    (photoIds: string[]) => {
+    ({
+      burstId,
+      photoIds,
+      size,
+    }: {
+      burstId: string;
+      photoIds: string[];
+      size: number;
+    }) => {
       const allSelected =
         photoIds.length > 0 &&
         photoIds.every((id) => selection.selected.has(id));
-      for (const id of photoIds) {
-        if (allSelected || !selection.selected.has(id)) selection.toggle(id);
+      if (allSelected) {
+        for (const id of photoIds) selection.toggle(id);
+        return;
       }
+      if (photoIds.length >= size) {
+        selection.selectAllVisible(photoIds);
+        return;
+      }
+      const seq = requestSeq.current;
+      void collectWholeBurstIds(burstId, size, {
+        loadedPhotos: () => photosRef.current,
+        hasMore: () => cursorRef.current !== null,
+        fetchNextPage: () => fetchNextPage(PAGE_LIMIT),
+        isStale: () => requestSeq.current !== seq,
+        waitForWire: () =>
+          new Promise((resolve) => setTimeout(resolve, 150)),
+      }).then((ids) => {
+        if (ids && requestSeq.current === seq) {
+          selection.selectAllVisible(ids);
+        }
+      });
     },
-    [selection],
+    [fetchNextPage, selection],
   );
 
   const applyFilters = useCallback(

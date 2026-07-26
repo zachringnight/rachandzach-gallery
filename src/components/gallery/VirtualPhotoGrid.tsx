@@ -39,8 +39,17 @@ export interface VirtualPhotoGridProps {
   /** Contact-sheet stacks currently fanned out inline (P4). */
   expandedBursts?: ReadonlySet<string>;
   onToggleBurst?: (burstId: string) => void;
-  /** Toggle selection for every loaded frame of a burst at once. */
-  onToggleBurstSelection?: (photoIds: string[]) => void;
+  /**
+   * Toggle selection for a whole burst at once. The stack's full size rides
+   * along with the loaded frame ids so the shell can finish loading a burst
+   * that crosses a pagination boundary before it counts as selected --
+   * otherwise the card's "N frames" claim and the exported set drift apart.
+   */
+  onToggleBurstSelection?: (stack: {
+    burstId: string;
+    photoIds: string[];
+    size: number;
+  }) => void;
   /**
    * Reports the index (into `photos`) of the first photograph on screen as
    * the guest scrolls; drives the Light Bar and chapter label (P3).
@@ -346,7 +355,12 @@ export const VirtualPhotoGrid = forwardRef<
                           }
                           onToggleSelection={
                             onToggleBurstSelection
-                              ? () => onToggleBurstSelection(ids)
+                              ? () =>
+                                  onToggleBurstSelection({
+                                    burstId: item.burstId,
+                                    photoIds: ids,
+                                    size: item.size,
+                                  })
                               : undefined
                           }
                         />
