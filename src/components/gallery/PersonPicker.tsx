@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
 import {
   faceCropCss,
@@ -158,6 +158,25 @@ function FaceTile({
   active: boolean;
   onClick: () => void;
 }) {
+  // Reset when the person's face changes: a fresh signed URL deserves a fresh
+  // attempt, otherwise one expiry would strand the tile on initials.
+  const [cropFailed, setCropFailed] = useState(false);
+  const [committedFailed, setCommittedFailed] = useState(false);
+  useEffect(() => {
+    setCropFailed(false);
+    setCommittedFailed(false);
+  }, [face?.kind === "crop" ? face.url : null, slug]);
+
+  const showCrop = face?.kind === "crop" && !cropFailed;
+  // Only attempt the committed file for someone the directory says has a face:
+  // either it IS the committed kind, or a crop just failed and a committed one
+  // may sit underneath it. A person with no face at all goes straight to
+  // initials rather than firing a request that 404s.
+  const showCommitted =
+    !showCrop &&
+    !committedFailed &&
+    (face?.kind === "committed" || face?.kind === "crop");
+
   const initials = name
     .split(/\s+/)
     .slice(0, 2)
@@ -174,22 +193,28 @@ function FaceTile({
     >
       <span
         className="atlas-face-tile-image"
-        style={face?.kind === "crop" ? { position: "relative" } : undefined}
+        style={showCrop ? { position: "relative" } : undefined}
       >
-        {face?.kind === "crop" ? (
+        {showCrop ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={face.url}
             alt=""
             loading="lazy"
             decoding="async"
+            // Signed preview URLs carry a TTL (an hour by default). The picker
+            // is not rendered until a returning guest clicks "Not ...?", which
+            // can be long after the page loaded, so this URL may already be
+            // dead. Degrade to the committed crop, then to initials, rather
+            // than showing a broken image.
+            onError={() => setCropFailed(true)}
             style={{
               position: "absolute",
               maxWidth: "none",
               ...faceCropCss(face.crop, face.aspectRatio),
             }}
           />
-        ) : face?.kind === "committed" ? (
+        ) : showCommitted ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`/faces/${slug}.webp`}
@@ -198,6 +223,7 @@ function FaceTile({
             height={192}
             loading="lazy"
             decoding="async"
+            onError={() => setCommittedFailed(true)}
           />
         ) : (
           <span aria-hidden="true">{initials}</span>

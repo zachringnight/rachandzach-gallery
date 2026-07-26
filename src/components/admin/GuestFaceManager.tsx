@@ -538,17 +538,32 @@ function PersonEditor({
         if (cancelled) return;
         setCandidates(body.photos);
         setNextCursor(body.nextCursor);
-        setPhoto((current) => {
-          if (current) return current;
-          // Re-editing an existing hand-pick: reopen on its photo.
-          // Match on the stable photo id. The signed preview URL is re-minted
-          // on every load, so comparing URLs failed to reopen the source frame
-          // and dropped the admin back to the candidate picker.
-          const existing = person.face
-            ? (body.photos.find((p) => p.id === person.face!.photoId) ?? null)
-            : null;
-          return existing ?? null;
-        });
+        const savedId = person.face?.photoId ?? null;
+        let existing = savedId
+          ? (body.photos.find((p) => p.id === savedId) ?? null)
+          : null;
+        // The saved photo need not be on this first page at all: it may have
+        // come from a later "Load more", or from "Browse all photos" while the
+        // editor reopens in the tagged scope. Matching only what happened to
+        // load left the admin back at the picker hunting for their own frame,
+        // so ask for it by id.
+        if (savedId && !existing) {
+          try {
+            const byId = await fetch(
+              `/api/gallery?ids=${encodeURIComponent(savedId)}`,
+              { cache: "no-store" },
+            );
+            if (byId.ok) {
+              const page: ClientGalleryPage = await byId.json();
+              existing = page.photos.find((p) => p.id === savedId) ?? null;
+            }
+          } catch {
+            // Reopening on the saved frame is a convenience; failing to fetch
+            // it must not take the editor down. The picker is the fallback.
+          }
+        }
+        if (cancelled) return;
+        setPhoto((current) => current ?? existing);
       } catch {
         if (!cancelled) setLoadError(true);
       } finally {
