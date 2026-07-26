@@ -3,6 +3,8 @@
  *
  * scope=tagged (default): photos the person is tagged in, weekend order.
  * scope=all: the whole approved archive, optionally text-filtered with ?q=,
+ * ?ids=<photoId>: resolve specific photographs regardless of scope, so the
+ * editor can reopen a saved face whose source is outside the loaded page.
  * for people who have no tags yet (admin-added people especially).
  * Signed preview URLs ride the standard serializer; object paths never
  * reach the client.
@@ -39,14 +41,23 @@ export async function GET(request: NextRequest, context: Context) {
     request.nextUrl.searchParams.get("scope") === "all" ? "all" : "tagged";
   const q = request.nextUrl.searchParams.get("q");
   const cursor = request.nextUrl.searchParams.get("cursor");
+  // ?ids= resolves specific photographs for this admin. The editor uses it to
+  // reopen a saved face whose source photo is not on the current candidate
+  // page. It must live here, behind requireAdmin(), rather than on
+  // /api/gallery: that route is validated against a GUEST session, and an
+  // admin authenticating through Supabase may hold no guest cookie, so the
+  // lookup would 401 and silently drop them back at the picker.
+  const ids = request.nextUrl.searchParams.getAll("ids").filter(Boolean);
 
   const client = createAdminClient();
   const source = createSupabaseGalleryDataSource(client);
   try {
     const page = await getGalleryPage(
-      scope === "tagged"
-        ? { person: slug, cursor, limit: 100 }
-        : { q, cursor, limit: 60 },
+      ids.length > 0
+        ? { ids, limit: ids.length }
+        : scope === "tagged"
+          ? { person: slug, cursor, limit: 100 }
+          : { q, cursor, limit: 60 },
       source,
     );
     const body = await serializeGalleryPage(page, client);

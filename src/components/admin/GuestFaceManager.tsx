@@ -384,7 +384,19 @@ function FaceDisc({
   // an admin without a guest cookie falls back to initials rather than a
   // broken image.
   const [committedFailed, setCommittedFailed] = useState(false);
-  const showCommitted = person.faceKind === "committed" && !committedFailed;
+  const [overrideFailed, setOverrideFailed] = useState(false);
+  const showOverride =
+    person.faceKind === "override" && person.face != null && !overrideFailed;
+  // Same degrade chain as the guest picker's FaceTile. A curation session can
+  // easily outlive the signed-preview TTL -- switch filters an hour in and
+  // newly mounted tiles request a dead URL -- and this is the screen whose
+  // whole job is showing which faces are right, so a broken image here is
+  // worse than anywhere else. An override that fails still tries the
+  // committed crop underneath it before falling to initials.
+  const showCommitted =
+    !showOverride &&
+    !committedFailed &&
+    (person.faceKind === "committed" || person.faceKind === "override");
 
   return (
     <span
@@ -397,13 +409,14 @@ function FaceDisc({
         boxShadow: "0 0 0 1px color-mix(in srgb, var(--color-tan) 40%, transparent)",
       }}
     >
-      {person.faceKind === "override" && person.face ? (
+      {showOverride && person.face ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={person.face.url}
           alt=""
           loading="lazy"
           decoding="async"
+          onError={() => setOverrideFailed(true)}
           style={{
             position: "absolute",
             maxWidth: "none",
@@ -555,7 +568,7 @@ function PersonEditor({
         if (savedId && !existing) {
           try {
             const byId = await fetch(
-              `/api/gallery?ids=${encodeURIComponent(savedId)}`,
+              `/api/admin/people/${encodeURIComponent(person.slug)}/photos?ids=${encodeURIComponent(savedId)}`,
               { cache: "no-store" },
             );
             if (byId.ok) {
