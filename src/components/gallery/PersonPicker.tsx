@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
 import {
   faceCropCss,
@@ -99,7 +99,10 @@ export function PersonPicker({
             </button>
             {filtered.map((person) => (
               <FaceTile
-                key={person.slug}
+                // Keyed on the face, not just the slug: a re-signed URL or a
+                // newly saved crop remounts the tile, which is what resets its
+                // load-failure state without an effect.
+                key={`${person.slug}:${faceKeyOf(faceDirectory?.[person.slug])}`}
                 slug={person.slug}
                 name={person.displayName}
                 face={faceDirectory?.[person.slug] ?? null}
@@ -145,6 +148,12 @@ export function PersonPicker({
  * never resolved fall back to their initials, so the grid stays even rather
  * than punching holes where the data is thin.
  */
+/** Identity of the face currently shown, used to key the tile. */
+function faceKeyOf(face: ClientPersonFace | null | undefined): string {
+  if (!face) return "none";
+  return face.kind === "crop" ? `crop:${face.url}` : "committed";
+}
+
 function FaceTile({
   slug,
   name,
@@ -158,14 +167,12 @@ function FaceTile({
   active: boolean;
   onClick: () => void;
 }) {
-  // Reset when the person's face changes: a fresh signed URL deserves a fresh
-  // attempt, otherwise one expiry would strand the tile on initials.
+  // No effect resets these. A fresh signed URL deserves a fresh attempt, and
+  // the call site keys this component on the face identity, so a changed face
+  // remounts the tile and the flags start false again. Resetting from an
+  // effect would setState during an effect body and cascade a render.
   const [cropFailed, setCropFailed] = useState(false);
   const [committedFailed, setCommittedFailed] = useState(false);
-  useEffect(() => {
-    setCropFailed(false);
-    setCommittedFailed(false);
-  }, [face?.kind === "crop" ? face.url : null, slug]);
 
   const showCrop = face?.kind === "crop" && !cropFailed;
   // Only attempt the committed file for someone the directory says has a face:
