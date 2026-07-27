@@ -882,7 +882,10 @@ describe.skipIf(!serviceReady)("live: schema semantics via service role", () => 
 
   it("cascades rachandzach_upload_items when a batch is deleted", async () => {
     const client = service();
-    const receipt = `test-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    // rachandzach_upload_batches constrains receipt_hash to ^[0-9a-f]{32,64}$,
+    // so a "test-..." prefix fails the check (23514) rather than exercising
+    // the cascade this test exists to prove.
+    const receipt = hexId();
     const batch = await client
       .from("rachandzach_upload_batches")
       .insert({ receipt_hash: receipt, status: "draft" })
@@ -954,7 +957,9 @@ describe.skipIf(!serviceReady)("live: schema semantics via service role", () => 
 
   it("rachandzach_consume_rate_limit allows up to the limit, then denies", async () => {
     const client = service();
-    const key = `k${Date.now()}`.padEnd(64, "0").slice(0, 64);
+    // Same constraint on rachandzach_rate_limits.key_hash: a leading "k" is
+    // not hex, so the insert failed the check instead of testing the limiter.
+    const key = hexId();
     const call = () =>
       client.rpc("rachandzach_consume_rate_limit", {
         key_hash: key,
@@ -970,4 +975,16 @@ describe.skipIf(!serviceReady)("live: schema semantics via service role", () => 
     expect(second.data).toBe(true);
     expect(third.data).toBe(false);
   });
-});
+});/**
+ * A unique lowercase-hex id that satisfies the `^[0-9a-f]{32,64}$` checks on
+ * receipt_hash and key_hash. Two live tests previously built ids with a
+ * non-hex prefix and failed the constraint, which read as a production
+ * problem when it was only a malformed fixture.
+ */
+function hexId(): string {
+  return Array.from({ length: 32 }, () =>
+    Math.floor(Math.random() * 16).toString(16),
+  ).join("");
+}
+
+
