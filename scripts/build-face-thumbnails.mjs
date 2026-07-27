@@ -264,12 +264,28 @@ async function main() {
     }
   }
 
+  // Reconcile the output directory against what we just generated. A guest
+  // who is removed disappears from the manifest but their crop file used to
+  // stay on disk, and /faces/{slug}.webp is a predictable URL -- so a deleted
+  // person's face remained retrievable indefinitely by anyone who had, or
+  // guessed, the path. Deleting a face is supposed to delete the face.
+  const expected = new Set(Object.keys(manifest).map((slug) => `${slug}.webp`));
+  let removed = 0;
+  for (const entry of await fs.readdir(OUT_DIR)) {
+    if (!entry.endsWith(".webp") || expected.has(entry)) continue;
+    await fs.rm(join(OUT_DIR, entry));
+    removed += 1;
+  }
+
   await fs.writeFile(
     join(repoRoot, "src/generated/face-thumbnails.json"),
     `${JSON.stringify({ size: SIZE, people: manifest }, null, 2)}\n`,
   );
 
   console.log(`wrote ${written} face thumbnails to ${OUT_DIR}`);
+  if (removed > 0) {
+    console.log(`removed ${removed} obsolete crop(s) no longer in the manifest`);
+  }
   console.log(`catalog people: ${inCatalog.size}, without a face: ${inCatalog.size - written}`);
   if (skipped.length > 0) {
     console.log("skipped:");

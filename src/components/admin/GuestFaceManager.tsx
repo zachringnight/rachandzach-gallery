@@ -382,6 +382,56 @@ function initialsOf(name: string): string {
  * save: an override whose URL had expired would keep showing the committed
  * crop or initials even after Rachel picked a new face, until a full reload.
  */
+/**
+ * Focus behaviour every modal here needs: move focus inside on open, wrap Tab
+ * and Shift+Tab within the dialog, and restore focus to the opener on close.
+ *
+ * A hook rather than a copied effect. The editor dialog got this first and the
+ * add-person dialog did not, which is the same drift that has bitten this file
+ * before -- a fix applied to one component and not its sibling. One
+ * implementation cannot diverge.
+ *
+ * The roster stays mounted behind these dialogs, so without the wrap Tab walks
+ * the background guest tiles despite aria-modal.
+ */
+function useDialogFocus(ref: React.RefObject<HTMLElement | null>): void {
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const root = ref.current;
+    if (!root) return;
+    const selector =
+      'a[href],button:not([disabled]),textarea,input:not([disabled]),select,[tabindex]:not([tabindex="-1"])';
+    const visible = () =>
+      Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) =>
+        typeof el.checkVisibility === "function"
+          ? el.checkVisibility({ visibilityProperty: true })
+          : el.offsetParent !== null,
+      );
+    visible()[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const items = visible();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !root.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      opener?.focus?.();
+    };
+  }, [ref]);
+}
+
 function faceDiscKey(person: AdminRosterPerson): string {
   if (person.faceKind === "override" && person.face) return `crop:${person.face.url}`;
   return person.faceKind;
@@ -552,51 +602,8 @@ function PersonEditor({
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
-  /**
-   * Focus management for the editor dialog.
-   *
-   * The roster stays mounted behind this, so opening it left focus on the
-   * guest tile that was activated: Tab walked the background tiles instead of
-   * entering the editor, despite aria-modal. On open, focus moves to the first
-   * control inside; Tab and Shift+Tab wrap within the dialog; and closing
-   * returns focus to the tile that opened it, so a keyboard user does not lose
-   * their place in a 132-guest roster.
-   */
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    const root = dialogRef.current;
-    if (!root) return;
-    const selector =
-      'a[href],button:not([disabled]),textarea,input:not([disabled]),select,[tabindex]:not([tabindex="-1"])';
-    const visible = () =>
-      Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) =>
-        typeof el.checkVisibility === "function"
-          ? el.checkVisibility({ visibilityProperty: true })
-          : el.offsetParent !== null,
-      );
-    visible()[0]?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Tab") return;
-      const items = visible();
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      const active = document.activeElement;
-      if (event.shiftKey && (active === first || !root.contains(active))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      opener?.focus?.();
-    };
-  }, []);
+  const candidateGeneration = useRef(0);
+  useDialogFocus(dialogRef);
 
   // Load candidate photos for the active scope/search.
   useEffect(() => {
@@ -651,11 +658,19 @@ function PersonEditor({
     void run();
     return () => {
       cancelled = true;
+      // Any in-flight "Load more" belongs to the list being replaced.
+      candidateGeneration.current += 1;
     };
   }, [person.slug, person.face, scope, searchAll]);
 
   const loadMore = useCallback(async () => {
     if (!nextCursor) return;
+    // Capture the generation this request belongs to. Switching scope or
+    // running a new all-photos search resets the list and bumps the counter;
+    // without this an in-flight "Load more" would append the previous scope's
+    // photos to the new list and overwrite nextCursor with a cursor from the
+    // old result set, mixing two scopes and skipping much of the archive.
+    const generation = candidateGeneration.current;
     try {
       const params = new URLSearchParams({ scope, cursor: nextCursor });
       if (scope === "all" && searchAll) params.set("q", searchAll);
@@ -665,13 +680,14 @@ function PersonEditor({
       );
       if (!res.ok) throw new Error(`status ${res.status}`);
       const body: ClientGalleryPage = await res.json();
+      if (generation !== candidateGeneration.current) return;
       setCandidates((current) => {
         const seen = new Set(current.map((p) => p.id));
         return [...current, ...body.photos.filter((p) => !seen.has(p.id))];
       });
       setNextCursor(body.nextCursor);
     } catch {
-      setLoadError(true);
+      if (generation === candidateGeneration.current) setLoadError(true);
     }
   }, [nextCursor, person.slug, scope, searchAll]);
 
@@ -1678,6 +1694,8 @@ function AddPersonDialog({
   const [slug, setSlug] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const addDialogRef = useRef<HTMLFormElement | null>(null);
+  useDialogFocus(addDialogRef);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -1752,6 +1770,7 @@ function AddPersonDialog({
       style={{ backgroundColor: "color-mix(in srgb, var(--color-ink) 42%, transparent)" }}
     >
       <form
+        ref={addDialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Add a person"

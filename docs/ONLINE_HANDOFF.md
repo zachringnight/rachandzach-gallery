@@ -160,6 +160,41 @@ is treated as holding a stale preference and is returned to the picker, since
 hidden people deliberately remain resolvable and absence is therefore
 unambiguous.
 
+### TEMPORARY: Preview is unauthenticated (2026-07-26)
+
+**The Preview environment currently has no access control at all, and it talks
+to the live database.**
+
+Two changes, both deliberate and both Zach's call, made to get the guest
+manager usable while magic-link sign-in is broken:
+
+1. `OPEN_ACCESS=1` is set on the Vercel **Preview** environment. It bypasses
+   the guest password (`src/proxy.ts`, `requireGalleryAccess`) and returns a
+   synthetic administrator from `requireAdmin()`. See
+   `src/lib/auth/open-access.ts`.
+2. Vercel **Deployment Protection (`ssoProtection`) was disabled** for the
+   project so Rachel could open the preview without a Vercel account.
+
+**Exposure while this stands:** anyone with a preview URL can read all 1,721
+photographs, the guest face crops, every guest name and each person's
+`/{slug}` page, and can *write* -- renaming, hiding and removing guests and
+moderating uploads -- against the **live Supabase project**, not a copy.
+
+Production is protected by construction: `isOpenAccess()` also requires
+`VERCEL_ENV !== "production"`, so setting the variable there has no effect.
+That is enforced in code, not by convention.
+
+**Retirement, required before this is considered finished:**
+
+- [ ] Add the gallery URLs to Supabase → Authentication → Redirect URLs
+      (`https://rachandzach.com/auth/callback`, the `www` variant, the preview
+      origin, `http://localhost:4319/auth/callback`). No gallery URL is
+      currently listed, which is *why* magic links land on the unrelated NWSL
+      project. **Do not change Site URL** -- it belongs to that other product.
+- [ ] Remove the `OPEN_ACCESS` variable from Vercel Preview and delete
+      `src/lib/auth/open-access.ts` along with its three call sites.
+- [ ] Re-enable `ssoProtection` (`all_except_custom_domains`).
+
 ## Next actions
 
 | Priority | Owner | Target | Action and definition of done |
