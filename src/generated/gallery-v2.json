@@ -20002,7 +20002,8 @@
         "alex-dubov",
         "alex-muecke",
         "ashley-dubov",
-        "bryant-kohler"
+        "bryant-kohler",
+        "siri-ramos"
       ],
       "keywords": [
         "Alex Dubov",
@@ -40754,6 +40755,7 @@
       "eventSlug": "ceremony",
       "capturedAt": "2025-07-19T16:15:28-07:00",
       "peopleSlugs": [
+        "alyssa-scott",
         "erin-ankin",
         "gisel-attila",
         "jacquie-michaelsen",
@@ -49214,6 +49216,7 @@
       "eventSlug": "ceremony",
       "capturedAt": "2025-07-19T16:43:26-07:00",
       "peopleSlugs": [
+        "alyssa-scott",
         "chris-gutierrez",
         "jamie-levine",
         "libby-rush",
@@ -49299,6 +49302,7 @@
         "leeann-howarth",
         "maddie-chaness",
         "morgan-becker",
+        "phil-becker",
         "scott-lattimer",
         "steph-soskin"
       ],
@@ -53517,6 +53521,7 @@
       "peopleSlugs": [
         "keagen-edwards",
         "libby-rush",
+        "maura-keith-gutierrez",
         "phil-quist",
         "rachel-casciano",
         "tim-myers",
@@ -54070,6 +54075,7 @@
       "capturedAt": "2025-07-19T16:56:29-07:00",
       "peopleSlugs": [
         "libby-rush",
+        "maura-keith-gutierrez",
         "scott-lattimer",
         "tim-myers"
       ],
@@ -67873,6 +67879,7 @@
       "eventSlug": "cocktail-hour",
       "capturedAt": "2025-07-19T17:56:19-07:00",
       "peopleSlugs": [
+        "chris-gutierrez",
         "maura-keith-gutierrez"
       ],
       "keywords": [
@@ -76605,6 +76612,7 @@
       "capturedAt": "2025-07-19T18:23:55-07:00",
       "peopleSlugs": [
         "chad-slomovitz",
+        "jeffry-lurie",
         "jorie-soskin",
         "maddie-slomovitz",
         "riley-soskin",
@@ -80902,6 +80910,7 @@
       "eventSlug": "reception",
       "capturedAt": "2025-07-19T19:16:24-08:00",
       "peopleSlugs": [
+        "chris-gutierrez",
         "maura-keith-gutierrez"
       ],
       "keywords": [
@@ -92165,7 +92174,8 @@
         "maddie-chaness",
         "maddie-slomovitz",
         "nancy-lurie",
-        "patrick-burton"
+        "patrick-burton",
+        "taylor-bennett"
       ],
       "keywords": [
         "Alex Dubov",
@@ -115288,6 +115298,7 @@
       "eventSlug": "film",
       "capturedAt": null,
       "peopleSlugs": [
+        "alyssa-scott",
         "ashley-dubov",
         "jules-gesink"
       ],
@@ -119854,6 +119865,7 @@
       "eventSlug": "film",
       "capturedAt": null,
       "peopleSlugs": [
+        "alyssa-scott",
         "jacquie-michaelsen",
         "jeffry-lurie",
         "patti-soskin",
@@ -124067,7 +124079,8 @@
       "peopleSlugs": [
         "charlie-weisman",
         "ellie-soskin",
-        "matt-muller"
+        "matt-muller",
+        "steph-soskin"
       ],
       "keywords": [
         "Charlie Weisman",
@@ -129432,7 +129445,7 @@
     {
       "slug": "alyssa-scott",
       "name": "Alyssa Scott",
-      "photoCount": 7
+      "photoCount": 11
     },
     {
       "slug": "amanda-pliska",
@@ -129522,7 +129535,7 @@
     {
       "slug": "chris-gutierrez",
       "name": "Chris Gutierrez",
-      "photoCount": 8
+      "photoCount": 10
     },
     {
       "slug": "chris-nuelle",
@@ -129722,7 +129735,7 @@
     {
       "slug": "jeffry-lurie",
       "name": "Jeffry Lurie",
-      "photoCount": 62
+      "photoCount": 63
     },
     {
       "slug": "jen-kraras",
@@ -129957,7 +129970,7 @@
     {
       "slug": "maura-keith-gutierrez",
       "name": "Maura Keith Gutierrez",
-      "photoCount": 18
+      "photoCount": 20
     },
     {
       "slug": "max-gordichuk",
@@ -130082,7 +130095,7 @@
     {
       "slug": "phil-becker",
       "name": "Phil Becker",
-      "photoCount": 4
+      "photoCount": 5
     },
     {
       "slug": "phil-campbell",
@@ -130202,7 +130215,7 @@
     {
       "slug": "siri-ramos",
       "name": "Siri Ramos",
-      "photoCount": 40
+      "photoCount": 41
     },
     {
       "slug": "spencer-soltman",
@@ -130217,7 +130230,7 @@
     {
       "slug": "steph-soskin",
       "name": "Steph Soskin",
-      "photoCount": 4
+      "photoCount": 5
     },
     {
       "slug": "stephanie-soskin",
@@ -130252,7 +130265,7 @@
     {
       "slug": "taylor-bennett",
       "name": "Taylor Bennett",
-      "photoCount": 7
+      "photoCount": 8
     },
     {
       "slug": "taylor-noyer",

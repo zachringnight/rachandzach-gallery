@@ -9,7 +9,8 @@
       "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7",
       "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
       "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
-      "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68"
+      "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
+      "2b262da3fac115b71f385e0a7604e62600d24fd3a9c63950585890a9183fd8c5"
     ],
     "reviewedAt": "2026-07-27",
     "reviewedBy": "Codex visual side-by-side review",
@@ -19,9 +20,9 @@
     "savedCropAnchorCount": 23,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 755,
-    "candidatesApproved": 578,
-    "candidatesRejected": 178,
+    "candidatesReviewed": 770,
+    "candidatesApproved": 591,
+    "candidatesRejected": 180,
     "reviewWaves": [
       {
         "wave": 1,
@@ -422,6 +423,35 @@
         "candidatesApproved": 2,
         "candidatesRejected": 0,
         "dependsOn": "The maura-keith-gutierrez profile defect recorded on wave 6 is still unfixed; her saved face still shows Chris until a crop is framed at /admin/faces."
+      },
+      {
+        "wave": 8,
+        "auditFingerprint": "2b262da3fac115b71f385e0a7604e62600d24fd3a9c63950585890a9183fd8c5",
+        "reviewType": "Candidates surfaced by the rebuilt signatures",
+        "reviewMethod": "Rebuilding signatures after waves 5-7 resolved 118 of 132 tagged people, up from 108, and gave Chris Gutierrez a signature for the first time. These are the untagged faces that appeared at the calibrated default thresholds as a result. Zach reviewed all fifteen as saved profile beside proposed face and denied the two Jorie Soskin rows.",
+        "minSimilarity": 0.58,
+        "minMargin": 0.08,
+        "candidatesReviewed": 15,
+        "candidatesApproved": 13,
+        "candidatesRejected": 2,
+        "overturnsEarlierDenials": [
+          "#7 Siri Ramos (01 Day 1/rachelzachday1-265.jpg)",
+          "#15 Jeffry Lurie (09 Reception/rachelzach-699.jpg)"
+        ],
+        "rejections": [
+          {
+            "photoId": "09cfd480a051b988b7efc5fd0fe3ee22",
+            "path": "09 Reception/rachelzach-754.jpg",
+            "personSlug": "jorie-soskin",
+            "reason": "Zach reviewed the wave-8 sheet and confirmed this is not Jorie Soskin."
+          },
+          {
+            "photoId": "0cd436cc6fe8e799db702465e15a1b9f",
+            "path": "09 Reception/rachelzach-664.jpg",
+            "personSlug": "jorie-soskin",
+            "reason": "Zach reviewed the wave-8 sheet and confirmed this is not Jorie Soskin."
+          }
+        ]
       }
     ]
   },
@@ -6509,6 +6539,157 @@
         "anchorPhoto": "01 Day 1/rachelzachday1-150.jpg",
         "anchorFaceIndex": 1,
         "note": "Similarity is measured against a face Zach identified as Maura, not against her stored profile: that profile is Chris Gutierrez. The margin is the lead over the best competing person profile (emily-stillman 0.171)."
+      }
+    },
+    {
+      "photoId": "0325879ef0b1b86d2ab0b6cd9403d0a1",
+      "path": "09 Reception/rachelzach-755.jpg",
+      "personSlug": "chris-gutierrez",
+      "displayName": "Chris Gutierrez",
+      "faceIndex": 0,
+      "similarity": 0.837,
+      "margin": 0.633,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "ddd5c2c0a49a8bd16433d6133cfacf8e",
+      "path": "05 Ceremony/rachelzach-345.jpg",
+      "personSlug": "phil-becker",
+      "displayName": "Phil Becker",
+      "faceIndex": 0,
+      "similarity": 0.788,
+      "margin": 0.649,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "aafd555108f326d3e15d52f145b570f8",
+      "path": "05 Ceremony/rachelzach-408.jpg",
+      "personSlug": "maura-keith-gutierrez",
+      "displayName": "Maura Keith-Gutierrez",
+      "faceIndex": 0,
+      "similarity": 0.755,
+      "margin": 0.569,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "df5cc1838d18c111fadfce2105d074fc",
+      "path": "05 Ceremony/rachelzach-234.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 4,
+      "similarity": 0.749,
+      "margin": 0.562,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "c12c79ee75ce52a411a1d562d291540d",
+      "path": "14 Film/rachelzachfilm-171.jpg",
+      "personSlug": "steph-soskin",
+      "displayName": "Steph Soskin",
+      "faceIndex": 2,
+      "similarity": 0.727,
+      "margin": 0.589,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "6c255f59a727e475fc88ca2fa863e9c5",
+      "path": "07 Cocktail Hour/rachelzach-616.jpg",
+      "personSlug": "chris-gutierrez",
+      "displayName": "Chris Gutierrez",
+      "faceIndex": 0,
+      "similarity": 0.703,
+      "margin": 0.541,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "641b951f10537552075fe24def76a680",
+      "path": "01 Day 1/rachelzachday1-265.jpg",
+      "personSlug": "siri-ramos",
+      "displayName": "Siri Ramos",
+      "faceIndex": 8,
+      "similarity": 0.698,
+      "margin": 0.504,
+      "profileSource": "learned",
+      "reviewWave": 8,
+      "overturns": {
+        "wave": 6,
+        "note": "Denied in wave 6 on the earlier profiles and approved here by Zach on the rebuilt ones. Recorded so the reversal is visible rather than silent."
+      }
+    },
+    {
+      "photoId": "0c6c88586a7cc91525b5109e55dc90ba",
+      "path": "10 Dancing/rachelzach-959.jpg",
+      "personSlug": "taylor-bennett",
+      "displayName": "Taylor Bennett",
+      "faceIndex": 0,
+      "similarity": 0.685,
+      "margin": 0.385,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "179baa6253c58d3899d3a16e72c66583",
+      "path": "05 Ceremony/rachelzach-401.jpg",
+      "personSlug": "maura-keith-gutierrez",
+      "displayName": "Maura Keith-Gutierrez",
+      "faceIndex": 2,
+      "similarity": 0.675,
+      "margin": 0.497,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "9414fa272b8dc2924194d8b04e8add74",
+      "path": "05 Ceremony/rachelzach-344.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 16,
+      "similarity": 0.628,
+      "margin": 0.399,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "35057bf6ecb38f58e146292df965fc9e",
+      "path": "14 Film/rachelzachfilm-45.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 1,
+      "similarity": 0.626,
+      "margin": 0.438,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "d9a85bebc8db64890151193c77c2ac82",
+      "path": "14 Film/rachelzachfilm-112.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 3,
+      "similarity": 0.601,
+      "margin": 0.452,
+      "profileSource": "learned",
+      "reviewWave": 8
+    },
+    {
+      "photoId": "5dac499635ecafe5b6152b27791e9761",
+      "path": "09 Reception/rachelzach-699.jpg",
+      "personSlug": "jeffry-lurie",
+      "displayName": "Jeffry Lurie",
+      "faceIndex": 0,
+      "similarity": 0.58,
+      "margin": 0.355,
+      "profileSource": "learned",
+      "reviewWave": 8,
+      "overturns": {
+        "wave": 6,
+        "note": "Denied in wave 6 on the earlier profiles and approved here by Zach on the rebuilt ones. Recorded so the reversal is visible rather than silent."
       }
     }
   ]
