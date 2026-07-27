@@ -1,7 +1,8 @@
 # Face-recognition moderation assist (pipeline half)
 
 Local-only InsightFace pipeline that learns per-person face signatures from the
-1,721 confirmed-tagged archive photos and audits existing tags against them.
+1,721 confirmed-tagged archive photos, supplements them with hand-picked saved
+face crops, and audits existing tags against all available profiles.
 Admin-side tooling only: nothing here is guest-facing, embeddings and reports
 never leave local disk (`metadata/faces/` is gitignored), and the audit output
 is a review list for a human, never an auto-correction. The admin-UI wiring
@@ -96,7 +97,14 @@ uv run --no-project --python .venv-faces/bin/python \
 
 Pure numpy over the saved artifacts (no model inference), so it finishes in
 seconds and is byte-for-byte idempotent for unchanged inputs (outputs carry an
-inputs fingerprint instead of timestamps). Writes
+inputs fingerprint instead of timestamps). The fingerprint hashes the
+identity-bearing override fields and ignores the export-only `exportedAt`
+timestamp, so a no-change live readback cannot invalidate an existing review
+packet. It combines 108 learned signatures with the 23 hand-picked crops in
+`src/generated/person-overrides.json`, giving the current archive 131 saved
+profiles. A crop anchor is accepted only when one detected face contains the
+crop center and covers at least 80% of the crop; ambiguous or unresolved crops
+fail closed. Writes
 `metadata/faces/audit-report.json` and `metadata/faces/audit-report.md`, ranked
 by confidence:
 
@@ -132,10 +140,103 @@ run, 6,535 faces, 108 of 132 tagged people resolved):
 assignment under `calibration` on every run; if those drift after a re-tag
 wave, revisit the constants.
 
+### 3. `render-tag-review-sheets.py`
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/render-tag-review-sheets.py \
+    --min-sim 0.72 --min-margin 0.15
+```
+
+Renders the committed saved profile beside the proposed detected face using
+only `public/faces/*.webp` and local 1600px derivatives. It never opens
+originals or changes tags. Sheets stay under ignored `metadata/faces/` and
+must be reviewed visually before a pair is added to the tracked
+`metadata/reviewed-face-tag-additions.json` overlay.
+
+### 4. `review-zero-tag-photos.py`
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/review-zero-tag-photos.py
+```
+
+Audits the narrower blind spot where a catalog photo has detected faces but no
+people tags at all. It compares every clustering-eligible face with all 131
+saved profiles, groups repeated detections with the archive-calibrated
+same-face clustering rules, and sorts recurring unknown faces ahead of
+singletons. It renders:
+
+- full-photo sheets with every detected face boxed, including detections too
+  small or soft for identity comparison; and
+- face sheets sorted by same-face cluster, with the closest saved profile,
+  runner-up matches, score, margin, and quality tier.
+
+The machine-readable and Markdown reports plus both sheet sets stay under the
+ignored `metadata/faces/zero-tag-review*` paths. The script reads only the
+catalog, local face artifacts, committed face thumbnails, and local preview
+derivatives. It never opens an original and never applies a tag. Review
+decisions remain explicit rows in
+`metadata/reviewed-face-tag-additions.json`; a review wave can carry its own
+recorded thresholds when visual context confirms a face below the default
+saved-profile score.
+
+### 5. Private recurring-face tagger
+
+```bash
+npm run faces:recurring
+```
+
+Builds and opens
+`metadata/faces/recurring-face-tagger/index.html`, a local-only review surface
+for the repeated unnamed clusters produced by step 4. It currently shows 13
+same-face groups (31 face instances across 10 photographs) and lets Zach:
+
+- compare every crop in a group and open the full photograph with the face
+  boxed;
+- search all 189 current catalog identities, including seated attendees who
+  do not have a tagged photograph or saved face yet;
+- compare a selected identity with its committed saved face when one exists;
+- confirm one identity for the entire cluster or hold it for later; and
+- restore or download the review decisions as JSON.
+
+The page saves drafts in browser local storage. Its HTML, private preview
+references, and decisions stay under ignored local paths; it contains no
+embeddings and deliberately omits model-similarity suggestions so the
+reviewer makes the identity decision.
+
+Import a downloaded decision file in read-only mode first:
+
+```bash
+npm run faces:recurring:apply -- \
+  ~/Downloads/rachandzach-recurring-face-decisions.json
+```
+
+Add `--write` only after the dry-run is correct. Write mode validates the
+exact report fingerprint, every cluster and person, photo-path drift, and
+same-person conflicts before writing the tracked additive face-tag overlay and
+generated local catalog. Each file is replaced atomically. Human cluster
+assignments are recorded as their own review wave without inventing a model
+similarity score.
+
+The importer never syncs live data. Use the existing narrow sync separately:
+
+```bash
+node scripts/sync-catalog-overlays.mjs
+node scripts/sync-catalog-overlays.mjs --execute
+```
+
+The first command is read-only. `--execute` writes an ignored pre-state backup,
+performs only additive confirmed tag upserts, and verifies the live result.
+
 ## Privacy and safety rails
 
 - Source master opened read-only; only the catalog and `metadata/faces/` are
   written.
+- The zero-tag review does not open the source master at all; it uses local
+  preview derivatives and keeps its contact sheets private.
+- The recurring-face tagger uses those same local derivatives; its generated
+  page and browser decisions remain gitignored.
 - Embeddings, signatures, and reports stay on local disk (gitignored), service
   workflows never see them in this phase.
 - The audit is a review list: a human confirms every row against the actual
