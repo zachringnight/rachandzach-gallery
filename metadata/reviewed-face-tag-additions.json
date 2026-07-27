@@ -1,23 +1,24 @@
 {
   "schemaVersion": 1,
   "source": {
-    "auditFingerprint": "2d820a8fa0abbcd9a4bbeb54023bccf418fb22f5232b0cf568b6a1d1cab182e9",
+    "auditFingerprint": "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7",
     "auditFingerprints": [
       "89d7732b1be5606d7413bc21b5f634c0fb71b1af0e4dee964905ce02de6fd08b",
       "a6bb35488b45afb864280e3a16a656bd26b627d1d2fbe7552977105d76b90a45",
-      "2d820a8fa0abbcd9a4bbeb54023bccf418fb22f5232b0cf568b6a1d1cab182e9"
+      "2d820a8fa0abbcd9a4bbeb54023bccf418fb22f5232b0cf568b6a1d1cab182e9",
+      "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7"
     ],
     "reviewedAt": "2026-07-27",
     "reviewedBy": "Codex visual side-by-side review",
-    "reviewMethod": "Committed saved profile compared with the detected candidate face in local 1600px derivatives. Wedding originals were not opened or changed.",
+    "reviewMethod": "Committed saved profiles were compared with detected candidate faces in local derivatives. Zero-tag photos were also reviewed as complete images, repeated faces were grouped across photos, and lower-score confirmations required matching same-day visual context. Wedding originals were not opened or changed.",
     "savedFaceProfileCount": 131,
     "learnedSignatureCount": 108,
     "savedCropAnchorCount": 23,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 306,
-    "candidatesApproved": 290,
-    "candidatesRejected": 16,
+    "candidatesReviewed": 444,
+    "candidatesApproved": 300,
+    "candidatesRejected": 144,
     "reviewWaves": [
       {
         "wave": 1,
@@ -145,6 +146,24 @@
             "reason": "Candidate is too blurred to distinguish confidently from nearby similar-looking guests."
           }
         ]
+      },
+      {
+        "wave": 4,
+        "auditFingerprint": "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7",
+        "reviewType": "Exhaustive review of zero-tag photos with detected faces",
+        "reviewMethod": "Reviewed every full-photo overview and every clustering-eligible face comparison, sorted repeated detections into same-face clusters, and used tagged same-day photos only as corroborating visual context.",
+        "minSimilarity": 0.4,
+        "minMargin": 0.18,
+        "photosReviewed": 56,
+        "detectedFacesReviewed": 245,
+        "candidatesReviewed": 138,
+        "candidatesApproved": 10,
+        "candidatesRejected": 128,
+        "sameFaceClusters": 120,
+        "repeatedSameFaceClusters": 13,
+        "facesInRepeatedClusters": 31,
+        "contextConfirmedBelowDefault": 2,
+        "heldBackReason": "Candidates not approved were mismatches, duplicate-person detections in one photo, unknown recurring faces, or too distant, blurred, occluded, or back-facing to identify safely."
       }
     ]
   },
@@ -3048,6 +3067,118 @@
       "similarity": 0.551,
       "margin": 0.393,
       "profileSource": "learned"
+    },
+    {
+      "photoId": "873527e6bdc30f3e04e8472e8e4646a7",
+      "path": "05 Ceremony/rachelzach-226.jpg",
+      "personSlug": "janice-harstad",
+      "displayName": "Janice Harstad",
+      "faceIndex": 0,
+      "similarity": 0.419,
+      "margin": 0.187,
+      "profileSource": "saved-crop",
+      "reviewWave": 4,
+      "contextEvidence": "Matched the same green-and-pink wedding outfit and face against tagged photo 07 Cocktail Hour/rachelzach-579.jpg."
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "kelsey-myers",
+      "displayName": "Kelsey Myers",
+      "faceIndex": 3,
+      "similarity": 0.677,
+      "margin": 0.348,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "bryant-kohler",
+      "displayName": "Bryant Kohler",
+      "faceIndex": 12,
+      "similarity": 0.589,
+      "margin": 0.38,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "kayla-kohler",
+      "displayName": "Kayla Kohler",
+      "faceIndex": 14,
+      "similarity": 0.687,
+      "margin": 0.503,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "spencer-soltman",
+      "displayName": "Spencer Soltman",
+      "faceIndex": 15,
+      "similarity": 0.721,
+      "margin": 0.512,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "daniel-shin",
+      "displayName": "Daniel Shin",
+      "faceIndex": 18,
+      "similarity": 0.67,
+      "margin": 0.527,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "sean-morse",
+      "displayName": "Sean Morse",
+      "faceIndex": 19,
+      "similarity": 0.68,
+      "margin": 0.532,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "lars-lattimer",
+      "displayName": "Lars Lattimer",
+      "faceIndex": 25,
+      "similarity": 0.669,
+      "margin": 0.359,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "patrick-burton",
+      "displayName": "Patrick Burton",
+      "faceIndex": 26,
+      "similarity": 0.766,
+      "margin": 0.575,
+      "profileSource": "learned",
+      "reviewWave": 4
+    },
+    {
+      "photoId": "d8e3467509f5dca000f96a65218a49ba",
+      "path": "10 Dancing/rachelzach-987.jpg",
+      "personSlug": "abe-burton",
+      "displayName": "Abe Burton",
+      "faceIndex": 2,
+      "similarity": 0.46,
+      "margin": 0.3,
+      "profileSource": "learned",
+      "reviewWave": 4,
+      "contextEvidence": "Matched the same dark suit, white shirt, hair, and side profile against tagged photo 14 Film/rachelzachfilm-65.jpg."
     }
   ]
 }

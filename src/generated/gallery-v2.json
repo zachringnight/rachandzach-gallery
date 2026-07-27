@@ -40101,7 +40101,9 @@
       "orientation": "portrait",
       "eventSlug": "ceremony",
       "capturedAt": "2025-07-19T16:09:59-07:00",
-      "peopleSlugs": [],
+      "peopleSlugs": [
+        "janice-harstad"
+      ],
       "keywords": [
         "Wedding"
       ],
@@ -79594,7 +79596,16 @@
       "orientation": "portrait",
       "eventSlug": "reception",
       "capturedAt": "2025-07-19T18:46:45-07:00",
-      "peopleSlugs": [],
+      "peopleSlugs": [
+        "bryant-kohler",
+        "daniel-shin",
+        "kayla-kohler",
+        "kelsey-myers",
+        "lars-lattimer",
+        "patrick-burton",
+        "sean-morse",
+        "spencer-soltman"
+      ],
       "keywords": [
         "Wedding"
       ],
@@ -94088,7 +94099,9 @@
       "orientation": "portrait",
       "eventSlug": "dancing",
       "capturedAt": "2025-07-19T20:42:27-07:00",
-      "peopleSlugs": [],
+      "peopleSlugs": [
+        "abe-burton"
+      ],
       "keywords": [
         "Wedding"
       ],
@@ -129080,7 +129093,7 @@
     {
       "slug": "abe-burton",
       "name": "Abe Burton",
-      "photoCount": 5
+      "photoCount": 6
     },
     {
       "slug": "adam-brown",
@@ -129205,7 +129218,7 @@
     {
       "slug": "bryant-kohler",
       "name": "Bryant Kohler",
-      "photoCount": 51
+      "photoCount": 52
     },
     {
       "slug": "carter-cheskey",
@@ -129265,7 +129278,7 @@
     {
       "slug": "daniel-shin",
       "name": "Daniel Shin",
-      "photoCount": 14
+      "photoCount": 15
     },
     {
       "slug": "danny-listrani",
@@ -129405,7 +129418,7 @@
     {
       "slug": "janice-harstad",
       "name": "Janice Harstad",
-      "photoCount": 7
+      "photoCount": 8
     },
     {
       "slug": "jason-howarth",
@@ -129525,7 +129538,7 @@
     {
       "slug": "kayla-kohler",
       "name": "Kayla Kohler",
-      "photoCount": 82
+      "photoCount": 83
     },
     {
       "slug": "keagen-edwards",
@@ -129540,7 +129553,7 @@
     {
       "slug": "kelsey-myers",
       "name": "Kelsey Myers",
-      "photoCount": 75
+      "photoCount": 76
     },
     {
       "slug": "kelsey-nuelle",
@@ -129560,7 +129573,7 @@
     {
       "slug": "lars-lattimer",
       "name": "Lars Lattimer",
-      "photoCount": 13
+      "photoCount": 14
     },
     {
       "slug": "laura-weisman",
@@ -129770,7 +129783,7 @@
     {
       "slug": "patrick-burton",
       "name": "Patrick Burton",
-      "photoCount": 34
+      "photoCount": 35
     },
     {
       "slug": "patti-soskin",
@@ -129890,7 +129903,7 @@
     {
       "slug": "sean-morse",
       "name": "Sean Morse",
-      "photoCount": 22
+      "photoCount": 23
     },
     {
       "slug": "sharon-phillips",
@@ -129915,7 +129928,7 @@
     {
       "slug": "spencer-soltman",
       "name": "Spencer Soltman",
-      "photoCount": 48
+      "photoCount": 49
     },
     {
       "slug": "steph-mohr",

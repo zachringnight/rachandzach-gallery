@@ -123,4 +123,31 @@ describe("catalog overlays", () => {
       "multiple seating attendees resolve to alias-target",
     );
   });
+
+  it("uses a recorded review wave threshold for contextual confirmations", () => {
+    const tags = faceTags();
+    tags.source.reviewWaves = [
+      {
+        wave: 4,
+        minSimilarity: 0.4,
+        minMargin: 0.18,
+      },
+    ];
+    tags.additions[0].reviewWave = 4;
+    tags.additions[0].similarity = 0.46;
+    tags.additions[0].margin = 0.3;
+
+    expect(() =>
+      applyCatalogOverlays(fixture(), attendance(), tags),
+    ).not.toThrow();
+  });
+
+  it("fails closed when a tag references an unknown review wave", () => {
+    const tags = faceTags();
+    tags.additions[0].reviewWave = 4;
+
+    expect(() => applyCatalogOverlays(fixture(), attendance(), tags)).toThrow(
+      "references unknown review wave",
+    );
+  });
 });

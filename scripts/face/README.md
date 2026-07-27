@@ -154,10 +154,39 @@ originals or changes tags. Sheets stay under ignored `metadata/faces/` and
 must be reviewed visually before a pair is added to the tracked
 `metadata/reviewed-face-tag-additions.json` overlay.
 
+### 4. `review-zero-tag-photos.py`
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/review-zero-tag-photos.py
+```
+
+Audits the narrower blind spot where a catalog photo has detected faces but no
+people tags at all. It compares every clustering-eligible face with all 131
+saved profiles, groups repeated detections with the archive-calibrated
+same-face clustering rules, and sorts recurring unknown faces ahead of
+singletons. It renders:
+
+- full-photo sheets with every detected face boxed, including detections too
+  small or soft for identity comparison; and
+- face sheets sorted by same-face cluster, with the closest saved profile,
+  runner-up matches, score, margin, and quality tier.
+
+The machine-readable and Markdown reports plus both sheet sets stay under the
+ignored `metadata/faces/zero-tag-review*` paths. The script reads only the
+catalog, local face artifacts, committed face thumbnails, and local preview
+derivatives. It never opens an original and never applies a tag. Review
+decisions remain explicit rows in
+`metadata/reviewed-face-tag-additions.json`; a review wave can carry its own
+recorded thresholds when visual context confirms a face below the default
+saved-profile score.
+
 ## Privacy and safety rails
 
 - Source master opened read-only; only the catalog and `metadata/faces/` are
   written.
+- The zero-tag review does not open the source master at all; it uses local
+  preview derivatives and keeps its contact sheets private.
 - Embeddings, signatures, and reports stay on local disk (gitignored), service
   workflows never see them in this phase.
 - The audit is a review list: a human confirms every row against the actual

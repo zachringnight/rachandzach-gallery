@@ -57,8 +57,22 @@ function validateFaceTags(manifest) {
     "face-tag approved count does not match additions",
   );
 
+  const reviewWaves = new Map(
+    (manifest.source.reviewWaves ?? []).map((wave) => [wave.wave, wave]),
+  );
   const pairs = new Set();
   for (const addition of manifest.additions) {
+    const reviewWave =
+      addition.reviewWave === undefined
+        ? null
+        : reviewWaves.get(addition.reviewWave);
+    invariant(
+      addition.reviewWave === undefined || reviewWave,
+      `face-tag ${addition.photoId}/${addition.personSlug} references unknown review wave`,
+    );
+    const minSimilarity =
+      reviewWave?.minSimilarity ?? manifest.source.minSimilarity;
+    const minMargin = reviewWave?.minMargin ?? manifest.source.minMargin;
     invariant(
       typeof addition.photoId === "string" && addition.photoId.length > 0,
       "face-tag photoId is required",
@@ -69,12 +83,12 @@ function validateFaceTags(manifest) {
     );
     invariant(
       Number.isFinite(addition.similarity) &&
-        addition.similarity >= manifest.source.minSimilarity,
+        addition.similarity >= minSimilarity,
       `face-tag ${addition.photoId}/${addition.personSlug} is below similarity threshold`,
     );
     invariant(
       Number.isFinite(addition.margin) &&
-        addition.margin >= manifest.source.minMargin,
+        addition.margin >= minMargin,
       `face-tag ${addition.photoId}/${addition.personSlug} is below margin threshold`,
     );
     const key = `${addition.photoId}:${addition.personSlug}`;

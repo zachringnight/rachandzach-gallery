@@ -183,21 +183,34 @@ hand-picked face crops, zero renames, and one hidden identity. Those 23 crops
 are anchors in addition to 108 learned signatures, so the audit uses 131 saved
 face profiles—not 23.
 
-Three side-by-side visual review waves examined every current saved-face
-suggestion against the committed profile and the detected face in a local
-1600px derivative. The third wave checked all 151 candidates that remained:
+The first three side-by-side visual review waves examined every current
+saved-face suggestion against the committed profile and the detected face in
+a local derivative. The third wave checked all 151 candidates that remained:
 136 were confirmed and 15 were held back as mismatches or genuinely ambiguous
-faces. Across the three waves, 290 confirmed links are tracked in
-`metadata/reviewed-face-tag-additions.json`. The first held-back crop was
-deliberately rechecked in the third wave, so the 306 review decisions cover
-305 unique candidate/photo pairs. Wedding originals were never opened for
-this review and were not changed.
+faces.
 
-The live joins were added as `manual` / `confirmed`, then re-read: the live
-project has 4,535 `rachandzach_photo_people` rows, all 290 reviewed links are
-present, and a second dry run has zero pending people or tags. The refreshed
-audit still lists the 15 intentionally held-back comparisons and no
-unreviewed saved-face suggestion.
+A fourth exhaustive pass then covered the separate zero-tag blind spot. Before
+applying anything, 241 photos had no people tags; 56 of those contained 245
+detected faces. Every full photo was reviewed, all 138 clustering-eligible
+faces were compared with all 131 saved profiles, and repeated detections were
+sorted into 120 same-face clusters. Thirteen clusters repeated across photos,
+covering 31 face detections. Eight identities were visually confirmed in one
+wide reception photo. Janice Harstad and Abe Burton were confirmed only after
+matching their face, outfit, and same-day context against already-tagged
+photos. The other 128 profile comparisons were held back because they were
+mismatches, duplicate-person detections, unknown recurring guests, or too
+distant, blurred, occluded, or back-facing to name safely.
+
+Across all four waves, 300 confirmed links are tracked in
+`metadata/reviewed-face-tag-additions.json`. The live joins were added as
+`manual` / `confirmed`, then re-read: the live project has 4,545
+`rachandzach_photo_people` rows, all 300 reviewed links are present, and a
+second dry run has zero pending people or tags. After those additions, 238
+photos remain entirely untagged; 53 contain 208 detected faces, including 118
+clustering-eligible faces. The same 13 recurring unknown clusters remain
+privately sorted for a later identification pass. Reports and review sheets
+stay gitignored under `metadata/faces/`; wedding originals were never opened
+for this fourth pass and were not changed.
 
 `scripts/sync-catalog-overlays.mjs` is read-only by default and uses
 `--execute` for the narrow additive live sync. It creates missing people only
@@ -209,10 +222,11 @@ live data curation above is complete and verified.
 
 Fresh local verification on that branch:
 
-- focused catalog-overlay coverage passed 4 tests
-- Python compilation and the post-sync face audit passed
+- focused catalog-overlay coverage passed 6 tests
+- Python compilation, the post-sync face audit, and the zero-tag regrouping
+  pass completed successfully
 - `npm run verify` passed typecheck; lint completed with zero errors and 18
-  warnings; Vitest passed 1,035 tests with 17 documented skips;
+  warnings; Vitest passed 1,037 tests with 17 documented skips;
   production build passed; Chromium end-to-end passed 83 tests with 28
   documented skips
 - `git diff --check` passed
@@ -260,8 +274,8 @@ That is enforced in code, not by convention.
 | DONE | Codex | 2026-07-26 | Confirmed `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` and `NEXT_PUBLIC_DROPBOX_APP_KEY` in Vercel Production and Preview, deployed `main`, and verified the production deployment is `READY`. |
 | P0 | Zach/admin | Before announcing cloud save | Complete the two consent-dependent file-transfer rows in the authenticated acceptance pass below using a personal Google Drive and Dropbox account. |
 | DONE | Codex | 2026-07-26 | Checked Vercel runtime errors after production smoke traffic; none were returned. |
-| DONE | Codex | 2026-07-27 | Reviewed all 151 remaining saved-face suggestions side by side, applied 136 confirmed links, held back 15 mismatches or ambiguous faces, and verified all 290 tracked links live with zero pending writes. |
-| P2 | Zach/admin | Later curation session | Revisit the 15 intentionally held-back face comparisons only if a clearer saved profile or photo becomes available. Reports and contact sheets remain gitignored; no rejected suggestion is auto-applied. |
+| DONE | Codex | 2026-07-27 | Reviewed all 151 remaining saved-face suggestions, then exhaustively reviewed all 56 zero-tag photos with detected faces. Applied 146 confirmed links across the two passes and verified all 300 tracked links live with zero pending writes. |
+| P2 | Zach/admin | Later curation session | Revisit the 15 intentionally held-back saved-face comparisons and the 13 privately sorted recurring unknown-face clusters only if a clearer saved profile, photo, or identity becomes available. Reports and contact sheets remain gitignored; no rejected suggestion is auto-applied. |
 | P2 | Engineer | Future maintenance | Add a live-database integration harness to replace the intentional schema/catalog skips when repeatable production-like DB testing becomes worthwhile. |
 | DONE | Codex | 2026-07-25 | Removed the merged `codex/wedding-premium-overhaul` exception from the CI and Vercel branch allowlists after confirming it had no commits outside `main`. |
 | P2 | Zach plus shared-project owners | Future infrastructure decision | Decide whether the wedding app should remain in the shared Supabase project. Any isolation or RLS cleanup requires a cross-app migration plan. |
