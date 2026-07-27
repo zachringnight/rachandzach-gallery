@@ -65,6 +65,16 @@ export function sanitizePhotoIds(input: unknown): string[] {
  * client but validated against rachandzach_people via the (service-role)
  * client; an unknown or malformed slug falls back to keying by the verified
  * session id. The session id itself is never accepted from the client.
+ *
+ * A slug that is gone from the catalog but already OWNS person-keyed
+ * favorite rows stays resolvable. Reachability of stored favorites is
+ * anchored to the favorites table itself, so no identity deletion (however
+ * it interleaves with an in-flight favorite write; the favorites table has
+ * no FK to rachandzach_people to serialize against) can strand a guest's
+ * shortlist. This cannot mint new person keys: a slug with no catalog row
+ * and no existing rows still falls back to session keying, and in this
+ * password-gated context claiming an existing person's rows was already
+ * accepted behavior.
  */
 export async function resolveFavoriteOwner(
   client: SupabaseClient<Database>,
@@ -78,6 +88,15 @@ export async function resolveFavoriteOwner(
       .eq("slug", personSlugRaw)
       .maybeSingle();
     if (!error && data?.slug === personSlugRaw) {
+      return { kind: "person", key: personSlugRaw };
+    }
+    const existing = await client
+      .from("rachandzach_guest_favorites")
+      .select("photo_id")
+      .eq("owner_kind", "person")
+      .eq("owner_key", personSlugRaw)
+      .limit(1);
+    if (!existing.error && (existing.data?.length ?? 0) > 0) {
       return { kind: "person", key: personSlugRaw };
     }
   }
