@@ -97,8 +97,10 @@ uv run --no-project --python .venv-faces/bin/python \
 
 Pure numpy over the saved artifacts (no model inference), so it finishes in
 seconds and is byte-for-byte idempotent for unchanged inputs (outputs carry an
-inputs fingerprint instead of timestamps). It combines 108 learned signatures
-with the 23 hand-picked crops in
+inputs fingerprint instead of timestamps). The fingerprint hashes the
+identity-bearing override fields and ignores the export-only `exportedAt`
+timestamp, so a no-change live readback cannot invalidate an existing review
+packet. It combines 108 learned signatures with the 23 hand-picked crops in
 `src/generated/person-overrides.json`, giving the current archive 131 saved
 profiles. A crop anchor is accepted only when one detected face contains the
 crop center and covers at least 80% of the crop; ambiguous or unresolved crops

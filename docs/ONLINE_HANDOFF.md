@@ -183,15 +183,21 @@ hand-picked face crops, zero renames, and one hidden identity. Those 23 crops
 are anchors in addition to 108 learned signatures, so the audit uses 131 saved
 face profiles—not 23.
 
-Two side-by-side visual review waves examined 155 high-separation suggestions
-against the committed saved profile and the detected face in a local 1600px
-derivative. Codex approved 154 links and rejected one ambiguous comparison.
-Every approved link is tracked in
-`metadata/reviewed-face-tag-additions.json`; wedding originals were never
-opened for this review and were not changed. The live joins were added as
-`manual` / `confirmed`, then re-read: the live project has 4,399
-`rachandzach_photo_people` rows, all 154 reviewed links are present, and a
-second dry run has zero pending people or tags.
+Three side-by-side visual review waves examined every current saved-face
+suggestion against the committed profile and the detected face in a local
+1600px derivative. The third wave checked all 151 candidates that remained:
+136 were confirmed and 15 were held back as mismatches or genuinely ambiguous
+faces. Across the three waves, 290 confirmed links are tracked in
+`metadata/reviewed-face-tag-additions.json`. The first held-back crop was
+deliberately rechecked in the third wave, so the 306 review decisions cover
+305 unique candidate/photo pairs. Wedding originals were never opened for
+this review and were not changed.
+
+The live joins were added as `manual` / `confirmed`, then re-read: the live
+project has 4,535 `rachandzach_photo_people` rows, all 290 reviewed links are
+present, and a second dry run has zero pending people or tags. The refreshed
+audit still lists the 15 intentionally held-back comparisons and no
+unreviewed saved-face suggestion.
 
 `scripts/sync-catalog-overlays.mjs` is read-only by default and uses
 `--execute` for the narrow additive live sync. It creates missing people only
@@ -254,8 +260,8 @@ That is enforced in code, not by convention.
 | DONE | Codex | 2026-07-26 | Confirmed `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` and `NEXT_PUBLIC_DROPBOX_APP_KEY` in Vercel Production and Preview, deployed `main`, and verified the production deployment is `READY`. |
 | P0 | Zach/admin | Before announcing cloud save | Complete the two consent-dependent file-transfer rows in the authenticated acceptance pass below using a personal Google Drive and Dropbox account. |
 | DONE | Codex | 2026-07-26 | Checked Vercel runtime errors after production smoke traffic; none were returned. |
-| DONE | Codex | 2026-07-27 | Reviewed 155 saved-face suggestions side by side, applied 154 confirmed links, rejected one ambiguous comparison, and verified the tracked and live overlays are idempotent. |
-| P2 | Zach/admin | Later curation session | Review any remaining local-only face-audit suggestions. Reports and contact sheets remain gitignored; no unreviewed suggestion is auto-applied. |
+| DONE | Codex | 2026-07-27 | Reviewed all 151 remaining saved-face suggestions side by side, applied 136 confirmed links, held back 15 mismatches or ambiguous faces, and verified all 290 tracked links live with zero pending writes. |
+| P2 | Zach/admin | Later curation session | Revisit the 15 intentionally held-back face comparisons only if a clearer saved profile or photo becomes available. Reports and contact sheets remain gitignored; no rejected suggestion is auto-applied. |
 | P2 | Engineer | Future maintenance | Add a live-database integration harness to replace the intentional schema/catalog skips when repeatable production-like DB testing becomes worthwhile. |
 | DONE | Codex | 2026-07-25 | Removed the merged `codex/wedding-premium-overhaul` exception from the CI and Vercel branch allowlists after confirming it had no commits outside `main`. |
 | P2 | Zach plus shared-project owners | Future infrastructure decision | Decide whether the wedding app should remain in the shared Supabase project. Any isolation or RLS cleanup requires a cross-app migration plan. |

@@ -361,7 +361,20 @@ def main() -> None:
     fingerprint.update(CATALOG_PATH.read_bytes())
     fingerprint.update(DETECTIONS_PATH.read_bytes())
     fingerprint.update(SIGNATURES_PATH.read_bytes())
-    fingerprint.update(OVERRIDES_PATH.read_bytes())
+    # The exporter refreshes exportedAt on every live readback. Hash only the
+    # identity data so an unchanged face/people state remains idempotent.
+    fingerprint.update(
+        json.dumps(
+            {
+                "people": overrides.get("people", {}),
+                "names": overrides.get("names", {}),
+                "hidden": overrides.get("hidden", []),
+                "added": overrides.get("added", {}),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+    )
     fingerprint.update(json.dumps(PARAMS, sort_keys=True).encode())
 
     report = {
