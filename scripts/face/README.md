@@ -1,7 +1,8 @@
 # Face-recognition moderation assist (pipeline half)
 
 Local-only InsightFace pipeline that learns per-person face signatures from the
-1,721 confirmed-tagged archive photos and audits existing tags against them.
+1,721 confirmed-tagged archive photos, supplements them with hand-picked saved
+face crops, and audits existing tags against all available profiles.
 Admin-side tooling only: nothing here is guest-facing, embeddings and reports
 never leave local disk (`metadata/faces/` is gitignored), and the audit output
 is a review list for a human, never an auto-correction. The admin-UI wiring
@@ -96,7 +97,12 @@ uv run --no-project --python .venv-faces/bin/python \
 
 Pure numpy over the saved artifacts (no model inference), so it finishes in
 seconds and is byte-for-byte idempotent for unchanged inputs (outputs carry an
-inputs fingerprint instead of timestamps). Writes
+inputs fingerprint instead of timestamps). It combines 108 learned signatures
+with the 23 hand-picked crops in
+`src/generated/person-overrides.json`, giving the current archive 131 saved
+profiles. A crop anchor is accepted only when one detected face contains the
+crop center and covers at least 80% of the crop; ambiguous or unresolved crops
+fail closed. Writes
 `metadata/faces/audit-report.json` and `metadata/faces/audit-report.md`, ranked
 by confidence:
 
@@ -131,6 +137,20 @@ run, 6,535 faces, 108 of 132 tagged people resolved):
 `signatures.json` re-reports genuine/impostor percentiles from the final
 assignment under `calibration` on every run; if those drift after a re-tag
 wave, revisit the constants.
+
+### 3. `render-tag-review-sheets.py`
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/render-tag-review-sheets.py \
+    --min-sim 0.72 --min-margin 0.15
+```
+
+Renders the committed saved profile beside the proposed detected face using
+only `public/faces/*.webp` and local 1600px derivatives. It never opens
+originals or changes tags. Sheets stay under ignored `metadata/faces/` and
+must be reviewed visually before a pair is added to the tracked
+`metadata/reviewed-face-tag-additions.json` overlay.
 
 ## Privacy and safety rails
 

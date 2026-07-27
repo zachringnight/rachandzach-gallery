@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """Backward audit: compare detected face identities against catalog tags.
 
-Consumes the artifacts written by build-face-signatures.py (no model inference
+Consumes the artifacts written by build-face-signatures.py plus the committed
+admin face picks in src/generated/person-overrides.json (no model inference
 here, pure numpy over saved embeddings, so re-runs take seconds and are
-byte-for-byte idempotent for unchanged inputs). Produces a ranked REVIEW LIST
-for a human. It never edits tags, the catalog, or anything else.
+byte-for-byte idempotent for unchanged inputs). The learned signatures cover
+the people with enough existing tags; a hand-picked crop supplies the missing
+single-face anchor for people who could not be learned from co-occurrence.
+Together those are the saved face profiles used by the gallery.
+
+Produces a ranked REVIEW LIST for a human. It never edits tags, the catalog,
+or anything else.
 
 Two buckets:
   (a) tagged-but-no-matching-face: a confirmed tag whose person's signature
@@ -37,6 +43,7 @@ CATALOG_PATH = REPO / "src" / "generated" / "gallery-v2.json"
 FACES_DIR = REPO / "metadata" / "faces"
 DETECTIONS_PATH = FACES_DIR / "detections.jsonl"
 SIGNATURES_PATH = FACES_DIR / "signatures.json"
+OVERRIDES_PATH = REPO / "src" / "generated" / "person-overrides.json"
 REPORT_JSON_PATH = FACES_DIR / "audit-report.json"
 REPORT_MD_PATH = FACES_DIR / "audit-report.md"
 
@@ -88,9 +95,123 @@ def load_detections() -> dict[str, dict]:
     return records
 
 
+def decode_embeddings(faces: list[dict]) -> np.ndarray:
+    """Decode the unit face vectors stored by build-face-signatures.py."""
+    return np.frombuffer(
+        b"".join(base64.b64decode(face["emb"]) for face in faces),
+        dtype=np.float32,
+    ).reshape(len(faces), 512)
+
+
+def face_for_saved_crop(record: dict, crop: dict) -> tuple[dict, np.ndarray, dict]:
+    """Resolve one normalized admin crop to exactly one saved detection.
+
+    Face crops use source-image normalized coordinates:
+      x = left / width, y = top / height, size = side / min(width, height).
+    The detector's bounded decode preserves the source aspect ratio, so the
+    same formula maps the crop onto dw/dh without opening an original.
+
+    A valid admin crop should fully contain its intended detected face. We
+    rank eligible faces by center containment, face coverage, and distance to
+    the crop center; ambiguity fails closed rather than learning the wrong
+    person.
+    """
+    faces = record["faces"]
+    if not faces:
+        raise ValueError("saved crop photo has no detected faces")
+
+    width = float(record["dw"])
+    height = float(record["dh"])
+    side = float(crop["size"]) * min(width, height)
+    left = float(crop["x"]) * width
+    top = float(crop["y"]) * height
+    right = left + side
+    bottom = top + side
+    crop_center_x = left + side / 2
+    crop_center_y = top + side / 2
+
+    ranked = []
+    for index, face in enumerate(faces):
+        x1, y1, x2, y2 = (float(value) for value in face["bbox"])
+        face_width = max(0.0, x2 - x1)
+        face_height = max(0.0, y2 - y1)
+        face_area = face_width * face_height
+        if face_area <= 0:
+            continue
+        intersection_width = max(0.0, min(right, x2) - max(left, x1))
+        intersection_height = max(0.0, min(bottom, y2) - max(top, y1))
+        coverage = (intersection_width * intersection_height) / face_area
+        face_center_x = (x1 + x2) / 2
+        face_center_y = (y1 + y2) / 2
+        center_inside = (
+            left <= face_center_x <= right and top <= face_center_y <= bottom
+        )
+        center_distance = (
+            (face_center_x - crop_center_x) ** 2
+            + (face_center_y - crop_center_y) ** 2
+        ) ** 0.5 / max(side, 1.0)
+        if not center_inside or coverage < 0.80:
+            continue
+        ranked.append(
+            (
+                coverage,
+                -center_distance,
+                float(face["score"]),
+                index,
+                {
+                    "faceIndex": face["i"],
+                    "faceCoverage": round(coverage, 4),
+                    "centerDistance": round(center_distance, 4),
+                    "detScore": face["score"],
+                },
+            )
+        )
+
+    if not ranked:
+        raise ValueError("saved crop does not contain a detected face")
+    ranked.sort(reverse=True)
+    if len(ranked) > 1:
+        best = ranked[0]
+        runner = ranked[1]
+        # Two nearly identical crop fits would make the identity ambiguous.
+        if best[0] - runner[0] < 0.02 and best[1] - runner[1] < 0.05:
+            raise ValueError("saved crop contains multiple ambiguous faces")
+
+    selected_index = ranked[0][3]
+    embeddings = decode_embeddings(faces)
+    return faces[selected_index], embeddings[selected_index], ranked[0][4]
+
+
+def saved_crop_anchors(
+    detections: dict[str, dict],
+    overrides: dict,
+    learned_slugs: set[str],
+) -> tuple[list[tuple[str, np.ndarray]], list[dict]]:
+    """Return authoritative single-face anchors not already learned."""
+    anchors = []
+    details = []
+    for slug, choice in sorted(overrides.get("people", {}).items()):
+        # Learned multi-photo signatures are more robust. The crop is the
+        # authoritative fallback only for the profiles co-occurrence could
+        # not resolve.
+        if slug in learned_slugs:
+            continue
+        photo_id = choice["photoId"]
+        record = detections.get(photo_id)
+        if record is None:
+            raise ValueError(
+                f"saved face for {slug} references missing detection {photo_id}"
+            )
+        _face, embedding, fit = face_for_saved_crop(record, choice["crop"])
+        anchors.append((slug, embedding))
+        details.append({"slug": slug, "photoId": photo_id, **fit})
+    return anchors, details
+
+
 def main() -> None:
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
     signatures = json.loads(SIGNATURES_PATH.read_text(encoding="utf-8"))
+    overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
     detections = load_detections()
 
     people_by_slug = {p["slug"]: p["name"] for p in catalog["people"]}
@@ -99,13 +220,21 @@ def main() -> None:
     # Centroid matrix over every signature cluster, with a person index per row.
     centroid_rows: list[list[float]] = []
     row_slug: list[str] = []
-    signature_slugs: list[str] = []
+    learned_slugs: list[str] = []
     for person in signatures["people"]:
-        signature_slugs.append(person["slug"])
+        learned_slugs.append(person["slug"])
         for cluster in person["clusters"]:
             centroid_rows.append(cluster["centroid"])
             row_slug.append(person["slug"])
+    learned_set = set(learned_slugs)
+    anchors, anchor_details = saved_crop_anchors(
+        detections, overrides, learned_set
+    )
+    for slug, embedding in anchors:
+        centroid_rows.append(embedding.tolist())
+        row_slug.append(slug)
     centroids = np.asarray(centroid_rows, dtype=np.float32)
+    signature_slugs = sorted(learned_set | {slug for slug, _ in anchors})
     signature_set = set(signature_slugs)
 
     tagged_slugs = sorted({s for p in catalog["photos"] for s in p["peopleSlugs"]})
@@ -124,9 +253,7 @@ def main() -> None:
         long_edge = max(record["dw"], record["dh"])
 
         if faces:
-            emb = np.frombuffer(
-                b"".join(base64.b64decode(f["emb"]) for f in faces), dtype=np.float32
-            ).reshape(len(faces), 512)
+            emb = decode_embeddings(faces)
             sims = emb @ centroids.T  # (faces, clusters)
             # Best sim per (face, person).
             person_best: dict[str, np.ndarray] = {}
@@ -214,6 +341,9 @@ def main() -> None:
                 "faceFrac": round(fracs[i], 3),
                 "detScore": face["score"],
                 "tier": "strong" if top_sim >= T_UNTAGGED_STRONG else "review",
+                "profileSource": (
+                    "saved-crop" if top_slug not in learned_set else "learned"
+                ),
                 "currentTags": sorted(tags),
             }
             existing = best_by_person.get(top_slug)
@@ -231,15 +361,19 @@ def main() -> None:
     fingerprint.update(CATALOG_PATH.read_bytes())
     fingerprint.update(DETECTIONS_PATH.read_bytes())
     fingerprint.update(SIGNATURES_PATH.read_bytes())
+    fingerprint.update(OVERRIDES_PATH.read_bytes())
     fingerprint.update(json.dumps(PARAMS, sort_keys=True).encode())
 
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "inputsFingerprint": fingerprint.hexdigest(),
         "params": PARAMS,
+        "savedCropAnchors": anchor_details,
         "summary": {
             "photosAudited": len(detections),
             "peopleWithSignatures": len(signature_slugs),
+            "peopleWithLearnedSignatures": len(learned_slugs),
+            "peopleWithSavedCropAnchors": len(anchors),
             "taggedPeopleTotal": len(tagged_slugs),
             "unauditablePeople": unauditable,
             "tagsChecked": tags_checked,
@@ -283,8 +417,10 @@ def render_markdown(report: dict) -> str:
         "look at the photo before acting.",
         "",
         f"- Photos audited: {summary['photosAudited']}",
-        f"- People with face signatures: {summary['peopleWithSignatures']} of "
+        f"- People with saved face profiles: {summary['peopleWithSignatures']} of "
         f"{summary['taggedPeopleTotal']} tagged people",
+        f"  ({summary['peopleWithLearnedSignatures']} learned signatures + "
+        f"{summary['peopleWithSavedCropAnchors']} hand-picked crop anchors)",
         f"- Tags checked: {summary['tagsChecked']}",
         f"- Bucket (a) tagged-but-no-matching-face: {a['total']} "
         f"(high {a['high']}, medium {a['medium']}, low {a['low']})",

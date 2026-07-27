@@ -27,6 +27,7 @@ import {
   sha256Stream,
   EXCLUDED_DIRECTORIES
 } from "./lib/clean-master-manifest.mjs";
+import { applyTrackedCatalogOverlays } from "./lib/catalog-overlays.mjs";
 import { generateDerivatives } from "./lib/image-derivatives.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -206,6 +207,7 @@ async function main() {
       );
     }
   });
+  const catalogOverlays = await applyTrackedCatalogOverlays(catalog, repoRoot);
   if (Number.isInteger(args.limit) && args.limit > 0) {
     catalog.photos = catalog.photos.slice(0, args.limit);
   }
@@ -387,7 +389,8 @@ async function main() {
           root: args.derivativesRoot
         },
     issues: catalog.stats.issues,
-    metadataErrors: catalog.stats.metadataErrors ?? []
+    metadataErrors: catalog.stats.metadataErrors ?? [],
+    catalogOverlays
   };
 
   await writeJson(args.catalogOut, catalog);

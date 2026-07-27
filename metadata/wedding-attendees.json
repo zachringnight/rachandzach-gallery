@@ -1,0 +1,1113 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "title": "Rachel + Zach 7.19.25 | MASTER Guest List & Seating Diagram.xlsx",
+    "sheet": "MASTER Guest List - Alpha",
+    "sourceUpdatedAt": "2025-07-15T22:07:56.134Z",
+    "verifiedAt": "2026-07-27",
+    "attendeeCount": 183,
+    "addedIdentityCount": 57,
+    "aliasCount": 5,
+    "privacy": "Names only. Table, seat, meal, notes, addresses, and contact fields are excluded."
+  },
+  "attendees": [
+    {
+      "seatingName": "Nick Carl Adam",
+      "personSlug": "nick-carl-adam",
+      "displayName": "Nick Carl Adam",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Elizabeth Adame",
+      "personSlug": "elizabeth-licon",
+      "displayName": "Elizabeth Licon",
+      "resolution": "alias"
+    },
+    {
+      "seatingName": "Erin Ankin",
+      "personSlug": "erin-ankin",
+      "displayName": "Erin Ankin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Harris Ankin",
+      "personSlug": "harris-ankin",
+      "displayName": "Harris Ankin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Sam Ankin",
+      "personSlug": "sam-ankin",
+      "displayName": "Sam Ankin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Gisel Attila",
+      "personSlug": "gisel-attila",
+      "displayName": "Gisel Attila",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jeff Attila",
+      "personSlug": "jeff-attila",
+      "displayName": "Jeff Attila",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Joan AuWerter",
+      "personSlug": "joan-auwerter",
+      "displayName": "Joan AuWerter",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Toby AuWerter",
+      "personSlug": "toby-auwerter",
+      "displayName": "Toby AuWerter",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Debi Becker",
+      "personSlug": "debi-becker",
+      "displayName": "Debi Becker",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Phil Becker",
+      "personSlug": "phil-becker",
+      "displayName": "Phil Becker",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Morgan Becker",
+      "personSlug": "morgan-becker",
+      "displayName": "Morgan Becker",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Frankie Bennett",
+      "personSlug": "frankie-bennett",
+      "displayName": "Frankie Bennett",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Taylor Bennett",
+      "personSlug": "taylor-bennett",
+      "displayName": "Taylor Bennett",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "David Benrud",
+      "personSlug": "david-benrud",
+      "displayName": "David Benrud",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Chris Bishop",
+      "personSlug": "chris-bishop",
+      "displayName": "Chris Bishop",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Lauren Bond",
+      "personSlug": "lauren-bond",
+      "displayName": "Lauren Bond",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "John Breton",
+      "personSlug": "john-breton",
+      "displayName": "John Breton",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Lori Breton",
+      "personSlug": "lori-breton",
+      "displayName": "Lori Breton",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Adam Brown",
+      "personSlug": "adam-brown",
+      "displayName": "Adam Brown",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Tara Brown",
+      "personSlug": "tara-brown",
+      "displayName": "Tara Brown",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Abe Burton",
+      "personSlug": "abe-burton",
+      "displayName": "Abe Burton",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "David Burton",
+      "personSlug": "david-burton",
+      "displayName": "David Burton",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Dee Burton",
+      "personSlug": "dee-burton",
+      "displayName": "Dee Burton",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Elaine Burton",
+      "personSlug": "elaine-burton",
+      "displayName": "Elaine Burton",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Jeremy Burton",
+      "personSlug": "jeremy-burton",
+      "displayName": "Jeremy Burton",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Josie Burton",
+      "personSlug": "josie-burton",
+      "displayName": "Josie Burton",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Julie Burton",
+      "personSlug": "julie-burton",
+      "displayName": "Julie Burton",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Kaitlin Burton",
+      "personSlug": "kaitlin-burton",
+      "displayName": "Kaitlin Burton",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Pat Burton",
+      "personSlug": "patrick-burton",
+      "displayName": "Patrick Burton",
+      "resolution": "alias"
+    },
+    {
+      "seatingName": "Phil Campbell",
+      "personSlug": "phil-campbell",
+      "displayName": "Phil Campbell",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Allan Caplan",
+      "personSlug": "allan-caplan",
+      "displayName": "Allan Caplan",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Lisa Caplan",
+      "personSlug": "lisa-caplan",
+      "displayName": "Lisa Caplan",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Beth Caputo",
+      "personSlug": "beth-caputo",
+      "displayName": "Beth Caputo",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Richie Caputo",
+      "personSlug": "richie-caputo",
+      "displayName": "Richie Caputo",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Dominique Caron",
+      "personSlug": "dominique-caron",
+      "displayName": "Dominique Caron",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Mike Caron",
+      "personSlug": "mike-caron",
+      "displayName": "Mike Caron",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Dan Casciano",
+      "personSlug": "dan-casciano",
+      "displayName": "Dan Casciano",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Melanie Casciano",
+      "personSlug": "melanie-casciano",
+      "displayName": "Melanie Casciano",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Rachel Casciano",
+      "personSlug": "rachel-casciano",
+      "displayName": "Rachel Casciano",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Carter Cheskey",
+      "personSlug": "carter-cheskey",
+      "displayName": "Carter Cheskey",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Daniel Cogan",
+      "personSlug": "daniel-cogan",
+      "displayName": "Daniel Cogan",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jo Cohn",
+      "personSlug": "jo-cohn",
+      "displayName": "Jo Cohn",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Paul Cohn",
+      "personSlug": "paul-cohn",
+      "displayName": "Paul Cohn",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Emily Cronin-Stillman",
+      "personSlug": "emily-stillman",
+      "displayName": "Emily Stillman",
+      "resolution": "alias"
+    },
+    {
+      "seatingName": "Ty Damon",
+      "personSlug": "ty-damon",
+      "displayName": "Ty Damon",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Alex Dubov",
+      "personSlug": "alex-dubov",
+      "displayName": "Alex Dubov",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Ashley Dubov",
+      "personSlug": "ashley-dubov",
+      "displayName": "Ashley Dubov",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Keagen Edwards",
+      "personSlug": "keagen-edwards",
+      "displayName": "Keagen Edwards",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Marty Erdley",
+      "personSlug": "marty-erdley",
+      "displayName": "Marty Erdley",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Greg Foster",
+      "personSlug": "greg-foster",
+      "displayName": "Greg Foster",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Mia Frebault",
+      "personSlug": "mia-frebault",
+      "displayName": "Mia Frebault",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Alicia Garrity",
+      "personSlug": "alicia-garrity",
+      "displayName": "Alicia Garrity",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Jules Gesink",
+      "personSlug": "jules-gesink",
+      "displayName": "Jules Gesink",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Lisa Gilbert",
+      "personSlug": "lisa-gilbert",
+      "displayName": "Lisa Gilbert",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Rodd Gilbert",
+      "personSlug": "rodd-gilbert",
+      "displayName": "Rodd Gilbert",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Aly Gilboa",
+      "personSlug": "aly-gilboa",
+      "displayName": "Aly Gilboa",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Dave Gilboa",
+      "personSlug": "dave-gilboa",
+      "displayName": "Dave Gilboa",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Max Gordichuk",
+      "personSlug": "max-gordichuk",
+      "displayName": "Max Gordichuk",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Adi Greene",
+      "personSlug": "adi-greene",
+      "displayName": "Adi Greene",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Brendan Greene",
+      "personSlug": "brendan-greene",
+      "displayName": "Brendan Greene",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Erik Gunkel",
+      "personSlug": "erik-gunkel",
+      "displayName": "Erik Gunkel",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Chris Gutierrez",
+      "personSlug": "chris-gutierrez",
+      "displayName": "Chris Gutierrez",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Ron Harris",
+      "personSlug": "ronald-harris",
+      "displayName": "Ronald Harris",
+      "resolution": "alias"
+    },
+    {
+      "seatingName": "Janice Harstad",
+      "personSlug": "janice-harstad",
+      "displayName": "Janice Harstad",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Marty Harstad",
+      "personSlug": "marty-harstad",
+      "displayName": "Marty Harstad",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Pasha Hashemi",
+      "personSlug": "pasha-hashemi",
+      "displayName": "Pasha Hashemi",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Sandra Hecklin",
+      "personSlug": "sandra-hecklin",
+      "displayName": "Sandra Hecklin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Steve Hecklin",
+      "personSlug": "steve-hecklin",
+      "displayName": "Steve Hecklin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Ann Marie Hoppler",
+      "personSlug": "ann-marie-hoppler",
+      "displayName": "Ann Marie Hoppler",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jason Howarth",
+      "personSlug": "jason-howarth",
+      "displayName": "Jason Howarth",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "LeeAnn Howarth",
+      "personSlug": "leeann-howarth",
+      "displayName": "LeeAnn Howarth",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Brett Huckabee",
+      "personSlug": "brett-huckabee",
+      "displayName": "Brett Huckabee",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Joann Huckabee",
+      "personSlug": "joann-huckabee",
+      "displayName": "Joann Huckabee",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Tim Jackowski",
+      "personSlug": "tim-jackowski",
+      "displayName": "Tim Jackowski",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Kathi Jacobs",
+      "personSlug": "kathi-jacobs",
+      "displayName": "Kathi Jacobs",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Jon Jennings",
+      "personSlug": "jon-jennings",
+      "displayName": "Jon Jennings",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Alex Kamins",
+      "personSlug": "alex-kamins",
+      "displayName": "Alex Kamins",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Maura Keith-Gutierrez",
+      "personSlug": "maura-keith-gutierrez",
+      "displayName": "Maura Keith Gutierrez",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Bryant Kohler",
+      "personSlug": "bryant-kohler",
+      "displayName": "Bryant Kohler",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Kayla Kohler",
+      "personSlug": "kayla-kohler",
+      "displayName": "Kayla Kohler",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Kaitlin Koosman",
+      "personSlug": "kaitlin-koosman",
+      "displayName": "Kaitlin Koosman",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Dean Kraras",
+      "personSlug": "dean-kraras",
+      "displayName": "Dean Kraras",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Jen Kraras",
+      "personSlug": "jen-kraras",
+      "displayName": "Jen Kraras",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Lauren Kunz",
+      "personSlug": "lauren-kunz",
+      "displayName": "Lauren Kunz",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Natalie Lane",
+      "personSlug": "natalie-lane",
+      "displayName": "Natalie Lane",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Lars Lattimer",
+      "personSlug": "lars-lattimer",
+      "displayName": "Lars Lattimer",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Scott Lattimer",
+      "personSlug": "scott-lattimer",
+      "displayName": "Scott Lattimer",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Christian Laursen",
+      "personSlug": "christian-laursen",
+      "displayName": "Christian Laursen",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Beth Leonard",
+      "personSlug": "beth-leonard",
+      "displayName": "Beth Leonard",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Todd Leonard",
+      "personSlug": "todd-leonard",
+      "displayName": "Todd Leonard",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jamie Levine",
+      "personSlug": "jamie-levine",
+      "displayName": "Jamie Levine",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Ivan Licon",
+      "personSlug": "ivan-licon",
+      "displayName": "Ivan Licon",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Danny Listrani",
+      "personSlug": "danny-listrani",
+      "displayName": "Danny Listrani",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Donna Listrani",
+      "personSlug": "donna-listrani",
+      "displayName": "Donna Listrani",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Jake Lurie",
+      "personSlug": "jake-lurie",
+      "displayName": "Jake Lurie",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jeffry Lurie",
+      "personSlug": "jeffry-lurie",
+      "displayName": "Jeffry Lurie",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Maddie Lurie",
+      "personSlug": "maddie-chaness",
+      "displayName": "Maddie Chaness",
+      "resolution": "alias"
+    },
+    {
+      "seatingName": "Nancy Lurie",
+      "personSlug": "nancy-lurie",
+      "displayName": "Nancy Lurie",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Todd Lurie",
+      "personSlug": "todd-lurie",
+      "displayName": "Todd Lurie",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Adam Lynn",
+      "personSlug": "adam-lynn",
+      "displayName": "Adam Lynn",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Leah McCall",
+      "personSlug": "leah-mccall",
+      "displayName": "Leah McCall",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Meg McCullough",
+      "personSlug": "meg-mccullough",
+      "displayName": "Meg McCullough",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jacquie Michaelsen",
+      "personSlug": "jacquie-michaelsen",
+      "displayName": "Jacquie Michaelsen",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Steve Michaelsen",
+      "personSlug": "steve-michaelsen",
+      "displayName": "Steve Michaelsen",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Lindsey Miller",
+      "personSlug": "lindsey-miller",
+      "displayName": "Lindsey Miller",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jon Mohr",
+      "personSlug": "jon-mohr",
+      "displayName": "Jon Mohr",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Steph Mohr",
+      "personSlug": "steph-mohr",
+      "displayName": "Steph Mohr",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Sean Morse",
+      "personSlug": "sean-morse",
+      "displayName": "Sean Morse",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Alex Muecke",
+      "personSlug": "alex-muecke",
+      "displayName": "Alex Muecke",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Sierra Muecke",
+      "personSlug": "sierra-muecke",
+      "displayName": "Sierra Muecke",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Matt Muller",
+      "personSlug": "matt-muller",
+      "displayName": "Matt Muller",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Christina Myers",
+      "personSlug": "christina-myers",
+      "displayName": "Christina Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Curt Myers",
+      "personSlug": "curt-myers",
+      "displayName": "Curt Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Emily Myers",
+      "personSlug": "emily-myers",
+      "displayName": "Emily Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Jill Myers",
+      "personSlug": "jill-myers",
+      "displayName": "Jill Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Kelsey Myers",
+      "personSlug": "kelsey-myers",
+      "displayName": "Kelsey Myers",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Kim Myers",
+      "personSlug": "kim-myers",
+      "displayName": "Kim Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Nita Myers",
+      "personSlug": "nita-myers",
+      "displayName": "Nita Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Roger Myers",
+      "personSlug": "roger-myers",
+      "displayName": "Roger Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Tim Myers",
+      "personSlug": "tim-myers",
+      "displayName": "Tim Myers",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Tom Myers",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Taylor Noyer",
+      "personSlug": "taylor-noyer",
+      "displayName": "Taylor Noyer",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Chris Nuelle",
+      "personSlug": "chris-nuelle",
+      "displayName": "Chris Nuelle",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Kelsey Nuelle",
+      "personSlug": "kelsey-nuelle",
+      "displayName": "Kelsey Nuelle",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Nate Oveson",
+      "personSlug": "nate-oveson",
+      "displayName": "Nate Oveson",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Keith Petrillo",
+      "personSlug": "keith-petrillo",
+      "displayName": "Keith Petrillo",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Rhonda Petrillo",
+      "personSlug": "rhonda-petrillo",
+      "displayName": "Rhonda Petrillo",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Pete Phillips",
+      "personSlug": "pete-phillips",
+      "displayName": "Pete Phillips",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Sharon Phillips",
+      "personSlug": "sharon-phillips",
+      "displayName": "Sharon Phillips",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Amanda Pliska",
+      "personSlug": "amanda-pliska",
+      "displayName": "Amanda Pliska",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Becky Pohlad",
+      "personSlug": "becky-pohlad",
+      "displayName": "Becky Pohlad",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Bob Pohlad",
+      "personSlug": "bob-pohlad",
+      "displayName": "Bob Pohlad",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "David Post",
+      "personSlug": "david-post",
+      "displayName": "David Post",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jody Post",
+      "personSlug": "jody-post",
+      "displayName": "Jody Post",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Amy Prusha",
+      "personSlug": "amy-prusha",
+      "displayName": "Amy Prusha",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Scott Prusha",
+      "personSlug": "scott-prusha",
+      "displayName": "Scott Prusha",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Nick Pugliese",
+      "personSlug": "nick-pugliese",
+      "displayName": "Nick Pugliese",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Phil Quist",
+      "personSlug": "phil-quist",
+      "displayName": "Phil Quist",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Siri Ramos",
+      "personSlug": "siri-ramos",
+      "displayName": "Siri Ramos",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Kim Remington",
+      "personSlug": "kim-remington",
+      "displayName": "Kim Remington",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Din Rush",
+      "personSlug": "din-rush",
+      "displayName": "Din Rush",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Jeff Rush",
+      "personSlug": "jeff-rush",
+      "displayName": "Jeff Rush",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Libby Rush",
+      "personSlug": "libby-rush",
+      "displayName": "Libby Rush",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Alyssa Scott",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Tav Scott",
+      "personSlug": "tav-scott",
+      "displayName": "Tav Scott",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Mika Sears",
+      "personSlug": "mika-sears",
+      "displayName": "Mika Sears",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Daniel Shin",
+      "personSlug": "daniel-shin",
+      "displayName": "Daniel Shin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Tatyana Shliomina",
+      "personSlug": "tatyana-shliomina",
+      "displayName": "Tatyana Shliomina",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Chad Slomovitz",
+      "personSlug": "chad-slomovitz",
+      "displayName": "Chad Slomovitz",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Maddie Slomovitz",
+      "personSlug": "maddie-slomovitz",
+      "displayName": "Maddie Slomovitz",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Bruce Smith",
+      "personSlug": "bruce-smith",
+      "displayName": "Bruce Smith",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Sarah Smith",
+      "personSlug": "sarah-smith",
+      "displayName": "Sarah Smith",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Spencer Soltman",
+      "personSlug": "spencer-soltman",
+      "displayName": "Spencer Soltman",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Halley Sonntag",
+      "personSlug": "halley-sonntag",
+      "displayName": "Halley Sonntag",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Marsha Sonntag",
+      "personSlug": "marsha-sonntag",
+      "displayName": "Marsha Sonntag",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Tom Sonntag",
+      "personSlug": "tom-sonntag",
+      "displayName": "Tom Sonntag",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Ellie Soskin",
+      "personSlug": "ellie-soskin",
+      "displayName": "Ellie Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jorie Soskin",
+      "personSlug": "jorie-soskin",
+      "displayName": "Jorie Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Marc Soskin",
+      "personSlug": "marc-soskin",
+      "displayName": "Marc Soskin",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Parker Soskin",
+      "personSlug": "parker-soskin",
+      "displayName": "Parker Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Patti Soskin",
+      "personSlug": "patti-soskin",
+      "displayName": "Patti Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Rick Soskin",
+      "personSlug": "rick-soskin",
+      "displayName": "Rick Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Riley Soskin",
+      "personSlug": "riley-soskin",
+      "displayName": "Riley Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Robbie Soskin",
+      "personSlug": "robbie-soskin",
+      "displayName": "Robbie Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Sam Soskin",
+      "personSlug": "sam-soskin",
+      "displayName": "Sam Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Shirley Soskin",
+      "personSlug": "shirley-soskin",
+      "displayName": "Shirley Soskin",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Steph Soskin",
+      "personSlug": "steph-soskin",
+      "displayName": "Steph Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Stephanie Soskin",
+      "personSlug": "stephanie-soskin",
+      "displayName": "Stephanie Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Zach Soskin",
+      "personSlug": "zach-soskin",
+      "displayName": "Zach Soskin",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Adam Stillman",
+      "personSlug": "adam-stillman",
+      "displayName": "Adam Stillman",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Sally Stringham",
+      "personSlug": "sally-stringham",
+      "displayName": "Sally Stringham",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Allison Vega",
+      "personSlug": "allison-vega",
+      "displayName": "Allison Vega",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Trelawny Vermont-Davis",
+      "personSlug": "trelawny-vermont-davis",
+      "displayName": "Trelawny Vermont-Davis",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Nate Waldron",
+      "personSlug": "nate-waldron",
+      "displayName": "Nate Waldron",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Jeff Wasmuth",
+      "personSlug": "jeff-wasmuth",
+      "displayName": "Jeff Wasmuth",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Lauren Wasmuth",
+      "personSlug": "lauren-wasmuth",
+      "displayName": "Lauren Wasmuth",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Pam Wasmuth",
+      "personSlug": "pam-wasmuth",
+      "displayName": "Pam Wasmuth",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Brend Wasserman",
+      "personSlug": "brend-wasserman",
+      "displayName": "Brend Wasserman",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Charlie Weisman",
+      "personSlug": "charlie-weisman",
+      "displayName": "Charlie Weisman",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Laura Weisman",
+      "personSlug": "laura-weisman",
+      "displayName": "Laura Weisman",
+      "resolution": "existing"
+    },
+    {
+      "seatingName": "Linda Willey",
+      "personSlug": "linda-willey",
+      "displayName": "Linda Willey",
+      "resolution": "added"
+    },
+    {
+      "seatingName": "Nick Willey",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "resolution": "added"
+    }
+  ]
+}
