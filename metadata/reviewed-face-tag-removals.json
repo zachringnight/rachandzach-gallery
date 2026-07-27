@@ -18,6 +18,17 @@
         "detectedFaces": 3,
         "auditSeverity": "medium"
       }
+    },
+    {
+      "photoId": "066cfe826990670bfbac38c0818916a0",
+      "path": "09 Reception/rachelzach-692.jpg",
+      "personSlug": "pa",
+      "displayName": "pa",
+      "reason": "Zach confirmed pa is a typo of Pat Burton, not a person. patrick-burton is already tagged on this same photo, so removing the typo loses nothing. It was the only photo carrying it, and it was already hidden from Find me.",
+      "evidence": {
+        "wasOnlyPhotoForSlug": true,
+        "realPersonAlreadyTagged": "patrick-burton"
+      }
     }
   ]
 }

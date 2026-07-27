@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-07-27T20:38:01.265Z",
+  "exportedAt": "2026-07-27T20:49:07.408Z",
   "people": {
     "alyssa-scott": {
       "photoId": "a43bc4d818a73412d3bb272d553aaa35",
@@ -63,6 +63,14 @@
         "x": 0.84,
         "y": 0.177820672478207,
         "size": 0.24
+      }
+    },
+    "elizabeth-licon": {
+      "photoId": "2f50cfa406264d74594e5ed395ffd10e",
+      "crop": {
+        "x": 0.254114,
+        "y": 0.131389,
+        "size": 0.470981
       }
     },
     "janice-harstad": {
@@ -194,7 +202,13 @@
       }
     }
   },
-  "names": {},
+  "names": {
+    "elizabeth-licon": "Elizabeth Adame",
+    "emily-stillman": "Emily Cronin-Stillman",
+    "maura-keith-gutierrez": "Maura Keith-Gutierrez",
+    "patrick-burton": "Pat Burton",
+    "ronald-harris": "Ron Harris"
+  },
   "hidden": [
     "pa"
   ],
