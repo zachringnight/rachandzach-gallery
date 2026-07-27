@@ -124,7 +124,7 @@ describe("unresolved cluster report", () => {
       signatures([CLEAN, small]),
       detections([["p1", [0]], ["p2", [1]], ["p3", [0]]]),
       catalog(["p1", "p2", "p3"]),
-      2,
+      { minFaces: 2 },
     );
     expect(report.clusters.map((c) => c.clusterId)).toEqual(["c0116"]);
   });
@@ -175,5 +175,75 @@ describe("unresolved cluster report", () => {
       catalog(["p1", "p2", "p3"]),
     );
     expect(a.inputsFingerprint).not.toBe(b.inputsFingerprint);
+  });
+});
+
+describe("quality gate", () => {
+  const quality = (entries) => new Map(Object.entries(entries));
+
+  it("drops a cluster whose every face is too soft", () => {
+    const report = buildReport(
+      signatures([CLEAN]),
+      detections([["p1", [0]], ["p2", [1]], ["p3", [0]]]),
+      catalog(["p1", "p2", "p3"]),
+      {
+        minFocus: 25,
+        qualityByFaceKey: quality({
+          "p1:0": { frac: 0.2, focus: 4 },
+          "p2:1": { frac: 0.2, focus: 9 },
+          "p3:0": { frac: 0.2, focus: 11 },
+        }),
+      },
+    );
+    expect(report.clusters).toHaveLength(0);
+    expect(report.lowQualityClusters[0].reason).toMatch(/too soft/);
+    expect(report.photos).toHaveLength(0);
+  });
+
+  it("keeps a cluster that is sharp even once", () => {
+    const report = buildReport(
+      signatures([CLEAN]),
+      detections([["p1", [0]], ["p2", [1]], ["p3", [0]]]),
+      catalog(["p1", "p2", "p3"]),
+      {
+        minFocus: 25,
+        qualityByFaceKey: quality({
+          // Blurred in the background twice, sharp once. Naming them still
+          // tags the good frame, so the cluster is worth showing.
+          "p1:0": { frac: 0.2, focus: 4 },
+          "p2:1": { frac: 0.2, focus: 900 },
+          "p3:0": { frac: 0.2, focus: 6 },
+        }),
+      },
+    );
+    expect(report.clusters).toHaveLength(1);
+  });
+
+  it("drops a cluster that is never more than a speck", () => {
+    const report = buildReport(
+      signatures([CLEAN]),
+      detections([["p1", [0]], ["p2", [1]], ["p3", [0]]]),
+      catalog(["p1", "p2", "p3"]),
+      {
+        minFrac: 0.03,
+        qualityByFaceKey: quality({
+          "p1:0": { frac: 0.01, focus: 900 },
+          "p2:1": { frac: 0.02, focus: 900 },
+          "p3:0": { frac: 0.005, focus: 900 },
+        }),
+      },
+    );
+    expect(report.clusters).toHaveLength(0);
+    expect(report.lowQualityClusters[0].reason).toMatch(/too small/);
+  });
+
+  it("does not judge a cluster it could not measure", () => {
+    const report = buildReport(
+      signatures([CLEAN]),
+      detections([["p1", [0]], ["p2", [1]], ["p3", [0]]]),
+      catalog(["p1", "p2", "p3"]),
+      { minFocus: 25, minFrac: 0.03, qualityByFaceKey: new Map() },
+    );
+    expect(report.clusters).toHaveLength(1);
   });
 });
