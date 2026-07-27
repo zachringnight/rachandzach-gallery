@@ -68,6 +68,11 @@ const photoProcessingGateMigrationPath = path.join(
   "migrations",
   "20260724124851_rachandzach_photo_processing_gate.sql",
 );
+const removeAddedPersonMigrationPath = path.join(
+  supabaseDir,
+  "migrations",
+  "20260726213000_rachandzach_remove_added_person.sql",
+);
 const configPath = path.join(supabaseDir, "config.toml");
 const seedPath = path.join(supabaseDir, "seed.sql");
 const envExamplePath = path.join(repoRoot, ".env.example");
@@ -660,13 +665,49 @@ describe("static: no secrets in committed files", () => {
   });
 });
 
+describe("static: remove-added-person migration (20260726213000)", () => {
+  const sql = () => mustRead(removeAddedPersonMigrationPath);
+
+  it("makes the reference checks and the delete one atomic statement set", () => {
+    const text = sql();
+    expect(text).toContain(
+      "create function public.rachandzach_remove_added_person(p_slug text)",
+    );
+    // The serialization point that closes the tag race: the catalog row is
+    // locked before any check, so a concurrent rachandzach_photo_people
+    // insert (FOR KEY SHARE via its person_id FK) cannot interleave between
+    // check and delete.
+    expect(text).toMatch(/from public\.rachandzach_people\s+where slug = p_slug\s+for update/);
+    // Both durable reference kinds gate the delete: photo tags and
+    // person-keyed guest favorites (a guest's shortlist).
+    expect(text).toContain("from public.rachandzach_photo_people");
+    expect(text).toMatch(/rachandzach_guest_favorites[\s\S]*owner_kind = 'person'/);
+    // Photographs are never named as a delete target.
+    expect(stripSqlComments(text)).not.toMatch(
+      /delete\s+from\s+public\.rachandzach_photos\b/i,
+    );
+    expect(text).toContain("set search_path = ''");
+  });
+
+  it("keeps the function service-role only", () => {
+    const text = sql();
+    expect(text).toContain(
+      "revoke all on function public.rachandzach_remove_added_person(text) from public, anon, authenticated;",
+    );
+    expect(text).toContain(
+      "grant execute on function public.rachandzach_remove_added_person(text) to service_role;",
+    );
+  });
+});
+
 describe("static: database.types.ts mirrors the migrations", () => {
-  it("declares every table and the rate-limit function", () => {
+  it("declares every table and the rachandzach functions", () => {
     const types = mustRead(databaseTypesPath);
     for (const table of ALL_TABLES) {
       expect(types).toMatch(new RegExp(`\\b${table}: \\{`));
     }
     expect(types).toContain("rachandzach_consume_rate_limit");
+    expect(types).toContain("rachandzach_remove_added_person");
     expect(types).toContain("npm run types:generate");
   });
 });

@@ -27,10 +27,13 @@ import {
  * rachandzach_person_overrides. Identity lives in rachandzach_people:
  * "add" creates a real catalog row (so the person is taggable everywhere)
  * plus an override row carrying the added = true provenance marker, and
- * "remove" deletes that identity ONLY while nothing references it -- the
- * moment a person has photo tags, remove degrades to the soft hidden flag
- * and destroys nothing. Photos and photo-person links are never deleted
- * from this module. See the migration headers for the crop scheme and the
+ * "remove" deletes that identity ONLY while nothing durable references it:
+ * the moment a person has photo tags OR person-keyed guest favorites,
+ * remove degrades to the soft hidden flag and destroys nothing. That
+ * decision is made atomically inside the rachandzach_remove_added_person
+ * RPC (see its migration header), never as a client-side check followed by
+ * a separate delete. Photos and photo-person links are never deleted from
+ * this module. See the migration headers for the crop scheme and the
  * added-people invariant.
  */
 
@@ -195,21 +198,6 @@ async function getCatalogPerson(
 
 async function isCatalogPerson(client: Db, slug: string): Promise<boolean> {
   return (await getCatalogPerson(client, slug)) !== null;
-}
-
-/** Photo-person links of ANY source/confidence; the remove guard uses it. */
-async function countPersonPhotoLinks(
-  client: Db,
-  personId: string,
-): Promise<number> {
-  const { count, error } = await client
-    .from("rachandzach_photo_people")
-    .select("photo_id", { count: "exact", head: true })
-    .eq("person_id", personId);
-  if (error) {
-    throw new Error(`Person tag count failed: ${error.message}`);
-  }
-  return count ?? 0;
 }
 
 /**
@@ -417,21 +405,25 @@ export async function addPerson(
  *   removing sets the soft hidden flag. Their photo tags, favorites, and
  *   /{slug} personalized route all keep working; they simply stop being
  *   offered in pickers. Fully reversible from the Hidden filter.
- * - An added person with ZERO photo-person links (any source or confidence)
- *   is deleted outright -- catalog row and override row. Nothing references
- *   them yet, so nothing can be orphaned, and photographs are untouched by
- *   construction.
- * - An added person WITH links degrades to the same soft hide as a catalog
- *   person. Deleting their rachandzach_people row would cascade-delete
- *   confirmed tags (rachandzach_photo_people.person_id is ON DELETE
- *   CASCADE), which must never happen implicitly. Untag them first if a
- *   full delete is really wanted; the UI says so before confirming.
+ * - An added person is deleted outright (catalog row and override row) only
+ *   while nothing durable references the identity: zero photo-person links
+ *   (any source or confidence) AND zero person-keyed guest favorites.
+ *   Favorites gate the delete because a guest who claimed this person on
+ *   Find me stores their shortlist under the slug, independent of tags;
+ *   deleting the catalog row would strand that shortlist forever.
+ * - Any reference degrades to the same soft hide as a catalog person.
+ *   Deleting the rachandzach_people row would cascade-delete confirmed tags
+ *   (rachandzach_photo_people.person_id is ON DELETE CASCADE), which must
+ *   never happen implicitly. Untag them first if a full delete is really
+ *   wanted; the UI says so before confirming.
  *
- * The link count is re-checked here rather than trusted from the client, so
- * a tag written after the admin's confirm dialog opened still blocks the
- * delete. Delete order is override row first, catalog row second: a failure
- * between the two leaves a plain catalog person (safe) rather than an added
- * override with no catalog row.
+ * The reference checks and the conditional delete run as ONE atomic
+ * rachandzach_remove_added_person RPC, which locks the catalog row FOR
+ * UPDATE before checking. A tag insert interleaved with this call either
+ * commits first (the RPC sees it and keeps the person) or blocks on the
+ * lock and fails its FK after the delete; a check-then-delete in two
+ * statements cannot promise that, which is why no delete of
+ * rachandzach_people appears in this branch at all.
  */
 export async function removePerson(
   slug: string,
@@ -444,7 +436,9 @@ export async function removePerson(
   ]);
   if (override?.added && !catalogPerson) {
     // Anomaly recovery: an added override with no catalog row predates the
-    // backfill migration (or was hand-inserted). Nothing references it.
+    // backfill migration (or was hand-inserted). Nothing references it:
+    // tags need a catalog id, and person-keyed favorites can only ever be
+    // written for a slug that resolves in rachandzach_people.
     const { error } = await client
       .from("rachandzach_person_overrides")
       .delete()
@@ -459,26 +453,21 @@ export async function removePerson(
   }
 
   if (override?.added) {
-    const linkCount = await countPersonPhotoLinks(client, catalogPerson.id);
-    if (linkCount === 0) {
-      const overrideDelete = await client
-        .from("rachandzach_person_overrides")
-        .delete()
-        .eq("person_slug", slug);
-      if (overrideDelete.error) {
-        throw new Error(
-          `Person delete failed: ${overrideDelete.error.message}`,
-        );
-      }
-      const catalogDelete = await client
-        .from("rachandzach_people")
-        .delete()
-        .eq("id", catalogPerson.id);
-      if (catalogDelete.error) {
-        throw new Error(`Person delete failed: ${catalogDelete.error.message}`);
-      }
+    const { data, error } = await client.rpc(
+      "rachandzach_remove_added_person",
+      { p_slug: slug },
+    );
+    if (error) {
+      throw new Error(`Person delete failed: ${error.message}`);
+    }
+    if (data === "deleted") return "deleted";
+    if (data === "missing") {
+      // The catalog row existed a moment ago; a concurrent remove finished
+      // first. The end state is exactly what this call promised.
       return "deleted";
     }
+    // "kept": something durable references the identity; fall through to
+    // the soft hide so nothing a guest did is destroyed or stranded.
   }
 
   await patchPerson(slug, { hidden: true }, actorEmail, client);

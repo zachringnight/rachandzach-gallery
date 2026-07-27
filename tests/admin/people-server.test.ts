@@ -13,22 +13,31 @@ import {
 /**
  * Minimal in-memory stand-in for the Supabase query builder, covering only
  * the chains addPerson/removePerson/patchPerson use: select/eq/maybeSingle,
- * head counts, insert, upsert-on-person_slug, and delete/eq. The point of
- * these tests is the REMOVE SEMANTICS -- an added person with photo links
- * must degrade to a soft hide, never a cascade delete -- and the add-order
- * invariant (catalog row first).
+ * insert, upsert-on-person_slug, delete/eq, and the
+ * rachandzach_remove_added_person RPC (whose reference-checking semantics
+ * the fake mirrors; the REAL atomicity lives in the migration and is pinned
+ * by tests/database/schema.test.ts plus the live suite in
+ * tests/admin/remove-person-live.test.ts). The point of these tests is the
+ * REMOVE SEMANTICS -- an added person with photo links OR person-keyed
+ * favorites must degrade to a soft hide, never a cascade delete or a
+ * stranded shortlist -- plus the add-order invariant (catalog row first)
+ * and the design rule that removePerson itself never deletes from
+ * rachandzach_people (only the atomic RPC may).
  */
 type Row = Record<string, unknown>;
 
 interface FakeStore {
   tables: Map<string, Row[]>;
   failNextInsert: string | null;
+  /** Tables that a FakeQuery delete (NOT the rpc) actually ran against. */
+  clientDeletes: string[];
 }
 
 function makeStore(seed: Record<string, Row[]>): FakeStore {
   return {
     tables: new Map(Object.entries(seed).map(([k, v]) => [k, [...v]])),
     failNextInsert: null,
+    clientDeletes: [],
   };
 }
 
@@ -142,6 +151,7 @@ class FakeQuery {
       );
     }
     if (this.mode === "delete") {
+      this.store.clientDeletes.push(this.table);
       const keep = this.rows().filter(
         (row) => !this.filters.every(([col, val]) => row[col] === val),
       );
@@ -155,9 +165,56 @@ class FakeQuery {
   }
 }
 
+/**
+ * Fake of the rachandzach_remove_added_person RPC with the same observable
+ * semantics as the migration: delete both rows only when the person is
+ * added AND has zero photo links AND zero person-keyed favorites; report
+ * 'kept' otherwise, 'missing' when there is no catalog row. Atomicity
+ * cannot be faked here; it is proven against the real database instead.
+ */
+function fakeRemoveAddedPersonRpc(
+  store: FakeStore,
+  slug: string,
+): { data: string | null; error: { message: string } | null } {
+  const people = store.tables.get("rachandzach_people") ?? [];
+  const person = people.find((row) => row.slug === slug);
+  if (!person) return { data: "missing", error: null };
+  const overrides = store.tables.get("rachandzach_person_overrides") ?? [];
+  const added = overrides.some(
+    (row) => row.person_slug === slug && row.added === true,
+  );
+  const linked = (store.tables.get("rachandzach_photo_people") ?? []).some(
+    (row) => row.person_id === person.id,
+  );
+  const favorited = (
+    store.tables.get("rachandzach_guest_favorites") ?? []
+  ).some((row) => row.owner_kind === "person" && row.owner_key === slug);
+  if (!added || linked || favorited) return { data: "kept", error: null };
+  store.tables.set(
+    "rachandzach_person_overrides",
+    overrides.filter((row) => row.person_slug !== slug),
+  );
+  store.tables.set(
+    "rachandzach_people",
+    people.filter((row) => row.slug !== slug),
+  );
+  return { data: "deleted", error: null };
+}
+
 function fakeClient(store: FakeStore) {
   return {
     from: (table: string) => new FakeQuery(store, table),
+    rpc: (name: string, args: Record<string, unknown>) => {
+      if (name !== "rachandzach_remove_added_person") {
+        return Promise.resolve({
+          data: null,
+          error: { message: `unknown rpc: ${name}` },
+        });
+      }
+      return Promise.resolve(
+        fakeRemoveAddedPersonRpc(store, String(args.p_slug)),
+      );
+    },
   } as unknown as Parameters<typeof addPerson>[3];
 }
 
@@ -215,7 +272,7 @@ describe("addPerson", () => {
 });
 
 describe("removePerson", () => {
-  function addedPersonStore(links: Row[]): FakeStore {
+  function addedPersonStore(links: Row[], favorites: Row[] = []): FakeStore {
     return makeStore({
       rachandzach_people: [
         { id: "p1", slug: "aunt-carol", display_name: "Aunt Carol" },
@@ -230,15 +287,19 @@ describe("removePerson", () => {
         },
       ],
       rachandzach_photo_people: links,
+      rachandzach_guest_favorites: favorites,
     });
   }
 
-  it("deletes an added person nothing is tagged with (both rows)", async () => {
+  it("deletes an added person nothing references (both rows)", async () => {
     const store = addedPersonStore([]);
     const outcome = await removePerson("aunt-carol", ACTOR, fakeClient(store));
     expect(outcome).toBe("deleted");
     expect(store.tables.get("rachandzach_people")).toHaveLength(0);
     expect(store.tables.get("rachandzach_person_overrides")).toHaveLength(0);
+    // Design rule: the catalog row may only ever be deleted inside the
+    // atomic RPC, never by a client-side statement that raced a check.
+    expect(store.clientDeletes).not.toContain("rachandzach_people");
   });
 
   it("hides an added person with photo links and touches no tags", async () => {
@@ -255,6 +316,50 @@ describe("removePerson", () => {
     ]);
     const override = store.tables.get("rachandzach_person_overrides")![0];
     expect(override).toMatchObject({ person_slug: "aunt-carol", hidden: true });
+    expect(store.clientDeletes).not.toContain("rachandzach_people");
+  });
+
+  it("hides an added person whose slug holds guest favorites, keeping the shortlist reachable", async () => {
+    // Zero photo tags is NOT enough to delete: a guest who claimed this
+    // person on Find me stores their favorites under the slug, and deleting
+    // the catalog row would strand that shortlist forever.
+    const store = addedPersonStore(
+      [],
+      [
+        {
+          owner_kind: "person",
+          owner_key: "aunt-carol",
+          photo_id: "photo-9",
+          created_at: "2026-07-26T00:00:00.000Z",
+        },
+      ],
+    );
+    const outcome = await removePerson("aunt-carol", ACTOR, fakeClient(store));
+    expect(outcome).toBe("hidden");
+    expect(store.tables.get("rachandzach_people")).toHaveLength(1);
+    expect(store.tables.get("rachandzach_guest_favorites")).toHaveLength(1);
+    const override = store.tables.get("rachandzach_person_overrides")![0];
+    expect(override).toMatchObject({ person_slug: "aunt-carol", hidden: true });
+    expect(store.clientDeletes).not.toContain("rachandzach_people");
+  });
+
+  it("ignores session-keyed favorites that merely share the slug string", async () => {
+    // Only owner_kind = 'person' rows gate deletion; a session key equal to
+    // the slug is a different owner space.
+    const store = addedPersonStore(
+      [],
+      [
+        {
+          owner_kind: "session",
+          owner_key: "aunt-carol",
+          photo_id: "photo-9",
+          created_at: "2026-07-26T00:00:00.000Z",
+        },
+      ],
+    );
+    const outcome = await removePerson("aunt-carol", ACTOR, fakeClient(store));
+    expect(outcome).toBe("deleted");
+    expect(store.tables.get("rachandzach_people")).toHaveLength(0);
   });
 
   it("always hides, never deletes, a person the pipeline matched", async () => {

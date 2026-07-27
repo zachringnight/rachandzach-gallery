@@ -16,10 +16,11 @@
  *
  * "Add" creates a real catalog person (taggable from the Catalog screen)
  * plus the override row that marks them as added here. "Remove" soft-hides
- * anyone whose photos reference them and hard-deletes an added person only
- * while nothing is tagged with them; the confirm dialog states which will
- * happen. "Revert" clears the hand-picked crop. Photo tags are never edited
- * from this screen.
+ * anyone something references and hard-deletes an added person only while
+ * nothing durable references them (no photo tags and no guest favorites
+ * saved under their name, decided atomically server-side); the confirm
+ * dialog states which will happen. "Revert" clears the hand-picked crop.
+ * Photo tags are never edited from this screen.
  */
 import {
   useCallback,
@@ -769,14 +770,17 @@ function PersonEditor({
 
   const remove = useCallback(async () => {
     // Added people are real catalog identities now, so the consequence
-    // depends on whether photos reference them. The server re-checks the
-    // tag count before deleting anything, so a delete can quietly become a
-    // hide if tags landed meanwhile -- never the other way around.
+    // depends on whether anything references them. The server makes that
+    // call atomically (tags AND guest favorites, checked inside the delete
+    // itself), so a delete can quietly become a hide if a reference exists
+    // or lands meanwhile -- never the other way around. The zero-count copy
+    // below states both outcomes because this client only knows the tag
+    // count; favorites live server-side.
     const confirmMessage = !person.added
       ? `Remove ${person.displayName} from the Find me picker? Their photos and tags stay untouched, and you can undo this from the Hidden filter.`
       : person.count > 0
         ? `Remove ${person.displayName}? They are tagged in ${person.count} ${person.count === 1 ? "photo" : "photos"}, so they will be hidden from the Find me picker instead of deleted: their photos, tags, and personal page stay. To delete them entirely, untag those photos in the Catalog first. Undo from the Hidden filter.`
-        : `Remove ${person.displayName}? No photos are tagged with them, so they will be deleted entirely. No photographs are affected.`;
+        : `Remove ${person.displayName}? No photos are tagged with them, so they will be deleted entirely, unless a guest has saved favorites under their name, in which case they are hidden instead so that shortlist keeps working. Either way, no photographs are affected and you can undo a hide from the Hidden filter.`;
     if (!window.confirm(confirmMessage)) {
       return;
     }
