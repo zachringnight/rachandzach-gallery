@@ -46,6 +46,20 @@ export async function requireAdmin(): Promise<{
   userId: string;
   email: AdminEmail;
 }> {
+  // Open-access mode (OPEN_ACCESS=1, Vercel Preview only): admin screens are
+  // usable without a prior magic link. Zach asked for this on 2026-07-26 so
+  // the guest manager and review queue could actually be used; the Supabase
+  // redirect allowlist has no gallery URL in it, so normal magic-link sign-in
+  // lands on a different product entirely.
+  //
+  // This is a real hole while it is on: anyone reaching /admin can rename,
+  // hide or remove guests and moderate uploads, against the LIVE database.
+  // It is deliberately a flag so it cannot ride a merge into production, and
+  // it must be turned off once sign-in is fixed properly.
+  if (process.env.OPEN_ACCESS === "1") {
+    return { userId: "open-access", email: ADMIN_EMAIL_ALLOWLIST[0] };
+  }
+
   const supabase = await createServerClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {

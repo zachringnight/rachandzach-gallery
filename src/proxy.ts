@@ -50,8 +50,27 @@ function deny(request: NextRequest): NextResponse {
   return applySecurityHeaders(NextResponse.redirect(enterUrl));
 }
 
+/**
+ * Open-access mode: no guest password, and admin reachable without a prior
+ * magic link.
+ *
+ * Zach asked for the gate removed entirely on 2026-07-26, after confirming
+ * what it exposes: all 1,721 photographs, the guest face crops, every guest
+ * name, each person's /{slug} page, the upload form and signed originals.
+ *
+ * It is a flag rather than a deletion so that this cannot reach
+ * rachandzach.com by merging a branch. The flag is set on the Vercel PREVIEW
+ * environment only; production stays gated until someone deliberately sets it
+ * there. Absent the variable, every check below behaves exactly as before.
+ */
+const OPEN_ACCESS = process.env.OPEN_ACCESS === "1";
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+
+  if (OPEN_ACCESS) {
+    return applySecurityHeaders(NextResponse.next());
+  }
 
   if (isPublicRoute(pathname)) {
     return applySecurityHeaders(NextResponse.next());
