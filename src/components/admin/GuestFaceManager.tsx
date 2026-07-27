@@ -1167,6 +1167,34 @@ function stagePreview(photo: ClientPhoto) {
 const KEY_STEP = 0.01;
 const KEY_STEP_LARGE = 0.05;
 
+/** The crop stage may take up at most this much of the viewport's height. */
+export const STAGE_MAX_VIEWPORT_HEIGHT_FRACTION = 0.52;
+
+/**
+ * Sizes the crop stage so the box IS the painted photo. Every pointer
+ * handler, the crop rect, the dim cutout, and the saved normalized crop all
+ * compute fractions of the stage box, so any letterbox between the box and
+ * the object-contain image silently skews the face that gets saved.
+ *
+ * A block box with `aspect-ratio` + `max-height` broke that guarantee on
+ * portrait photos and short viewports: block layout stretches the width to
+ * the container, and whether the max-height clamp transfers back to the
+ * width is engine-dependent (Chromium shrinks the width to match; WebKit
+ * keeps it stretched, leaving the photo letterboxed inside a wider box and
+ * the saved crop offset from the face the admin framed).
+ * Deriving the WIDTH from the same viewport cap instead -- never wider than
+ * the container, never wider than the cap allows at this aspect ratio --
+ * lets `aspect-ratio` produce the height, so both dimensions agree with the
+ * photo by construction. Exported for the geometry regression test.
+ */
+export function stageBoxStyle(aspectRatio: number): React.CSSProperties {
+  const a = aspectRatio > 0 ? aspectRatio : 1;
+  return {
+    aspectRatio: `${a}`,
+    width: `min(100%, ${STAGE_MAX_VIEWPORT_HEIGHT_FRACTION * 100}vh * ${a})`,
+  };
+}
+
 function CropStep({
   photo,
   crop,
@@ -1405,9 +1433,7 @@ function CropStep({
             ref={stageRef}
             className="relative mx-auto overflow-hidden"
             style={{
-              aspectRatio: `${a}`,
-              maxHeight: "52vh",
-              maxWidth: "100%",
+              ...stageBoxStyle(a),
               borderRadius: "var(--radius-card)",
               backgroundColor: "var(--color-sand)",
             }}
