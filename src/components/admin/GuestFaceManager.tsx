@@ -374,6 +374,19 @@ function initialsOf(name: string): string {
     .join("");
 }
 
+/**
+ * Identity of the face a disc is showing, used to key it.
+ *
+ * Mirrors faceKeyOf in the guest PersonPicker. FaceDisc holds load-failure
+ * state, and a roster tile keyed only by slug preserves that state across a
+ * save: an override whose URL had expired would keep showing the committed
+ * crop or initials even after Rachel picked a new face, until a full reload.
+ */
+function faceDiscKey(person: AdminRosterPerson): string {
+  if (person.faceKind === "override" && person.face) return `crop:${person.face.url}`;
+  return person.faceKind;
+}
+
 function FaceDisc({
   person,
   sizeClass = "w-full",
@@ -464,7 +477,7 @@ function PersonTile({
       style={{ color: "var(--color-ink)", opacity: person.hidden ? 0.55 : 1 }}
       aria-label={`Edit ${person.displayName}`}
     >
-      <FaceDisc person={person} />
+      <FaceDisc key={faceDiscKey(person)} person={person} />
       <span className="flex flex-col items-center gap-0.5">
         <span className="text-xs leading-tight">{person.displayName}</span>
         <span
@@ -818,7 +831,7 @@ function PersonEditor({
       >
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <FaceDisc person={person} sizeClass="w-12" />
+            <FaceDisc key={faceDiscKey(person)} person={person} sizeClass="w-12" />
             <div className="flex flex-col">
               <label className="sr-only" htmlFor="person-name">
                 Display name
