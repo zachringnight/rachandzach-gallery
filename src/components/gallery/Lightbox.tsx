@@ -173,6 +173,7 @@ export function Lightbox({
   const [chromeVisible, setChromeVisible] = useState(true);
   const [notesOpen, setNotesOpen] = useState(false);
   const activeFrameRef = useRef<HTMLButtonElement | null>(null);
+  const notesToggleRef = useRef<HTMLButtonElement | null>(null);
   const hideChromeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scheduleChromeHide = useCallback(() => {
@@ -280,19 +281,32 @@ export function Lightbox({
     [onClose, onNext, onPrev, photo.id, revealChrome],
   );
 
+  /**
+   * Open once, restore once.
+   *
+   * This used to also carry the keydown listener, which put handleKeyDown in
+   * its dependencies -- and handleKeyDown depends on revealChrome, which
+   * depends on notesOpen. So every Notes toggle re-ran this whole effect and
+   * re-focused the Close button, stealing focus from wherever the guest was.
+   * Mount-only concerns and the listener are now separate.
+   */
   useEffect(() => {
     previouslyFocused.current = document.activeElement;
     closeButtonRef.current?.focus();
-    document.addEventListener("keydown", handleKeyDown);
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = overflow;
       if (previouslyFocused.current instanceof HTMLElement) {
         previouslyFocused.current.focus();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   useEffect(() => {
@@ -484,6 +498,7 @@ export function Lightbox({
           </DownloadOriginalButton>
           <SharePhotoButton photoId={photo.id} />
           <button
+            ref={notesToggleRef}
             type="button"
             onClick={() => {
               setNotesOpen((current) => !current);
@@ -585,7 +600,15 @@ export function Lightbox({
           <p>Notes</p>
           <button
             type="button"
-            onClick={() => setNotesOpen(false)}
+            onClick={() => {
+              setNotesOpen(false);
+              // Return focus to the control that opened the panel. Closing
+              // left focus on a button that visibility:hidden then removed
+              // from the page, so focus fell to the body and the trap -- which
+              // only wraps at its first or last visible control -- let the
+              // next Tab escape to the page behind the dialog.
+              notesToggleRef.current?.focus();
+            }}
             className="atlas-lightbox-icon"
             aria-label="Close notes"
           >

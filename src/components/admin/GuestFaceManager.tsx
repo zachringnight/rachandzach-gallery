@@ -552,6 +552,52 @@ function PersonEditor({
 
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
+  /**
+   * Focus management for the editor dialog.
+   *
+   * The roster stays mounted behind this, so opening it left focus on the
+   * guest tile that was activated: Tab walked the background tiles instead of
+   * entering the editor, despite aria-modal. On open, focus moves to the first
+   * control inside; Tab and Shift+Tab wrap within the dialog; and closing
+   * returns focus to the tile that opened it, so a keyboard user does not lose
+   * their place in a 132-guest roster.
+   */
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const root = dialogRef.current;
+    if (!root) return;
+    const selector =
+      'a[href],button:not([disabled]),textarea,input:not([disabled]),select,[tabindex]:not([tabindex="-1"])';
+    const visible = () =>
+      Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) =>
+        typeof el.checkVisibility === "function"
+          ? el.checkVisibility({ visibilityProperty: true })
+          : el.offsetParent !== null,
+      );
+    visible()[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const items = visible();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !root.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      opener?.focus?.();
+    };
+  }, []);
+
   // Load candidate photos for the active scope/search.
   useEffect(() => {
     let cancelled = false;

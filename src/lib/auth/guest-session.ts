@@ -12,6 +12,8 @@
  * the Node runtime that proxy.ts and every route handler run on.
  */
 
+import { isOpenAccess } from "@/lib/auth/open-access";
+
 export interface GallerySession {
   sessionId: string;
   issuedAt: number;
@@ -276,14 +278,10 @@ export async function verifyGuestSession(
  * GalleryAccessConfigError.
  */
 export async function requireGalleryAccess(): Promise<GallerySession> {
-  // Open-access mode (OPEN_ACCESS=1, Vercel Preview only): the guest password
-  // is removed entirely, per Zach on 2026-07-26. The proxy is only the first
-  // gate -- every guest page and API also calls this, by design -- so the flag
-  // has to be honoured in both places or the archive stays locked.
-  //
-  // While this is on, the whole archive is public to anyone with a URL. It is
-  // a flag rather than a deletion so it cannot ride a merge into production.
-  if (process.env.OPEN_ACCESS === "1") {
+  // Open-access mode: see src/lib/auth/open-access.ts. The proxy is only the
+  // first gate -- every guest page and API also calls this, by design -- so
+  // the check has to live in both places or the archive stays locked.
+  if (isOpenAccess()) {
     const now = Math.floor(Date.now() / 1000);
     return {
       sessionId: "open-access",
