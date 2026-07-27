@@ -125,12 +125,31 @@ can be tagged from `/admin/catalog` and the review screens, appear in Find
 me, and own a working `/{slug}` personalized page. The DML-only backfill
 migration `20260726180000_rachandzach_added_people_catalog_backfill.sql` was
 applied to the live project (a no-op there: the overrides table held zero
-rows). Remove semantics: pipeline-matched people are only ever soft-hidden;
-an added person is deleted outright only while zero
-`rachandzach_photo_people` rows reference them, and otherwise degrades to
-the same soft hide (the server re-checks the link count, and the UI states
-the consequence before confirming). The `overrideOnly` guest-surface flag
-was removed along with the suppressed personalized-route link.
+rows). Remove semantics: pipeline-matched people are only ever soft-hidden. An added
+person is deleted outright only while **nothing durable references the
+identity**, which means BOTH zero `rachandzach_photo_people` rows and zero
+person-keyed `rachandzach_guest_favorites` rows; if either exists the removal
+degrades to the same soft hide. The favorites condition matters because
+favorites key on `(owner_kind = "person", owner_key = slug)` independently of
+photo tags, so deleting the catalog row would strand a guest's shortlist.
+
+That decision is made atomically inside
+`rachandzach_remove_added_person(p_slug)`, added by
+`20260726213000_rachandzach_remove_added_person.sql`, which **was applied to
+the live project** (additive: one `rachandzach_` function, pinned
+`search_path`, per-object revokes, `service_role`-only execute). The RPC takes
+the catalog row `FOR UPDATE` before checking, so a tag committed concurrently
+can no longer be destroyed by the foreign key cascade -- the previous
+check-then-delete pair could and did, reproducibly, destroy one. No
+client-side delete of `rachandzach_people` remains. Because the UI cannot see
+server-side favorites, the confirm dialog states both possible outcomes rather
+than one certainty; the server outcome is always one of the two.
+
+The `overrideOnly` guest-surface flag was removed along with the suppressed
+personalized-route link. A guest whose saved Find me person no longer resolves
+is treated as holding a stale preference and is returned to the picker, since
+hidden people deliberately remain resolvable and absence is therefore
+unambiguous.
 
 ## Next actions
 
