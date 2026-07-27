@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-07-27T15:09:39.896Z",
+  "exportedAt": "2026-07-27T20:38:01.265Z",
   "people": {
     "alyssa-scott": {
       "photoId": "a43bc4d818a73412d3bb272d553aaa35",
@@ -256,12 +256,5 @@
     "toby-auwerter": "Toby AuWerter",
     "tom-myers": "Tom Myers",
     "tom-sonntag": "Tom Sonntag"
-  },
-  "handAuthored": {
-    "note": "maura-keith-gutierrez was written here directly, not exported from Supabase. scripts/export-face-overrides.mjs rebuilds this file from rachandzach_person_overrides and WILL drop it unless the same crop is also framed at /admin/faces. Every other entry here is a real exported pick.",
-    "slugs": [
-      "maura-keith-gutierrez"
-    ],
-    "recordedAt": "2026-07-27"
   }
 }
