@@ -53,6 +53,10 @@ FACES_DIR = REPO / "metadata" / "faces"
 DETECTIONS_PATH = FACES_DIR / "detections.jsonl"
 SIGNATURES_PATH = FACES_DIR / "signatures.json"
 OVERRIDES_PATH = REPO / "src" / "generated" / "person-overrides.json"
+# Slugs whose learned signature is the wrong person; see the file's own
+# "purpose" note. Optional: absent file means no corrections, which is the
+# behaviour every run before this existed.
+CORRECTIONS_PATH = REPO / "metadata" / "face-profile-corrections.json"
 REPORT_JSON_PATH = FACES_DIR / "audit-report.json"
 REPORT_MD_PATH = FACES_DIR / "audit-report.md"
 
@@ -213,19 +217,30 @@ def face_for_saved_crop(record: dict, crop: dict) -> tuple[dict, np.ndarray, dic
     return faces[selected_index], embeddings[selected_index], ranked[0][4]
 
 
+def load_corrections() -> dict[str, dict]:
+    """Slugs whose learned signature is a different person entirely."""
+    if not CORRECTIONS_PATH.exists():
+        return {}
+    data = json.loads(CORRECTIONS_PATH.read_text(encoding="utf-8"))
+    return {c["slug"]: c for c in data.get("corrections", [])}
+
+
 def saved_crop_anchors(
     detections: dict[str, dict],
     overrides: dict,
     learned_slugs: set[str],
+    corrected: dict[str, dict] | None = None,
 ) -> tuple[list[tuple[str, np.ndarray]], list[dict]]:
     """Return authoritative single-face anchors not already learned."""
+    corrected = corrected or {}
     anchors = []
     details = []
     for slug, choice in sorted(overrides.get("people", {}).items()):
         # Learned multi-photo signatures are more robust. The crop is the
         # authoritative fallback only for the profiles co-occurrence could
-        # not resolve.
-        if slug in learned_slugs:
+        # not resolve -- OR for a slug whose learned signature is recorded as
+        # the wrong person, where one correct frame beats many wrong ones.
+        if slug in learned_slugs and slug not in corrected:
             continue
         photo_id = choice["photoId"]
         record = detections.get(photo_id)
@@ -257,6 +272,7 @@ def main() -> None:
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
     signatures = json.loads(SIGNATURES_PATH.read_text(encoding="utf-8"))
     overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
+    corrections = load_corrections()
     detections = load_detections()
 
     people_by_slug = {p["slug"]: p["name"] for p in catalog["people"]}
@@ -267,14 +283,23 @@ def main() -> None:
     row_slug: list[str] = []
     learned_slugs: list[str] = []
     for person in signatures["people"]:
+        # A corrected slug's clusters are somebody else's face. Dropping them
+        # is the point: leaving them in would let the wrong person keep
+        # winning matches even once the right crop is available.
+        if person["slug"] in corrections:
+            continue
         learned_slugs.append(person["slug"])
         for cluster in person["clusters"]:
             centroid_rows.append(cluster["centroid"])
             row_slug.append(person["slug"])
     learned_set = set(learned_slugs)
     anchors, anchor_details = saved_crop_anchors(
-        detections, overrides, learned_set
+        detections, overrides, learned_set, corrections
     )
+    # A correction with no crop yet leaves the person with no profile at all.
+    # That is deliberate: no profile beats a confidently wrong one.
+    anchored = {slug for slug, _ in anchors}
+    unanchored = sorted(set(corrections) - anchored)
     for slug, embedding in anchors:
         centroid_rows.append(embedding.tolist())
         row_slug.append(slug)
@@ -429,12 +454,22 @@ def main() -> None:
         ).encode()
     )
     fingerprint.update(json.dumps(params, sort_keys=True).encode())
+    # Only fold corrections in when there are some, so a run with no
+    # corrections still fingerprints identically to every run made before
+    # this mechanism existed.
+    if corrections:
+        fingerprint.update(json.dumps(corrections, sort_keys=True).encode())
 
     report = {
         "schemaVersion": 2,
         "inputsFingerprint": fingerprint.hexdigest(),
         "params": params,
         "savedCropAnchors": anchor_details,
+        "correctedProfiles": {
+            "slugs": sorted(corrections),
+            "anchoredByCrop": sorted(anchored & set(corrections)),
+            "awaitingCrop": unanchored,
+        },
         "summary": {
             "photosAudited": len(detections),
             "peopleWithSignatures": len(signature_slugs),

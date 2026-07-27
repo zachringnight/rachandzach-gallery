@@ -145,6 +145,31 @@ profile and the candidate wear sunglasses, shared occlusion can inflate
 similarity, so confirm on face shape and hair rather than the score. And small
 faces are often underexposed; a crop too dark to judge is a hold, not a yes.
 
+### Correcting a signature that learned the wrong person
+
+`metadata/face-profile-corrections.json` lists slugs whose LEARNED signature
+is somebody else's face. For each one the audit drops the learned clusters
+and uses the hand-picked `/admin/faces` crop instead.
+
+Both halves matter. `saved_crop_anchors` normally skips anyone who already
+has a learned signature, so without this a corrected crop would never reach
+the recognition profile: the guest-facing thumbnail would change and matching
+would carry on using the wrong face. Dropping the clusters is what stops the
+wrong person continuing to win matches.
+
+A corrected slug with no crop yet ends up with no profile at all, and is
+reported under `correctedProfiles.awaitingCrop`. That is deliberate: no
+profile beats a confidently wrong one.
+
+An absent or empty file behaves exactly as every run before this existed,
+fingerprint included; corrections only enter the fingerprint when present.
+
+Recorded so far: `maura-keith-gutierrez`, whose signature is Chris
+Gutierrez. `chris-gutierrez` had no learned signature of his own, so
+co-occurrence naming attached his face cluster to her slug. Watch for this
+shape wherever a couple appears together often and only one of them ever
+resolves.
+
 ## Thresholds and calibration
 
 All thresholds live as named constants at the top of each script and were
