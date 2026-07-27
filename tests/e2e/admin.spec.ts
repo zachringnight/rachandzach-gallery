@@ -101,6 +101,50 @@ test.describe("a structurally-shaped but unusable Supabase session", () => {
   });
 });
 
+test.describe("the guest-manager surfaces sit behind the same gate", () => {
+  test("/admin/faces redirects to /enter with no session at all", async ({
+    page,
+  }) => {
+    await page.goto("/admin/faces");
+    expect(new URL(page.url()).pathname).toBe("/enter");
+  });
+
+  test("a guest session never opens /admin/faces or its API", async ({
+    context,
+    page,
+  }) => {
+    await addGuestSession(context);
+    await page.goto("/admin/faces");
+    expect(new URL(page.url()).pathname).toBe("/enter");
+    for (const path of [
+      "/api/admin/people",
+      "/api/admin/people/zach-soskin/photos",
+    ]) {
+      const response = await context.request.get(path);
+      expect(response.status()).toBe(401);
+    }
+  });
+
+  test("guest-manager writes are denied without an admin session", async ({
+    context,
+  }) => {
+    await addGuestSession(context);
+    const add = await context.request.post("/api/admin/people", {
+      data: { displayName: "Nope" },
+    });
+    expect(add.status()).toBe(401);
+    const face = await context.request.put(
+      "/api/admin/people/zach-soskin/face",
+      { data: { photoId: "x", crop: { x: 0, y: 0, size: 0.5 } } },
+    );
+    expect(face.status()).toBe(401);
+    const remove = await context.request.delete(
+      "/api/admin/people/zach-soskin",
+    );
+    expect(remove.status()).toBe(401);
+  });
+});
+
 test.describe("known gaps requiring a live database (out of scope here)", () => {
   test.fixme(
     "an admin magic-link sign-in reaches /admin/review and lists the real queue",

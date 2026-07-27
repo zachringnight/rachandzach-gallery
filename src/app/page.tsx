@@ -17,7 +17,7 @@ import { storyPhotos } from "@/content/story-photos";
 export const metadata: Metadata = {
   title: "Private Photo Archive | Rach & Zach · Santa Barbara",
   description:
-    "Find your photos, keep a private shortlist, and save Rachel and Zach's original photographs wherever you keep them.",
+    "Find your photos, keep a private shortlist, and save Rachel and Zach's original photos wherever you keep them.",
 };
 
 const archiveUtilities = [
@@ -75,7 +75,7 @@ export default function HomePage() {
           </div>
           <p>
             Start with your name or search the whole collection. Keep the
-            photographs you want, then move the originals to the place you
+            photos you want, then move the originals to the place you
             already trust.
           </p>
         </Reveal>
@@ -134,7 +134,7 @@ export default function HomePage() {
           <p className="atlas-kicker">What comes next</p>
           <h2 id="archive-forward-title">The archive stays useful.</h2>
           <p>
-            Add what only you have, come back for the photographs you need,
+            Add what only you have, come back for the photos you need,
             and follow the next chapter taking shape.
           </p>
         </Reveal>

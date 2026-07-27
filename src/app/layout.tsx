@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 
-import { bodyFont, displayFont } from "@/components/brand/Wordmark";
+import { archiveFont, bodyFont, displayFont } from "@/components/brand/Wordmark";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Private Photo Archive | Rach & Zach",
   description:
-    "Find, favorite, download, and save photographs from Rachel and Zach's private archive.",
+    "Find, favorite, download, and save photos from Rachel and Zach's private archive.",
 };
 
 export const viewport: Viewport = {
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     // would otherwise log a development-only className mismatch.
     <html
       lang="en"
-      className={`${displayFont.variable} ${bodyFont.variable}`}
+      className={`${displayFont.variable} ${bodyFont.variable} ${archiveFont.variable}`}
       suppressHydrationWarning
     >
       <body>

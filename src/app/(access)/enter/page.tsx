@@ -70,7 +70,7 @@ export default async function EnterPage({ searchParams }: EnterPageProps) {
           <h1>{siteConfig.voice.heroTitle}</h1>
           <p>
             This archive is private to invited guests. Enter the password from
-            your invitation to search, favorite, download, and save photographs.
+            your invitation to search, favorite, download, and save photos.
           </p>
           <AccessForm nextPath={nextPath} errorMessage={errorMessage} />
         </div>

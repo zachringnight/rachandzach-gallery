@@ -737,12 +737,19 @@ button {
   padding-block: clamp(4rem, 10vh, 8rem);
 }
 
+/*
+ * Eyebrows are labels on the archive, not prose, so they take the archive
+ * voice (P7). Mono at this size reads as a catalogue annotation and, more
+ * usefully, stops the eyebrow and the headline beneath it being the same
+ * typeface at two sizes.
+ */
 .atlas-kicker {
   margin: 0;
   color: var(--rz-muted);
-  font-size: 0.67rem;
-  font-weight: 640;
-  letter-spacing: 0.16em;
+  font-family: var(--rz-font-archive);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   line-height: 1.4;
   text-transform: uppercase;
 }
@@ -769,7 +776,7 @@ button {
 .atlas-hero-body {
   max-width: 34rem;
   margin: clamp(1.6rem, 3.5vh, 2.5rem) 0 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.08rem, 1.45vw, 1.38rem);
   font-weight: 390;
   line-height: 1.55;
@@ -1260,7 +1267,7 @@ button {
   top: -2.5rem;
   right: 0;
   color: color-mix(in srgb, var(--rz-tan) 16%, transparent);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(7rem, 13vw, 15rem);
   font-weight: 320;
   letter-spacing: -0.08em;
@@ -1965,7 +1972,7 @@ button {
   max-width: 38rem;
   margin: 0;
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.15rem, 1.8vw, 1.55rem);
   line-height: 1.55;
 }
@@ -1984,7 +1991,7 @@ button {
 }
 
 .atlas-page-hero-index span {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(5rem, 12vw, 10rem);
   font-weight: 300;
   letter-spacing: -0.08em;
@@ -2126,7 +2133,7 @@ button {
   break-inside: avoid;
   margin: 0 0 1.4rem;
   color: var(--rz-ink);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1rem, 1.3vw, 1.16rem);
   line-height: 1.7;
 }
@@ -2174,7 +2181,7 @@ button {
 .atlas-page-cta p {
   max-width: 30ch;
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(2rem, 4vw, 4.6rem);
   font-weight: 360;
   letter-spacing: -0.045em;
@@ -2199,55 +2206,72 @@ button {
   padding: 0 var(--atlas-gutter) var(--rz-space-section);
 }
 
-.atlas-guest-header {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(14rem, 0.65fr) minmax(20rem, 1fr);
-  gap: clamp(2rem, 8vw, 9rem);
-  align-items: end;
-  min-height: clamp(22rem, 42vw, 36rem);
-  padding: clamp(5rem, 10vw, 9rem) 0 clamp(3rem, 6vw, 5rem);
+/*
+ * P1 page bar: the single compact page header. One headline, the live
+ * count in a utility voice, and (optionally) the page's controls, all on
+ * one baseline-aligned line so the photographs start above the fold.
+ */
+.atlas-page-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.4rem;
+  padding: clamp(1.4rem, 3vw, 2.4rem) 0 clamp(0.8rem, 1.6vw, 1.15rem);
   border-bottom: 1px solid var(--rz-ink);
-  overflow: hidden;
 }
 
-.atlas-guest-header h1 {
-  margin: 0.8rem 0 0;
+.atlas-page-bar h1 {
+  margin: 0;
   font-family: var(--rz-font-display);
-  font-size: clamp(4rem, 9vw, 9rem);
-  font-weight: 360;
-  letter-spacing: -0.065em;
-  line-height: 0.78;
+  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+  font-weight: 380;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
 }
 
-.atlas-guest-header > p {
-  position: relative;
-  z-index: 2;
-  max-width: 44rem;
+.atlas-page-bar-count {
   margin: 0;
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
-  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
-  line-height: 1.65;
+  font-family: var(--rz-font-archive);
+  font-size: 0.66rem;
+  font-weight: 620;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
 
-.atlas-guest-header > span {
-  position: absolute;
-  z-index: 0;
-  top: 1.5rem;
-  right: 0;
-  color: var(--rz-tan-text);
-  font-family: var(--rz-font-display);
-  font-size: clamp(4rem, 12vw, 12rem);
-  font-style: italic;
-  font-weight: 300;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  white-space: nowrap;
+.atlas-page-bar-count strong {
+  margin-right: 0.3rem;
+  color: var(--rz-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 680;
+}
+
+.atlas-page-bar-note {
+  flex: 1 1 14rem;
+  margin: 0;
+  color: var(--rz-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  text-align: right;
+  text-wrap: balance;
+}
+
+.atlas-page-bar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+}
+
+.atlas-page-bar-actions button,
+.atlas-page-bar-actions a {
+  border-radius: 0 !important;
 }
 
 .atlas-guest-body {
-  padding-top: clamp(2.5rem, 6vw, 5rem);
+  padding-top: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .atlas-guest-feature {
@@ -2257,39 +2281,11 @@ button {
 }
 
 .atlas-guest-feature h2 {
-  margin: 0.7rem 0 1.5rem;
+  margin: 0.6rem 0 1.25rem;
   font-family: var(--rz-font-display);
-  font-size: clamp(2rem, 4vw, 4rem);
-  font-weight: 390;
-  letter-spacing: -0.045em;
-}
-
-.atlas-gallery-shell {
-  display: grid;
-  grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr);
-  gap: clamp(2rem, 4vw, 4rem);
-  padding-top: clamp(2.5rem, 6vw, 5rem);
-}
-
-.atlas-filter-rail {
-  position: sticky;
-  top: 6rem;
-  align-self: start;
-  max-height: calc(100vh - 7.5rem);
-  overflow-y: auto;
-  padding: 0 1.5rem 1.5rem 0;
-  border-right: 1px solid var(--rz-wheat);
-}
-
-.atlas-filter-groups {
-  display: grid;
-  gap: 1.75rem;
-  margin-top: 1rem;
-}
-
-.atlas-filter-rail fieldset {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--rz-wheat);
+  font-size: clamp(1.45rem, 2.4vw, 2.1rem);
+  font-weight: 420;
+  letter-spacing: -0.035em;
 }
 
 .atlas-filter-rail legend {
@@ -2323,7 +2319,7 @@ button {
 
 .atlas-empty-state > p:first-child {
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.8rem;
 }
 
@@ -2424,7 +2420,7 @@ button {
   top: 0.5rem;
   right: 1rem;
   color: color-mix(in srgb, var(--rz-tan) 24%, transparent);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(9rem, 22vw, 19rem);
   font-weight: 260;
   line-height: 0.8;
@@ -2438,7 +2434,7 @@ button {
 }
 
 .atlas-upload-dropzone > p:first-of-type {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(2rem, 4vw, 4rem);
   letter-spacing: -0.045em;
 }
@@ -2628,7 +2624,7 @@ button {
   max-width: 31rem;
   margin: 1.75rem 0 0;
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.05rem;
   line-height: 1.65;
 }
@@ -2714,28 +2710,10 @@ button {
   .atlas-timeline-description {
     grid-column: 2 / -1;
   }
-
-  .atlas-gallery-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .atlas-filter-rail {
-    position: static;
-    max-height: none;
-    overflow: visible;
-    padding: 0 0 1.5rem;
-    border-right: 0;
-    border-bottom: 1px solid var(--rz-wheat);
-  }
-
-  .atlas-filter-groups {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 780px) {
   .atlas-page-hero,
-  .atlas-guest-header,
   .atlas-info-section {
     grid-template-columns: 1fr;
   }
@@ -2774,8 +2752,9 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .atlas-guest-header {
-    min-height: 30rem;
+  .atlas-page-bar-note {
+    flex-basis: 100%;
+    text-align: left;
   }
 
   .atlas-filter-groups {
@@ -2800,8 +2779,7 @@ button {
 }
 
 @media (max-width: 520px) {
-  .atlas-page-hero h1,
-  .atlas-guest-header h1 {
+  .atlas-page-hero h1 {
     font-size: clamp(4rem, 21vw, 6.5rem);
   }
 
@@ -2820,10 +2798,6 @@ button {
 
   .atlas-timeline-main {
     padding-block: 0.25rem;
-  }
-
-  .atlas-guest-header {
-    min-height: 27rem;
   }
 
   .atlas-upload-dropzone {
@@ -2860,13 +2834,17 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
-  padding-top: clamp(2.5rem, 6vw, 5rem);
 }
 
 .atlas-gallery-main {
   min-width: 0;
+  padding-top: 1rem;
 }
 
+/*
+ * P1 control bar: docks below the site header so search and filters stay
+ * reachable at any scroll depth. A single compact row at every width.
+ */
 .atlas-filter-rail {
   position: sticky;
   z-index: 24;
@@ -2875,41 +2853,24 @@ button {
   overflow: visible;
   padding: 0;
   border-right: 0;
-  border-block: 1px solid var(--rz-wheat);
+  border-bottom: 1px solid var(--rz-wheat);
   background: color-mix(in srgb, var(--rz-cream) 94%, transparent);
   backdrop-filter: blur(18px);
 }
 
-.atlas-filter-summary {
+.atlas-control-row {
   display: flex;
-  min-height: 4.1rem;
+  min-height: 3.4rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
-.atlas-filter-summary > p {
-  margin: 0;
-  color: var(--rz-muted);
-  font-size: 0.68rem;
-  font-weight: 610;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.atlas-filter-summary > p strong {
-  margin-right: 0.35rem;
-  color: var(--rz-ink);
-  font-family: var(--rz-font-display);
-  font-size: 1.55rem;
-  font-weight: 430;
-  letter-spacing: -0.035em;
-}
-
-.atlas-filter-summary-actions {
+.atlas-control-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  align-items: center;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .atlas-filter-action {
@@ -2950,22 +2911,15 @@ button {
   line-height: 1;
 }
 
-.atlas-gallery-discovery {
-  display: grid;
-  grid-template-columns: minmax(15rem, 24rem) minmax(0, 1fr);
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--rz-wheat);
-}
-
 .atlas-gallery-search {
   display: grid;
+  flex: 0 1 22rem;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  min-height: 2.75rem;
+  min-width: 9rem;
+  min-height: 2.55rem;
   align-items: center;
   gap: 0.55rem;
-  padding-left: 0.75rem;
+  padding-left: 0.7rem;
   border: 1px solid var(--rz-wheat);
   background: color-mix(in srgb, var(--rz-cream) 86%, white);
   color: var(--rz-muted);
@@ -2982,7 +2936,7 @@ button {
 .atlas-gallery-search input {
   width: 100%;
   min-width: 0;
-  height: 2.65rem;
+  height: 2.45rem;
   border: 0;
   outline: 0;
   background: transparent;
@@ -2997,8 +2951,8 @@ button {
 
 .atlas-gallery-search > button {
   display: inline-flex;
-  width: 2.65rem;
-  height: 2.65rem;
+  width: 2.45rem;
+  height: 2.45rem;
   align-items: center;
   justify-content: center;
   border: 0;
@@ -3014,7 +2968,9 @@ button {
 
 .atlas-active-filters {
   display: flex;
+  flex: 0 1 auto;
   min-width: 0;
+  align-items: center;
   gap: 0.4rem;
   overflow-x: auto;
   scrollbar-width: none;
@@ -3068,6 +3024,20 @@ button {
 
 .atlas-filter-groups[data-open="true"] {
   display: grid;
+  animation: atlas-copy-arrive 360ms var(--rz-ease-out) both;
+}
+
+/* Moment Search, docked to the same control bar (P1). */
+.atlas-moment-panel {
+  display: none;
+}
+
+.atlas-moment-panel[data-open="true"] {
+  display: block;
+  max-height: min(62dvh, 34rem);
+  padding: 1.25rem 0 1.5rem;
+  border-top: 1px solid var(--rz-wheat);
+  overflow-y: auto;
   animation: atlas-copy-arrive 360ms var(--rz-ease-out) both;
 }
 
@@ -3167,44 +3137,7 @@ button {
 .atlas-gallery-toolbar {
   display: grid;
   gap: 1rem;
-  margin: clamp(1.75rem, 4vw, 3rem) 0;
-}
-
-.atlas-search-disclosure {
-  border-block: 1px solid var(--rz-wheat);
-}
-
-.atlas-search-disclosure > summary {
-  display: flex;
-  min-height: 4rem;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  color: var(--rz-ink);
-  font-family: var(--rz-font-display);
-  font-size: clamp(1.15rem, 2vw, 1.55rem);
-  font-weight: 440;
-  list-style: none;
-}
-
-.atlas-search-disclosure > summary::-webkit-details-marker {
-  display: none;
-}
-
-.atlas-search-disclosure > summary::after {
-  content: "+";
-  color: var(--rz-muted);
-  font-family: var(--rz-font-body);
-  font-size: 1.1rem;
-  font-weight: 400;
-}
-
-.atlas-search-disclosure[open] > summary::after {
-  content: "−";
-}
-
-.atlas-search-disclosure-body {
-  padding: 0 0 clamp(2rem, 4vw, 3.5rem);
+  margin: 0 0 1.5rem;
 }
 
 .atlas-moment-search {
@@ -3215,7 +3148,7 @@ button {
   max-width: 42rem;
   margin: 0 0 1.25rem;
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.05rem;
   line-height: 1.6;
 }
@@ -3419,28 +3352,29 @@ button {
   opacity: 0;
 }
 
-.atlas-event-scrubber {
+/*
+ * P3 chapter label: a slim sticky tab at the grid's top edge naming where
+ * the guest is in the day. The clock and frame counter sit in the archive's
+ * utility voice; the event name gets the display face.
+ */
+.atlas-chapter {
   position: sticky;
   z-index: 18;
-  top: 8.8rem;
-  display: grid;
-  grid-template-columns: minmax(8rem, auto) minmax(15rem, 1fr);
-  gap: clamp(1rem, 3vw, 3rem);
-  align-items: center;
-  min-height: 3.7rem;
-  margin-bottom: 1rem;
-  padding: 0.7rem 1rem;
+  top: 8.35rem;
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+  padding: 0.42rem 0.85rem;
   border: 1px solid var(--rz-wheat);
   background: color-mix(in srgb, var(--rz-cream) 94%, transparent);
   backdrop-filter: blur(18px);
+  white-space: nowrap;
 }
 
-.atlas-event-scrubber-heading {
-  display: grid;
-  gap: 0.1rem;
-}
-
-.atlas-event-scrubber-heading span {
+.atlas-chapter-kicker {
   color: var(--rz-muted);
   font-size: 0.52rem;
   font-weight: 650;
@@ -3448,70 +3382,301 @@ button {
   text-transform: uppercase;
 }
 
-.atlas-event-scrubber-heading strong {
+.atlas-chapter strong {
   overflow: hidden;
+  max-width: 14rem;
   font-family: var(--rz-font-display);
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 470;
+  letter-spacing: -0.02em;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.atlas-event-scrubber-rail {
+/* Capture time and archive position are data about photographs, so they take
+ * the archive voice like every other count and index. */
+.atlas-chapter-clock,
+.atlas-chapter-position {
+  color: var(--rz-muted);
+  font-family: var(--rz-font-archive);
+  font-size: 0.6rem;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.atlas-chapter-position {
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--rz-wheat);
+}
+
+/*
+ * P3 Light Bar: the whole archive mapped onto the arc of the day, every
+ * segment tinted by the dominant light sampled from its own photographs.
+ * Vertical rail fixed to the right edge on desktop; a horizontal band that
+ * docks under the chapter label on smaller screens. The tints are
+ * photographic light (the one sanctioned color source beyond the palette);
+ * all chrome around them stays on the paper tokens.
+ */
+.atlas-light-bar {
+  position: fixed;
+  z-index: 30;
+  top: 50%;
+  right: clamp(0.55rem, 1.6vw, 1.5rem);
+  height: min(58vh, 34rem);
+  transform: translateY(-50%);
+}
+
+.atlas-light-bar-rail {
+  --rz-light-axis: to bottom;
   position: relative;
   display: flex;
-  min-width: 0;
-  height: 2rem;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  width: 0.85rem;
+  height: 100%;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-cream);
+  box-shadow: var(--rz-shadow-soft);
+  transition: width var(--rz-dur-fast) var(--rz-ease-out);
 }
 
-.atlas-event-scrubber-line {
-  position: absolute;
-  right: 0;
-  left: 0;
-  height: 1px;
-  background: var(--rz-tan);
+.atlas-light-bar:hover .atlas-light-bar-rail,
+.atlas-light-bar:focus-within .atlas-light-bar-rail {
+  width: 1.15rem;
 }
 
-.atlas-event-marker {
+.atlas-light-bar-segment {
   position: relative;
-  z-index: 3;
-  display: grid;
-  width: 1.7rem;
-  height: 1.7rem;
-  place-items: center;
+  z-index: 1;
+  flex-basis: 0;
+  min-height: 4px;
   padding: 0;
   border: 0;
-  background: transparent;
+  background: linear-gradient(
+    var(--rz-light-axis),
+    var(--rz-light-stops, transparent, transparent)
+  );
+  /* Uniform amplification of the sampled light so the rail reads as the
+   * day's arc rather than a scrollbar. The hues stay the photographs' own;
+   * saturate() only turns them up, it never authors a color. */
+  filter: saturate(2.1) contrast(1.06);
+  opacity: 0.88;
+  transition: opacity var(--rz-dur-fast) var(--rz-ease-out);
 }
 
-.atlas-event-marker > span {
-  width: 0.38rem;
-  height: 0.38rem;
-  border: 1px solid var(--rz-ink);
-  border-radius: 50%;
-  background: var(--rz-cream);
-  transition:
-    transform var(--rz-dur-fast) ease,
-    background var(--rz-dur-fast) ease;
+.atlas-light-bar-segment + .atlas-light-bar-segment {
+  border-top: 1px solid color-mix(in srgb, var(--rz-cream) 65%, transparent);
 }
 
-.atlas-event-marker:hover > span,
-.atlas-event-marker:focus-visible > span,
-.atlas-event-marker[data-active="true"] > span {
+.atlas-light-bar-segment:hover,
+.atlas-light-bar-segment:focus-visible,
+.atlas-light-bar-segment[data-active="true"] {
+  opacity: 1;
+}
+
+.atlas-light-bar-segment[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1px var(--rz-ink);
+  pointer-events: none;
+}
+
+.atlas-light-bar-segment:focus-visible {
+  outline: 2px solid var(--rz-coral);
+  outline-offset: 1px;
+}
+
+/* The index pointer: an ink hairline with a coral tick, tracking scroll. */
+.atlas-light-bar-thumb {
+  position: absolute;
+  z-index: 3;
+  top: var(--rz-light-thumb, 0%);
+  right: -0.3rem;
+  left: -0.3rem;
+  height: 0;
+  border-top: 2px solid var(--rz-ink);
+  transition: top var(--rz-dur-fast) var(--rz-ease-out);
+  pointer-events: none;
+}
+
+.atlas-light-bar-thumb::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -0.2rem;
+  width: 4px;
+  height: 4px;
   background: var(--rz-coral);
-  transform: scale(1.75);
 }
 
-.atlas-event-scrubber-rail input[type="range"] {
+.atlas-light-bar-rail input[type="range"] {
   position: absolute;
   z-index: 2;
   inset: 0;
   width: 100%;
   height: 100%;
-  cursor: ew-resize;
+  cursor: ns-resize;
   opacity: 0;
+  writing-mode: vertical-lr;
+}
+
+/* Chapter name that follows the pointer (or the scrub) along the rail. */
+.atlas-light-bar-flag {
+  position: absolute;
+  z-index: 4;
+  top: var(--rz-light-flag, 0%);
+  right: calc(100% + 0.55rem);
+  padding: 0.22rem 0.5rem;
+  border: 1px solid var(--rz-wheat);
+  background: color-mix(in srgb, var(--rz-cream) 96%, transparent);
+  color: var(--rz-ink);
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.atlas-light-bar[data-busy="true"] .atlas-light-bar-rail {
+  animation: atlas-light-busy 1.1s var(--rz-ease-inout) infinite alternate;
+}
+
+@keyframes atlas-light-busy {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.55;
+  }
+}
+
+/*
+ * P4 contact-sheet stack: the burst's first frame with layered film edges
+ * behind it and the frame count in the utility voice. Expanded frames get
+ * a hairline contact-sheet border and a collapse control on the leader.
+ */
+.atlas-stack-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.atlas-stack-card::before,
+.atlas-stack-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-sand);
+}
+
+.atlas-stack-card::before {
+  transform: translate(4px, -4px);
+}
+
+.atlas-stack-card::after {
+  transform: translate(8px, -8px);
+  opacity: 0.55;
+}
+
+.atlas-stack-open {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: var(--rz-wheat);
+  cursor: pointer;
+}
+
+.atlas-stack-open:focus-visible {
+  outline: 3px solid var(--rz-coral);
+  outline-offset: -3px;
+}
+
+.atlas-stack-card:hover .atlas-photo-image-target {
+  transform: scale(1.018);
+}
+
+.atlas-stack-count {
+  position: absolute;
+  z-index: 6;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  padding: 0.24rem 0.5rem;
+  background: color-mix(in srgb, var(--rz-ink) 78%, transparent);
+  color: var(--rz-cream);
+  font-size: 0.56rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.atlas-stack-select {
+  opacity: 0;
+}
+
+.atlas-stack-card:hover .atlas-stack-select,
+.atlas-stack-card:focus-within .atlas-stack-select,
+.atlas-stack-card[data-selecting="true"] .atlas-stack-select {
+  opacity: 1;
+}
+
+.atlas-stack-card[data-selected="true"] {
+  outline: 3px solid var(--rz-coral);
+  outline-offset: -3px;
+}
+
+.atlas-stack-card[data-partial="true"] .atlas-stack-select {
+  border-color: var(--rz-coral);
+  color: var(--rz-coral);
+  opacity: 1;
+}
+
+.atlas-burst-frame {
+  box-shadow: 0 0 0 1px var(--rz-wheat);
+}
+
+.atlas-stack-collapse {
+  position: absolute;
+  z-index: 6;
+  top: 0.6rem;
+  left: 0.6rem;
+  display: inline-flex;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--rz-cream) 55%, transparent);
+  background: color-mix(in srgb, var(--rz-ink) 72%, transparent);
+  color: var(--rz-cream);
+  backdrop-filter: blur(12px);
+  transition: background var(--rz-dur-fast) ease;
+}
+
+.atlas-stack-collapse:hover {
+  background: var(--rz-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-light-bar-rail,
+  .atlas-light-bar-segment,
+  .atlas-light-bar-thumb {
+    transition: none;
+  }
+
+  .atlas-light-bar[data-busy="true"] .atlas-light-bar-rail {
+    animation: none;
+  }
 }
 
 .atlas-selection-bar {
@@ -3544,7 +3709,7 @@ button {
 .atlas-selection-count span {
   margin-right: 0.35rem;
   color: var(--rz-coral);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: 1.35rem;
   font-weight: 450;
   letter-spacing: -0.03em;
@@ -3646,66 +3811,120 @@ button {
   gap: 0;
 }
 
+/*
+ * P2 lightbox: the photograph is the surface. The stage fills the viewport
+ * inside a fixed minimum margin; every piece of chrome overlays the image
+ * and fades away after two seconds of inactivity (reduced motion keeps it).
+ */
 .atlas-lightbox {
   position: fixed;
   z-index: 100;
   inset: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
   height: 100dvh;
   overflow: hidden;
-  padding: clamp(0.75rem, 1.5vw, 1.4rem);
   background: color-mix(in srgb, var(--rz-ink) 98.5%, black);
   color: var(--rz-cream);
   outline: none;
 }
 
 .atlas-lightbox-header {
+  position: absolute;
+  z-index: 8;
+  top: 0;
+  right: 0;
+  left: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--rz-cream) 16%, transparent);
+  padding: 0.65rem clamp(0.9rem, 2vw, 1.4rem) 1.9rem;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--rz-ink) 82%, transparent) 0%,
+    color-mix(in srgb, var(--rz-ink) 46%, transparent) 55%,
+    transparent 100%
+  );
+  transition:
+    opacity var(--rz-dur-med) var(--rz-ease-out),
+    visibility 0s linear 0s;
+}
+
+.atlas-lightbox[data-chrome-visible="false"] .atlas-lightbox-header,
+.atlas-lightbox[data-chrome-visible="false"] .atlas-lightbox-arrow,
+.atlas-lightbox[data-chrome-visible="false"] .atlas-lightbox-filmstrip {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--rz-dur-med) var(--rz-ease-out),
+    visibility 0s linear var(--rz-dur-med);
+}
+
+.atlas-lightbox[data-chrome-visible="false"] {
+  cursor: none;
 }
 
 .atlas-lightbox-title {
   min-width: 0;
+  flex: 1 1 auto;
 }
 
-.atlas-lightbox-title p,
-.atlas-lightbox-title h2 {
+/* Caption data in the archive's utility voice, never a headline (P2). */
+.atlas-lightbox-meta {
+  font-family: var(--rz-font-archive);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   margin: 0;
-}
-
-.atlas-lightbox-title p {
-  color: color-mix(in srgb, var(--rz-cream) 70%, transparent);
-  font-size: 0.54rem;
-  font-weight: 650;
-  letter-spacing: 0.11em;
+  color: color-mix(in srgb, var(--rz-cream) 82%, transparent);
+  column-gap: 0.55rem;
+  font-size: 0.62rem;
+  font-weight: 620;
+  letter-spacing: 0.09em;
+  line-height: 1.7;
   text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
 }
 
-.atlas-lightbox-title h2 {
-  margin-top: 0.2rem;
+.atlas-lightbox-meta span:first-child {
+  color: var(--rz-cream);
+}
+
+.atlas-lightbox-meta span + span::before {
+  content: "·";
+  margin-right: 0.55rem;
+  opacity: 0.55;
+}
+
+/* Names read as names, not as a label. One line; Notes carries the full set. */
+.atlas-lightbox-people {
   overflow: hidden;
-  font-family: var(--rz-font-display);
-  font-size: clamp(1.05rem, 1.8vw, 1.45rem);
-  font-weight: 430;
-  letter-spacing: -0.02em;
+  margin: 0.1rem 0 0;
+  color: color-mix(in srgb, var(--rz-cream) 72%, transparent);
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/*
+ * The tools stay on one row and never shrink. Wrapping them dropped Notes and
+ * Close onto a second line whenever the caption was long (a ten-person group
+ * frame did it at 1440px), which collided with the title block. The title
+ * truncates instead -- chrome yields to the photograph, not the other way.
+ */
 .atlas-lightbox-tools {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.35rem;
 }
 
 .atlas-lightbox-position {
+  font-family: var(--rz-font-archive);
   min-width: 4.25rem;
   padding-inline: 0.45rem;
   color: color-mix(in srgb, var(--rz-cream) 66%, transparent);
@@ -3746,11 +3965,13 @@ button {
 }
 
 .atlas-lightbox-stage {
-  position: relative;
+  position: absolute;
+  inset: 0;
   display: grid;
   min-height: 0;
   place-items: center;
-  padding: clamp(0.75rem, 1.6vw, 1.5rem) clamp(2.8rem, 5vw, 5rem);
+  /* The fixed minimum margin around the full-bleed photograph. */
+  padding: 1.5rem;
   touch-action: pan-y;
 }
 
@@ -3777,7 +3998,7 @@ button {
 
 .atlas-lightbox-arrow {
   position: absolute;
-  z-index: 5;
+  z-index: 6;
   top: 50%;
   display: grid;
   width: 2.7rem;
@@ -3790,6 +4011,11 @@ button {
   color: var(--rz-cream);
   transform: translateY(-50%);
   backdrop-filter: blur(12px);
+  transition:
+    opacity var(--rz-dur-med) var(--rz-ease-out),
+    visibility 0s linear 0s,
+    background var(--rz-dur-fast) ease,
+    color var(--rz-dur-fast) ease;
 }
 
 .atlas-lightbox-arrow:hover {
@@ -3798,29 +4024,141 @@ button {
 }
 
 .atlas-lightbox-arrow-prev {
-  left: 0;
+  left: 0.65rem;
 }
 
 .atlas-lightbox-arrow-next {
-  right: 0;
+  right: 0.65rem;
 }
 
+/* Neighbouring frames along the bottom edge (P2). */
+.atlas-lightbox-filmstrip {
+  position: absolute;
+  z-index: 7;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: safe center;
+  gap: 3px;
+  padding: 2.4rem clamp(0.9rem, 2vw, 1.4rem) 0.8rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--rz-ink) 84%, transparent) 0%,
+    color-mix(in srgb, var(--rz-ink) 42%, transparent) 60%,
+    transparent 100%
+  );
+  transition:
+    opacity var(--rz-dur-med) var(--rz-ease-out),
+    visibility 0s linear 0s;
+}
+
+.atlas-lightbox-filmstrip::-webkit-scrollbar {
+  display: none;
+}
+
+.atlas-lightbox-frame {
+  display: block;
+  flex: 0 0 auto;
+  height: 3.3rem;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  opacity: 0.52;
+  transition:
+    opacity var(--rz-dur-fast) ease,
+    border-color var(--rz-dur-fast) ease;
+}
+
+.atlas-lightbox-frame img {
+  display: block;
+  width: auto;
+  height: 100%;
+}
+
+.atlas-lightbox-frame:hover,
+.atlas-lightbox-frame:focus-visible {
+  opacity: 0.9;
+}
+
+.atlas-lightbox-frame[data-active="true"] {
+  border-color: var(--rz-cream);
+  opacity: 1;
+}
+
+/* Notes panel: uploader captions, keywords, and margin notes slide in over
+ * the photograph instead of permanently boxing it in. */
 .atlas-lightbox-notes {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(10rem, 0.65fr) minmax(16rem, 1.35fr) auto;
-  gap: 1.5rem;
-  align-items: start;
-  max-height: min(15rem, 30dvh);
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(24rem, 92vw);
   overflow-y: auto;
-  padding-top: 0.75rem;
-  border-top: 1px solid color-mix(in srgb, var(--rz-cream) 16%, transparent);
+  padding: 0.85rem 1.25rem 1.5rem;
+  border-left: 1px solid color-mix(in srgb, var(--rz-cream) 14%, transparent);
+  background: color-mix(in srgb, var(--rz-ink) 97.5%, black);
+  visibility: hidden;
+  transform: translateX(100%);
+  transition:
+    transform var(--rz-dur-med) var(--rz-ease-out),
+    visibility 0s linear var(--rz-dur-med);
+}
+
+.atlas-lightbox-notes[data-open="true"] {
+  visibility: visible;
+  transform: none;
+  transition:
+    transform var(--rz-dur-med) var(--rz-ease-out),
+    visibility 0s linear 0s;
+}
+
+.atlas-lightbox-notes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--rz-cream) 14%, transparent);
+}
+
+.atlas-lightbox-notes-head p {
+  margin: 0;
+  color: color-mix(in srgb, var(--rz-cream) 72%, transparent);
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+/* The full people list, since the header line truncates. */
+.atlas-lightbox-note-block {
+  margin: 0 0 1rem;
+  padding: 0.35rem 0 0.8rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--rz-cream) 12%, transparent);
+}
+
+.atlas-lightbox-note-block .atlas-kicker {
+  color: color-mix(in srgb, var(--rz-cream) 58%, transparent);
+}
+
+.atlas-lightbox-note-people {
+  max-width: 52rem;
+  margin: 0.45rem 0 0;
+  color: var(--rz-cream);
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 .atlas-lightbox-uploader-caption {
-  grid-column: 1 / -1;
   max-width: 52rem;
-  margin: 0;
+  margin: 0 0 1rem;
   padding: 0.35rem 0 0.8rem;
   border-bottom: 1px solid
     color-mix(in srgb, var(--rz-cream) 12%, transparent);
@@ -3829,7 +4167,7 @@ button {
 .atlas-lightbox-uploader-caption p {
   margin: 0;
   color: var(--rz-cream);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.2rem;
   font-style: italic;
   line-height: 1.45;
@@ -3871,14 +4209,14 @@ button {
 
 .atlas-lightbox-memory {
   display: grid;
-  grid-template-columns: minmax(6rem, 0.32fr) minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+  margin-top: 1.1rem;
 }
 
 .atlas-lightbox-margin-note {
-  padding-top: 0.75rem;
   color: var(--rz-coral);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 0.85rem;
   font-style: italic;
   line-height: 1.25;
@@ -3888,9 +4226,12 @@ button {
   padding-top: 0 !important;
 }
 
+.atlas-lightbox-related {
+  margin-top: 1.1rem;
+}
+
 .atlas-lightbox-shortcuts {
-  align-self: end;
-  margin: 0;
+  margin: 1.4rem 0 0;
   color: color-mix(in srgb, var(--rz-cream) 54%, transparent);
   font-size: 0.52rem;
   line-height: 1.6;
@@ -3931,7 +4272,7 @@ button {
   padding: clamp(3rem, 8vw, 7rem) 0;
   border-block: 1px solid var(--rz-wheat);
   color: var(--rz-muted);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.15rem, 2vw, 1.65rem);
 }
 
@@ -4014,25 +4355,34 @@ button {
   background: color-mix(in srgb, var(--rz-sand) 48%, transparent);
 }
 
+/*
+ * One column. Picking your name is this page's whole job, and the face grid
+ * (P5) is tall enough that putting it beside the copy left a 4,000px empty
+ * column running down the page. Copy on top, faces across the full width:
+ * roughly eleven faces per row instead of seven, so the page is shorter and
+ * nothing is stranded.
+ */
 .atlas-person-setup {
   display: grid;
-  grid-template-columns: minmax(15rem, 0.7fr) minmax(16rem, 0.8fr) minmax(20rem, 1.25fr);
-  gap: clamp(2rem, 6vw, 7rem);
+  grid-template-columns: 1fr;
+  gap: clamp(1.75rem, 3vw, 2.75rem);
   align-items: start;
-  padding: clamp(1.5rem, 3vw, 2.5rem) 0 clamp(4rem, 8vw, 8rem);
-  border-top: 1px solid var(--rz-ink);
+  padding: 0 0 clamp(3rem, 6vw, 5.5rem);
 }
 
+.atlas-person-setup-copy {
+  max-width: 42rem;
+}
+
+/* Section headings sit well below the single page headline (P1). */
 .atlas-person-setup-copy h2,
-.atlas-weekend-collection-heading h2,
-.atlas-favorites-collection-header h2,
-.atlas-favorites-empty h2 {
+.atlas-weekend-collection-heading h2 {
   margin: 0.7rem 0 0;
   font-family: var(--rz-font-display);
-  font-size: clamp(2.3rem, 4.8vw, 5.2rem);
-  font-weight: 390;
-  letter-spacing: -0.05em;
-  line-height: 0.94;
+  font-size: clamp(1.45rem, 2.4vw, 2.1rem);
+  font-weight: 420;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
 }
 
 .atlas-person-setup-intro {
@@ -4048,8 +4398,124 @@ button {
   background: color-mix(in srgb, var(--rz-sand) 35%, transparent);
 }
 
-.atlas-person-setup-picker section > div {
-  max-height: 18rem !important;
+/*
+ * No inner scroll here. The capped height clipped a chip row through its
+ * middle, which read as a rendering fault rather than as "there is more".
+ * The full guest list is short enough to sit on the page.
+ */
+.atlas-person-setup-picker .atlas-picker-options {
+  max-height: none;
+  overflow-y: visible;
+}
+
+/*
+ * Find me, as faces (P5). Recognising yourself is faster than reading 132
+ * names, and the faces are the archive's own material -- each tile is a crop
+ * from a photograph in the collection, cut at build time by
+ * scripts/build-face-thumbnails.mjs.
+ *
+ * The counts rule holds: a tile never shows how many photographs someone is
+ * in. Faces here, count after you pick.
+ */
+.atlas-picker[data-variant="faces"] .atlas-picker-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
+  gap: 1.15rem 0.9rem;
+}
+
+/*
+ * Phones get four faces per row, not two. At the desktop tile size a 132-guest
+ * grid ran past 15,000px on a 390px screen; four across keeps the whole party
+ * inside a few thumb-flicks.
+ */
+@media (max-width: 620px) {
+  .atlas-picker[data-variant="faces"] .atlas-picker-options {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem 0.55rem;
+  }
+
+  .atlas-face-tile-name {
+    font-size: 0.66rem;
+  }
+}
+
+.atlas-face-tile {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--rz-ink);
+  cursor: pointer;
+  text-align: center;
+}
+
+.atlas-face-tile-image {
+  display: grid;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: var(--rz-wheat);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--rz-tan) 34%, transparent);
+  color: var(--rz-tan-text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition:
+    box-shadow var(--rz-dur-fast) var(--rz-ease-out),
+    transform var(--rz-dur-fast) var(--rz-ease-out);
+}
+
+.atlas-face-tile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* "Everyone" is a word, not a face: set it as a label inside the same disc. */
+.atlas-face-tile-all .atlas-face-tile-image {
+  background: var(--rz-sand);
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.atlas-face-tile-name {
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+.atlas-face-tile:hover .atlas-face-tile-image,
+.atlas-face-tile:focus-visible .atlas-face-tile-image {
+  box-shadow: 0 0 0 2px var(--rz-tan);
+  transform: translateY(-2px);
+}
+
+.atlas-face-tile[data-active="true"] .atlas-face-tile-image {
+  box-shadow: 0 0 0 2px var(--rz-coral);
+}
+
+.atlas-face-tile[data-active="true"] .atlas-face-tile-name {
+  font-weight: 650;
+}
+
+.atlas-face-empty {
+  margin: 1.25rem 0 0;
+  color: var(--rz-muted-on-sand);
+  font-size: 0.85rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-face-tile-image,
+  .atlas-face-tile:hover .atlas-face-tile-image,
+  .atlas-face-tile:focus-visible .atlas-face-tile-image {
+    transform: none;
+    transition: none;
+  }
 }
 
 .atlas-person-setup-picker .atlas-inline-action {
@@ -4058,9 +4524,8 @@ button {
 
 .atlas-weekend-collection-header {
   display: grid;
-  gap: 2rem;
-  padding: 1.5rem 0 clamp(3rem, 6vw, 5rem);
-  border-top: 1px solid var(--rz-ink);
+  gap: 1.5rem;
+  padding: 0 0 clamp(2.25rem, 4.5vw, 3.5rem);
 }
 
 .atlas-weekend-collection-heading {
@@ -4148,26 +4613,34 @@ button {
   line-height: 1.65;
 }
 
+/*
+ * The empty shortlist used to open a dead band roughly 260px tall under a
+ * paragraph that named Find me and the archive without linking either. Tighter
+ * block, real controls.
+ */
 .atlas-favorites-empty {
   display: grid;
-  grid-template-columns: minmax(4rem, 0.25fr) minmax(18rem, 1fr);
-  gap: clamp(2rem, 6vw, 6rem);
-  align-items: start;
-  padding: clamp(4rem, 9vw, 9rem) 0;
-  border-block: 1px solid var(--rz-wheat);
+  gap: 1rem;
+  justify-items: start;
+  max-width: 34rem;
+  padding: clamp(1.75rem, 4vw, 2.75rem) 0 clamp(2rem, 4vw, 3rem);
+}
+
+.atlas-favorites-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.75rem;
+  margin-top: 1.6rem;
 }
 
 .atlas-favorites-empty > svg {
   color: var(--rz-coral);
 }
 
-.atlas-favorites-empty h2 {
-  max-width: 12ch;
-}
-
 .atlas-favorites-empty div > p:last-child {
   max-width: 34rem;
-  margin: 1.25rem 0 0;
+  margin: 0.65rem 0 0;
   color: var(--rz-muted);
   line-height: 1.7;
 }
@@ -4178,21 +4651,8 @@ button {
   color: var(--rz-ink);
 }
 
-.atlas-favorites-collection {
-  padding-top: 1rem;
-  border-top: 1px solid var(--rz-ink);
-}
-
-.atlas-favorites-collection-header {
-  display: grid;
-  grid-template-columns: minmax(16rem, 0.8fr) minmax(20rem, 1.4fr);
-  gap: clamp(2rem, 6vw, 7rem);
-  align-items: end;
-  padding: 0.5rem 0 clamp(3rem, 6vw, 5rem);
-}
-
-.atlas-favorites-collection-header h2 {
-  font-size: clamp(2.3rem, 4vw, 4.5rem);
+.atlas-favorites-collection .atlas-favorites-grid {
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .atlas-favorites-grid {
@@ -4446,14 +4906,6 @@ button {
 
 @media (max-width: 900px) {
   .atlas-person-setup {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .atlas-person-setup-picker {
-    grid-column: 1 / -1;
-  }
-
-  .atlas-favorites-collection-header {
     grid-template-columns: 1fr;
   }
 
@@ -4487,10 +4939,6 @@ button {
 
   .atlas-weekend-event-heading small {
     grid-column: 2;
-  }
-
-  .atlas-favorites-empty {
-    grid-template-columns: 1fr;
   }
 
   .atlas-favorites-grid {
@@ -4558,12 +5006,77 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .atlas-event-scrubber {
-    top: 8.8rem;
+  /* P3: below the desktop breakpoint the Light Bar becomes a horizontal
+   * band docked directly under the sticky chapter label. */
+  .atlas-chapter {
+    top: 8.2rem;
+    width: 100%;
+    margin-bottom: 0;
+    border-bottom: 0;
   }
 
-  .atlas-lightbox-notes {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  .atlas-light-bar {
+    position: sticky;
+    z-index: 17;
+    top: 10.3rem;
+    right: auto;
+    height: auto;
+    margin-bottom: 1rem;
+    transform: none;
+  }
+
+  .atlas-light-bar-rail {
+    --rz-light-axis: to right;
+    flex-direction: row;
+    width: 100%;
+    height: 0.8rem;
+    box-shadow: none;
+  }
+
+  .atlas-light-bar:hover .atlas-light-bar-rail,
+  .atlas-light-bar:focus-within .atlas-light-bar-rail {
+    width: 100%;
+  }
+
+  .atlas-light-bar-segment {
+    min-height: 0;
+    min-width: 4px;
+  }
+
+  .atlas-light-bar-segment + .atlas-light-bar-segment {
+    border-top: 0;
+    border-left: 1px solid color-mix(in srgb, var(--rz-cream) 65%, transparent);
+  }
+
+  .atlas-light-bar-thumb {
+    top: -0.3rem;
+    right: auto;
+    bottom: -0.3rem;
+    left: var(--rz-light-thumb, 0%);
+    width: 0;
+    height: auto;
+    border-top: 0;
+    border-left: 2px solid var(--rz-ink);
+    transition: left var(--rz-dur-fast) var(--rz-ease-out);
+  }
+
+  .atlas-light-bar-thumb::before {
+    top: auto;
+    bottom: -0.15rem;
+    left: -3px;
+  }
+
+  .atlas-light-bar-rail input[type="range"] {
+    cursor: ew-resize;
+    writing-mode: horizontal-tb;
+  }
+
+  .atlas-light-bar-flag {
+    top: auto;
+    right: auto;
+    bottom: calc(100% + 0.45rem);
+    left: clamp(2.5rem, var(--rz-light-flag, 0%), calc(100% - 2.5rem));
+    transform: translateX(-50%);
   }
 
   .atlas-lightbox-shortcuts {
@@ -4572,28 +5085,34 @@ button {
 }
 
 @media (max-width: 720px) {
-  .atlas-filter-summary {
-    align-items: flex-start;
-    padding: 0.65rem 0;
+  /* P1: the control bar collapses to one row; actions become icon-only. */
+  .atlas-control-row {
+    min-height: 3rem;
+    gap: 0.55rem;
   }
 
-  .atlas-filter-summary-actions {
-    margin-right: -0.5rem;
+  .atlas-gallery-search {
+    flex: 1 1 auto;
+  }
+
+  .atlas-control-actions {
+    margin-right: -0.35rem;
   }
 
   .atlas-filter-action {
     min-height: 2.15rem;
-    padding-inline: 0.55rem;
+    padding-inline: 0.5rem;
     border-left: 0;
   }
 
-  .atlas-gallery-discovery {
-    grid-template-columns: 1fr;
-    gap: 0.55rem;
+  .atlas-filter-action > span:not(.atlas-filter-count) {
+    display: none;
   }
 
-  .atlas-active-filter {
-    max-width: min(18rem, 78vw);
+  /* Active filters stay visible through the Filters badge and panel; the
+   * chips would otherwise crush the single-row bar at phone widths. */
+  .atlas-active-filters {
+    display: none;
   }
 
   .atlas-filter-groups {
@@ -4607,10 +5126,19 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .atlas-event-scrubber {
-    top: 8.3rem;
-    grid-template-columns: minmax(6.5rem, 0.5fr) minmax(10rem, 1fr);
-    padding-inline: 0.7rem;
+  .atlas-chapter {
+    top: 7.8rem;
+    gap: 0.5rem;
+    padding: 0.38rem 0.7rem;
+  }
+
+  .atlas-chapter strong {
+    max-width: 9rem;
+    font-size: 0.88rem;
+  }
+
+  .atlas-light-bar {
+    top: 9.7rem;
   }
 
   .atlas-selection-bar {
@@ -4637,16 +5165,14 @@ button {
     justify-content: center;
   }
 
-  .atlas-lightbox {
-    padding: 0.65rem;
-  }
-
   .atlas-lightbox-header {
-    align-items: center;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding-top: 0.55rem;
   }
 
-  .atlas-lightbox-title h2 {
-    max-width: 12rem;
+  .atlas-lightbox-meta {
+    font-size: 0.56rem;
   }
 
   .atlas-lightbox-control {
@@ -4659,7 +5185,7 @@ button {
   }
 
   .atlas-lightbox-stage {
-    padding-inline: 2.25rem;
+    padding: 1.25rem 1rem;
   }
 
   .atlas-lightbox-arrow {
@@ -4667,19 +5193,33 @@ button {
     height: 3.5rem;
   }
 
+  .atlas-lightbox-arrow-prev {
+    left: 0.35rem;
+  }
+
+  .atlas-lightbox-arrow-next {
+    right: 0.35rem;
+  }
+
+  .atlas-lightbox-frame {
+    height: 2.7rem;
+  }
+
+  /* The notes panel becomes a bottom sheet within thumb reach. */
   .atlas-lightbox-notes {
-    grid-template-columns: 1fr;
-    gap: 0.8rem;
-    max-height: min(17rem, 36dvh);
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: min(70dvh, 30rem);
+    border-top: 1px solid color-mix(in srgb, var(--rz-cream) 14%, transparent);
+    border-left: 0;
+    transform: translateY(100%);
   }
 
-  .atlas-lightbox-memory {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .atlas-lightbox-margin-note {
-    padding-top: 0;
+  .atlas-lightbox-notes[data-open="true"] {
+    transform: none;
   }
 }
 
@@ -4708,6 +5248,24 @@ button {
     pointer-events: auto;
     opacity: 1;
     transform: none;
+  }
+
+  /* P2 acceptance: reduced motion disables the lightbox chrome fade. */
+  .atlas-lightbox[data-chrome-visible="false"] {
+    cursor: auto;
+  }
+
+  .atlas-lightbox[data-chrome-visible="false"] .atlas-lightbox-header,
+  .atlas-lightbox[data-chrome-visible="false"] .atlas-lightbox-arrow,
+  .atlas-lightbox[data-chrome-visible="false"] .atlas-lightbox-filmstrip {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition: none;
+  }
+
+  .atlas-lightbox-notes {
+    transition: none;
   }
 }
 
@@ -4908,7 +5466,7 @@ button {
 }
 
 .atlas-nyc-progress-numbers strong {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(1.5rem, 2.2vw, 2.1rem);
   font-weight: 410;
   letter-spacing: -0.04em;
@@ -5012,7 +5570,7 @@ button {
 .atlas-nyc-signoff p {
   margin: 0;
   color: var(--rz-ink);
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(2rem, 3.2vw, 3.2rem);
   font-style: italic;
 }
@@ -5076,7 +5634,7 @@ button {
 }
 
 .atlas-nyc-impact-stats strong {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: clamp(3.5rem, 7vw, 7.4rem);
   font-weight: 320;
   letter-spacing: -0.075em;
@@ -5104,7 +5662,7 @@ button {
 .atlas-nyc-impact-cta p {
   max-width: 36rem;
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: clamp(1.15rem, 1.8vw, 1.55rem);
   line-height: 1.55;
 }
@@ -5299,7 +5857,7 @@ button {
 }
 
 .atlas-submission-counts strong {
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-archive);
   font-size: 2.3rem;
   font-weight: 400;
 }
@@ -6006,7 +6564,7 @@ button {
 
 .atlas-catalog-empty p {
   margin: 0;
-  font-family: var(--rz-font-display);
+  font-family: var(--rz-font-body);
   font-size: 1.8rem;
 }
 
@@ -6988,5 +7546,128 @@ button {
     animation: none;
     transform: none;
     transition: none;
+  }
+}
+
+/*
+ * Reduced-motion backstop (P8).
+ *
+ * The site had seven scoped prefers-reduced-motion blocks, but an audit of
+ * the rendered pages found 74 elements on /photos still animating transform
+ * with the preference set: the photo card lift, its inner image scale, and
+ * the hero's primary link. Those rules were added over time and each missed
+ * the opt-out.
+ *
+ * This block is deliberately last in the file and deliberately blunt: it
+ * kills movement only. Colour, border and opacity transitions are left alone
+ * on purpose -- the preference is about motion, and making every hover state
+ * snap is a worse experience than a 200ms tint, not a better one.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .atlas-photo-card,
+  .atlas-photo-card:hover,
+  .atlas-photo-card:focus-within,
+  /* Matches the specificity of `.atlas-photo-card img`, which carries its
+   * own !important transition: an important declaration only loses to a
+   * more specific important one, so a bare class cannot override it. */
+  .atlas-photo-card img,
+  .atlas-photo-card:hover img,
+  .atlas-photo-image-target,
+  .atlas-photo-image-placeholder,
+  .atlas-primary-link,
+  .atlas-secondary-link,
+  .atlas-text-link,
+  .archive-outline-link {
+    transform: none !important;
+    transition-property: opacity, color, background-color, border-color,
+      box-shadow !important;
+  }
+}
+
+/*
+ * Opening motion (P8).
+ *
+ * The lightbox used to materialise over the grid, which gave a guest no sense
+ * of which frame they had just opened. It now expands out of the clicked
+ * card: GalleryShell writes that card's centre and relative width onto the
+ * root as --rz-open-x / --rz-open-y / --rz-open-scale before the state
+ * change, and the stage grows from that origin. The backdrop fades on its own
+ * shorter curve so the photograph arrives before the darkness finishes.
+ *
+ * Falls back to a centred zoom when the origin variables are absent (deep
+ * link straight to /photos/[id], or a card the virtualizer had unmounted).
+ */
+@keyframes rz-lightbox-in {
+  from {
+    opacity: 0;
+    transform: translate(
+        calc((var(--rz-open-x, 50vw) - 50vw) * 0.85),
+        calc((var(--rz-open-y, 50vh) - 50vh) * 0.85)
+      )
+      scale(var(--rz-open-scale, 0.86));
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes rz-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.atlas-lightbox {
+  animation: rz-backdrop-in var(--rz-dur-fast) var(--rz-ease-out) both;
+}
+
+.atlas-lightbox-stage {
+  animation: rz-lightbox-in var(--rz-dur-med) var(--rz-ease-out) both;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+/*
+ * Grid entrance: the first screenful rises in a short stagger so the archive
+ * assembles rather than snapping in. Strictly capped at the first twelve
+ * cards -- every later row is already on screen by the time a guest scrolls
+ * to it, and animating 1,721 cards would put work on the scroll path.
+ *
+ * The delay is presentational only: cards are visible and clickable from
+ * frame one (opacity animates from 0.001, not 0), so nothing here sits on the
+ * critical path to the first photograph.
+ */
+@keyframes rz-card-in {
+  from {
+    opacity: 0.001;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.atlas-photo-grid-first-paint .atlas-photo-card:nth-child(-n + 12) {
+  animation: rz-card-in var(--rz-dur-med) var(--rz-ease-out) both;
+}
+
+.atlas-photo-grid-first-paint .atlas-photo-card:nth-child(3n + 2) {
+  animation-delay: 60ms;
+}
+
+.atlas-photo-grid-first-paint .atlas-photo-card:nth-child(3n + 3) {
+  animation-delay: 120ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-lightbox,
+  .atlas-lightbox-stage,
+  .atlas-photo-grid-first-paint .atlas-photo-card:nth-child(-n + 12) {
+    animation: none !important;
   }
 }

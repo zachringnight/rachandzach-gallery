@@ -13,14 +13,17 @@ import {
   GALLERY_SEARCH_URL_PARAM,
   type GalleryFilterState,
 } from "@/lib/gallery/client-types";
+import {
+  loadPersonOverrides,
+  surfaceGalleryFacets,
+} from "@/lib/people/overrides";
 import { GalleryShell } from "@/components/gallery/GalleryShell";
-import { siteConfig } from "@/content/site";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "The Archive | Rach & Zach",
-  description: "Search, select, download, and save the original photographs.",
+  description: "Search, select, download, and save the original photos.",
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -86,22 +89,17 @@ export default async function PhotosPage({
     }
   }
 
-  const initialPage = await serializeGalleryPage(page, client);
+  const [initialPage, overrides] = await Promise.all([
+    serializeGalleryPage(page, client),
+    loadPersonOverrides(client),
+  ]);
 
   return (
     <section className="atlas-guest-page atlas-photos-page">
-      <header className="atlas-guest-header">
-        <div>
-          <p className="atlas-kicker">Browse and save</p>
-          <h1>The archive</h1>
-        </div>
-        <p>{siteConfig.voice.galleryIntro}</p>
-        <span aria-hidden="true">Search · Select · Save</span>
-      </header>
-
       <GalleryShell
+        heading="The archive"
         initialPage={initialPage}
-        facets={facets}
+        facets={surfaceGalleryFacets(facets, overrides)}
         initialFilters={filterStateFromParams(params)}
         initialPhotoId={first(params.photo)}
       />

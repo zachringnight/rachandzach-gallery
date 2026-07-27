@@ -21,6 +21,7 @@ import {
   verifyGuestSession,
 } from "@/lib/auth/guest-session";
 import { applySecurityHeaders } from "@/lib/auth/security-headers";
+import { isOpenAccess } from "@/lib/auth/open-access";
 
 /** @supabase/ssr auth cookie: sb-<ref>-auth-token, possibly chunked (.0, .1). */
 const SUPABASE_AUTH_COOKIE = /^sb-[^=]+-auth-token(\.\d+)?$/;
@@ -50,8 +51,14 @@ function deny(request: NextRequest): NextResponse {
   return applySecurityHeaders(NextResponse.redirect(enterUrl));
 }
 
+
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+
+  if (isOpenAccess()) {
+    return applySecurityHeaders(NextResponse.next());
+  }
 
   if (isPublicRoute(pathname)) {
     return applySecurityHeaders(NextResponse.next());

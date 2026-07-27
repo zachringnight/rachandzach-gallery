@@ -108,6 +108,93 @@ have RLS disabled. That is a cross-application project concern, not a wedding
 release blocker. Do not change those unrelated tables without tracing their
 owners, readers, and writers.
 
+On 2026-07-26 the additive `rachandzach_person_overrides` table was applied to
+the live project (migration `20260726101500_rachandzach_person_overrides.sql`;
+RLS on, zero policies, per-object revokes, service-role only). It backs the
+`/admin/faces` guest manager: hand-picked Find me face crops, display-name
+corrections, soft hiding from guest pickers, and admin-added people. No
+existing table, policy, function, or bucket was altered, and the table was
+left empty after verification. The export round trip back to committed source
+is `scripts/export-face-overrides.mjs` followed by
+`scripts/build-face-thumbnails.mjs` (see each script's header).
+
+Later on 2026-07-26, admin-added people were upgraded to full catalog
+identities. "Add a person" on `/admin/faces` now creates a real
+`rachandzach_people` row (catalog first, override second), so added people
+can be tagged from `/admin/catalog` and the review screens, appear in Find
+me, and own a working `/{slug}` personalized page. The DML-only backfill
+migration `20260726180000_rachandzach_added_people_catalog_backfill.sql` was
+applied to the live project (a no-op there: the overrides table held zero
+rows). Remove semantics: pipeline-matched people are only ever soft-hidden. An added
+person is deleted outright only while **nothing durable references the
+identity**, which means BOTH zero `rachandzach_photo_people` rows and zero
+person-keyed `rachandzach_guest_favorites` rows; if either exists the removal
+degrades to the same soft hide. The favorites condition matters because
+favorites key on `(owner_kind = "person", owner_key = slug)` independently of
+photo tags, so deleting the catalog row would strand a guest's shortlist.
+
+Creation is atomic too: `rachandzach_add_person(p_slug, p_display_name,
+p_actor)`, added by `20260726233000_rachandzach_add_person.sql` and **applied
+to the live project**, writes the catalog row and the override row in one
+transaction. The previous sequence -- catalog insert, override insert, then an
+unconditional compensating delete in a separate transaction -- could destroy a
+tag committed inside that window via the foreign key cascade, which was
+reproduced against the live database before the fix. No client-side delete of
+`rachandzach_people` remains in either path.
+
+The removal decision is made atomically inside
+`rachandzach_remove_added_person(p_slug)`, added by
+`20260726213000_rachandzach_remove_added_person.sql`, which **was applied to
+the live project** (additive: one `rachandzach_` function, pinned
+`search_path`, per-object revokes, `service_role`-only execute). The RPC takes
+the catalog row `FOR UPDATE` before checking, so a tag committed concurrently
+can no longer be destroyed by the foreign key cascade -- the previous
+check-then-delete pair could and did, reproducibly, destroy one. No
+client-side delete of `rachandzach_people` remains. Because the UI cannot see
+server-side favorites, the confirm dialog states both possible outcomes rather
+than one certainty; the server outcome is always one of the two.
+
+The `overrideOnly` guest-surface flag was removed along with the suppressed
+personalized-route link. A guest whose saved Find me person no longer resolves
+is treated as holding a stale preference and is returned to the picker, since
+hidden people deliberately remain resolvable and absence is therefore
+unambiguous.
+
+### TEMPORARY: Preview is unauthenticated (2026-07-26)
+
+**The Preview environment currently has no access control at all, and it talks
+to the live database.**
+
+Two changes, both deliberate and both Zach's call, made to get the guest
+manager usable while magic-link sign-in is broken:
+
+1. `OPEN_ACCESS=1` is set on the Vercel **Preview** environment. It bypasses
+   the guest password (`src/proxy.ts`, `requireGalleryAccess`) and returns a
+   synthetic administrator from `requireAdmin()`. See
+   `src/lib/auth/open-access.ts`.
+2. Vercel **Deployment Protection (`ssoProtection`) was disabled** for the
+   project so Rachel could open the preview without a Vercel account.
+
+**Exposure while this stands:** anyone with a preview URL can read all 1,721
+photographs, the guest face crops, every guest name and each person's
+`/{slug}` page, and can *write* -- renaming, hiding and removing guests and
+moderating uploads -- against the **live Supabase project**, not a copy.
+
+Production is protected by construction: `isOpenAccess()` also requires
+`VERCEL_ENV !== "production"`, so setting the variable there has no effect.
+That is enforced in code, not by convention.
+
+**Retirement, required before this is considered finished:**
+
+- [ ] Add the gallery URLs to Supabase → Authentication → Redirect URLs
+      (`https://rachandzach.com/auth/callback`, the `www` variant, the preview
+      origin, `http://localhost:4319/auth/callback`). No gallery URL is
+      currently listed, which is *why* magic links land on the unrelated NWSL
+      project. **Do not change Site URL** -- it belongs to that other product.
+- [ ] Remove the `OPEN_ACCESS` variable from Vercel Preview and delete
+      `src/lib/auth/open-access.ts` along with its three call sites.
+- [ ] Re-enable `ssoProtection` (`all_except_custom_domains`).
+
 ## Next actions
 
 | Priority | Owner | Target | Action and definition of done |

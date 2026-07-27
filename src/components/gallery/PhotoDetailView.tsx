@@ -16,6 +16,14 @@ export function PhotoDetailView({ detail }: { detail: ClientPhotoDetail }) {
     <Lightbox
       photo={detail.photo}
       onClose={() => router.push("/photos")}
+      filmstrip={
+        detail.related.length > 0
+          ? {
+              photos: [detail.photo, ...detail.related],
+              onSelect: (photoId) => router.push(`/photos/${photoId}`),
+            }
+          : undefined
+      }
       footer={
         // The memories wall renders inside Lightbox itself (Round Two), so
         // this footer slot carries only the related strip.

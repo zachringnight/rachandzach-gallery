@@ -139,12 +139,15 @@ export const siteConfig: SiteConfig = {
   ],
   voice: {
     eyebrow: "Private photo archive",
-    heroTitle: "The photographs are ready.",
+    // Not "the photos are ready": they have been ready for a long time, and
+    // a headline that announces an event goes stale the day after it does.
+    // This one still reads right in five years.
+    heroTitle: "The photo gallery.",
     heroBody:
       "Find the ones you are in, build a private shortlist, and save the originals wherever you keep them.",
     galleryIntro:
-      "Search, filter, select, download, or save the original photographs to your own cloud account.",
+      "Search, filter, select, download, or save the original photos to your own cloud account.",
     uploadIntro:
-      "Contribute the photographs only you have. Every submission is reviewed before it joins the archive.",
+      "Contribute the photos only you have. Every submission is reviewed before it joins the archive.",
   },
 };

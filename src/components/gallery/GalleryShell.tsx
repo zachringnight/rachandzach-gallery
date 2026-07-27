@@ -5,16 +5,26 @@ import type {
   ClientGalleryFacets,
   ClientGalleryPage,
   ClientPhoto,
+  ClientTimeline,
   GalleryFilterState,
 } from "@/lib/gallery/client-types";
 import {
   EMPTY_FILTER_STATE,
   GALLERY_SEARCH_URL_PARAM,
 } from "@/lib/gallery/client-types";
+import { collectWholeBurstIds } from "@/lib/gallery/grouping";
+import {
+  createJumpController,
+  type JumpController,
+} from "@/lib/gallery/jump";
 import { FilterBar } from "@/components/gallery/FilterBar";
+import { LightBar } from "@/components/gallery/LightBar";
 import { SelectionBar } from "@/components/gallery/SelectionBar";
 import { useSelection } from "@/components/gallery/useSelection";
-import { VirtualPhotoGrid } from "@/components/gallery/VirtualPhotoGrid";
+import {
+  VirtualPhotoGrid,
+  type VirtualPhotoGridHandle,
+} from "@/components/gallery/VirtualPhotoGrid";
 import { Lightbox } from "@/components/gallery/Lightbox";
 import { DownloadSelectionButton } from "@/components/downloads/DownloadSelectionButton";
 import { SavePhotosButton } from "@/components/downloads/SavePhotosButton";
@@ -29,12 +39,23 @@ export interface GalleryShellProps {
   initialFilters: GalleryFilterState;
   initialPhotoId: string | null;
   toolbarSlot?: React.ReactNode;
+  /**
+   * Page headline rendered as the single compact header above the control
+   * bar, with the live result count beside it (P1: one headline per page).
+   */
+  heading?: string;
 }
 
 const PAGE_LIMIT = 60;
+/** Larger pages while the Light Bar races toward a far scrub target. */
+const JUMP_PAGE_LIMIT = 100;
 const RENEW_LEAD_MS = 60_000;
 
 type LoadState = "idle" | "loading" | "error-session" | "error-network";
+
+type PageFetchResult =
+  | { status: "appended"; photos: ClientPhoto[] }
+  | { status: "busy" | "end" | "stale" };
 
 function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
   const params = new URLSearchParams();
@@ -51,7 +72,7 @@ function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
 
 function apiUrl(
   filters: GalleryFilterState,
-  extra: { cursor?: string | null; ids?: string[] } = {},
+  extra: { cursor?: string | null; ids?: string[]; limit?: number } = {},
 ): string {
   const params = new URLSearchParams();
   if (extra.ids && extra.ids.length > 0) {
@@ -64,7 +85,7 @@ function apiUrl(
   if (filters.orientation) params.set("orientation", filters.orientation);
   if (filters.source) params.set("source", filters.source);
   params.set("sort", filters.sort);
-  params.set("limit", String(PAGE_LIMIT));
+  params.set("limit", String(extra.limit ?? PAGE_LIMIT));
   if (extra.cursor) params.set("cursor", extra.cursor);
   return `/api/gallery?${params.toString()}`;
 }
@@ -99,6 +120,7 @@ export function GalleryShell({
   initialFilters,
   initialPhotoId,
   toolbarSlot,
+  heading,
 }: GalleryShellProps) {
   const [filters, setFilters] = useState<GalleryFilterState>(initialFilters);
   const [photos, setPhotos] = useState<ClientPhoto[]>(initialPage.photos);
@@ -111,6 +133,16 @@ export function GalleryShell({
   const [activePhotoId, setActivePhotoId] = useState<string | null>(
     initialPhotoId,
   );
+  // The archive's light timeline (P3) and contact-sheet state (P4).
+  const [timeline, setTimeline] = useState<ClientTimeline | null>(
+    initialPage.timeline ?? null,
+  );
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [expandedBursts, setExpandedBursts] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
+  const [jumping, setJumping] = useState(false);
+  const gridRef = useRef<VirtualPhotoGridHandle | null>(null);
   const selection = useSelection();
   const selectedIds = useMemo(
     () => Array.from(selection.selected),
@@ -121,6 +153,18 @@ export function GalleryShell({
   const requestSeq = useRef(0);
   const requestBusyRef = useRef(false);
   const filtersRef = useRef(filters);
+  // Live mirrors for the Light Bar's paging jump loop and the contact-sheet
+  // burst completer.
+  const photosCountRef = useRef(photos.length);
+  const photosRef = useRef<ClientPhoto[]>(photos);
+  const cursorRef = useRef(cursor);
+  useEffect(() => {
+    photosCountRef.current = photos.length;
+    photosRef.current = photos;
+  }, [photos]);
+  useEffect(() => {
+    cursorRef.current = cursor;
+  }, [cursor]);
 
   const runQuery = useCallback(
     async (next: GalleryFilterState) => {
@@ -140,9 +184,15 @@ export function GalleryShell({
         const body: ClientGalleryPage = await res.json();
         if (seq !== requestSeq.current) return;
         setPhotos(body.photos);
+        photosRef.current = body.photos;
+        photosCountRef.current = body.photos.length;
         setCursor(body.nextCursor);
+        cursorRef.current = body.nextCursor;
         setTotal(body.total);
         setExpiresAt(body.signedUrlExpiresAt);
+        setTimeline(body.timeline ?? null);
+        setExpandedBursts(new Set<string>());
+        setCurrentIndex(0);
         requestBusyRef.current = false;
         setState("idle");
       } catch {
@@ -155,41 +205,159 @@ export function GalleryShell({
     [],
   );
 
-  const loadMore = useCallback(async () => {
-    if (!cursor || requestBusyRef.current) return;
-    const seq = requestSeq.current;
-    requestBusyRef.current = true;
-    setState("loading");
-    try {
-      const res = await fetchWithRetry(apiUrl(filters, { cursor }), {
-        cache: "no-store",
-      });
-      if (res.status === 401) {
+  /**
+   * Fetch and append the next page. Shared by grid tail-loading and Light
+   * Bar jumps. "busy" means another request holds the wire (retryable);
+   * "end" means the last page is already loaded; "stale" covers filter
+   * changes and failures (both end a jump).
+   */
+  const fetchNextPage = useCallback(
+    async (limit: number): Promise<PageFetchResult> => {
+      const nextCursor = cursorRef.current;
+      if (!nextCursor) return { status: "end" };
+      if (requestBusyRef.current) return { status: "busy" };
+      const seq = requestSeq.current;
+      requestBusyRef.current = true;
+      setState("loading");
+      try {
+        const res = await fetchWithRetry(
+          apiUrl(filtersRef.current, { cursor: nextCursor, limit }),
+          { cache: "no-store" },
+        );
+        if (res.status === 401) {
+          if (seq === requestSeq.current) {
+            requestBusyRef.current = false;
+            setState("error-session");
+          }
+          return { status: "stale" };
+        }
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const body: ClientGalleryPage = await res.json();
+        if (seq !== requestSeq.current) return { status: "stale" }; // filters changed
+        setPhotos((prev) => {
+          const seen = new Set(prev.map((p) => p.id));
+          const next = [...prev, ...body.photos.filter((p) => !seen.has(p.id))];
+          photosCountRef.current = next.length;
+          photosRef.current = next;
+          return next;
+        });
+        setCursor(body.nextCursor);
+        cursorRef.current = body.nextCursor;
+        setTotal(body.total);
+        setExpiresAt(body.signedUrlExpiresAt);
+        if (body.timeline) setTimeline(body.timeline);
+        requestBusyRef.current = false;
+        setState("idle");
+        return { status: "appended", photos: body.photos };
+      } catch {
         if (seq === requestSeq.current) {
           requestBusyRef.current = false;
-          setState("error-session");
+          setState("error-network");
         }
+        return { status: "stale" };
+      }
+    },
+    [],
+  );
+
+  const loadMore = useCallback(async () => {
+    await fetchNextPage(PAGE_LIMIT);
+  }, [fetchNextPage]);
+
+  /**
+   * Light Bar scrub target (P3). Anything already loaded scrolls
+   * immediately; a farther target pages toward it first, keeping the
+   * loaded list a contiguous prefix of the archive order. Rapid re-scrubs
+   * overlap, so the paging loops live in a generation-tokened controller
+   * (see src/lib/gallery/jump.ts): only the guest's LATEST jump may land,
+   * cancel, or idle the rail -- an earlier loop that finishes late can no
+   * longer clear the newer target and strand the grid at a stale index.
+   */
+  // Created lazily in an effect (never during render: the io closures read
+  // live refs). Jumps only start from pointer/keyboard handlers, which
+  // cannot fire before the first effect pass.
+  const jumpControllerRef = useRef<JumpController | null>(null);
+  useEffect(() => {
+    jumpControllerRef.current ??= createJumpController({
+      loadedCount: () => photosCountRef.current,
+      hasMore: () => cursorRef.current !== null,
+      requestSeq: () => requestSeq.current,
+      fetchNextPage: () => fetchNextPage(JUMP_PAGE_LIMIT),
+      waitForWire: () => new Promise((resolve) => setTimeout(resolve, 150)),
+      scrollTo: (photoIndex) => gridRef.current?.scrollToIndex(photoIndex),
+      // Land a deferred jump only after the grid has committed the rows
+      // that contain it (scrolling before the re-render would target
+      // stale layout).
+      scrollAfterCommit: (photoIndex) =>
+        requestAnimationFrame(() =>
+          gridRef.current?.scrollToIndex(photoIndex),
+        ),
+      setBusy: setJumping,
+    });
+  }, [fetchNextPage]);
+  useEffect(() => {
+    jumpControllerRef.current?.notifyLoaded();
+  }, [photos.length]);
+
+  const jumpToIndex = useCallback((photoIndex: number) => {
+    void jumpControllerRef.current?.jumpTo(photoIndex);
+  }, []);
+
+  const toggleBurst = useCallback((burstId: string) => {
+    setExpandedBursts((current) => {
+      const next = new Set(current);
+      if (next.has(burstId)) next.delete(burstId);
+      else next.add(burstId);
+      return next;
+    });
+  }, []);
+
+  /**
+   * Selecting a stack selects the WHOLE burst; selecting it again deselects.
+   * A burst that crosses a pagination boundary only has its leading frames
+   * loaded, while the stack card promises the full size -- so before such a
+   * stack counts as selected, page the rest of the burst in and select every
+   * frame at once. If paging fails, nothing is selected (the network error
+   * state surfaces); the selected count must never exceed what download,
+   * ZIP, Drive, and Dropbox will actually receive.
+   */
+  const toggleBurstSelection = useCallback(
+    ({
+      burstId,
+      photoIds,
+      size,
+    }: {
+      burstId: string;
+      photoIds: string[];
+      size: number;
+    }) => {
+      const allSelected =
+        photoIds.length > 0 &&
+        photoIds.every((id) => selection.selected.has(id));
+      if (allSelected) {
+        for (const id of photoIds) selection.toggle(id);
         return;
       }
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const body: ClientGalleryPage = await res.json();
-      if (seq !== requestSeq.current) return; // filters changed; drop this page
-      setPhotos((prev) => {
-        const seen = new Set(prev.map((p) => p.id));
-        return [...prev, ...body.photos.filter((p) => !seen.has(p.id))];
-      });
-      setCursor(body.nextCursor);
-      setTotal(body.total);
-      setExpiresAt(body.signedUrlExpiresAt);
-      requestBusyRef.current = false;
-      setState("idle");
-    } catch {
-      if (seq === requestSeq.current) {
-        requestBusyRef.current = false;
-        setState("error-network");
+      if (photoIds.length >= size) {
+        selection.selectAllVisible(photoIds);
+        return;
       }
-    }
-  }, [cursor, filters]);
+      const seq = requestSeq.current;
+      void collectWholeBurstIds(burstId, size, {
+        loadedPhotos: () => photosRef.current,
+        hasMore: () => cursorRef.current !== null,
+        fetchNextPage: () => fetchNextPage(PAGE_LIMIT),
+        isStale: () => requestSeq.current !== seq,
+        waitForWire: () =>
+          new Promise((resolve) => setTimeout(resolve, 150)),
+      }).then((ids) => {
+        if (ids && requestSeq.current === seq) {
+          selection.selectAllVisible(ids);
+        }
+      });
+    },
+    [fetchNextPage, selection],
+  );
 
   const applyFilters = useCallback(
     (patch: Partial<GalleryFilterState>) => {
@@ -213,6 +381,23 @@ export function GalleryShell({
   // Lightbox open/close with browser history.
   const openPhoto = useCallback(
     (photoId: string) => {
+      // Hand the lightbox the rect of the card that was clicked so it can
+      // expand out of that frame rather than materialising over it. Read
+      // synchronously here: once state changes the card may be unmounted by
+      // the virtualizer.
+      const card = document.querySelector<HTMLElement>(
+        `[data-photo-id="${CSS.escape(photoId)}"]`,
+      );
+      if (card) {
+        const r = card.getBoundingClientRect();
+        const root = document.documentElement;
+        root.style.setProperty("--rz-open-x", `${Math.round(r.left + r.width / 2)}px`);
+        root.style.setProperty("--rz-open-y", `${Math.round(r.top + r.height / 2)}px`);
+        root.style.setProperty(
+          "--rz-open-scale",
+          `${Math.max(0.12, Math.min(r.width / window.innerWidth, 0.9)).toFixed(3)}`,
+        );
+      }
       window.history.pushState({}, "", pageUrl(filters, photoId));
       setActivePhotoId(photoId);
     },
@@ -287,6 +472,15 @@ export function GalleryShell({
 
   const showEmpty = state === "idle" && photos.length === 0;
 
+  // Sticky chapter label (P3): where the guest is in the day right now.
+  const chapterPhoto =
+    photos.length > 0
+      ? photos[Math.max(0, Math.min(currentIndex, photos.length - 1))]
+      : null;
+  const chapterClock = chapterPhoto
+    ? formatChapterClock(chapterPhoto.capturedAt)
+    : null;
+
   const favoriteSelected = useCallback(() => {
     for (const photoId of selectedIds) {
       if (!favoriteStore.has(photoId)) favoriteStore.toggle(photoId);
@@ -295,6 +489,16 @@ export function GalleryShell({
 
   return (
     <div className="atlas-gallery-shell">
+      {heading ? (
+        <header className="atlas-page-bar">
+          <h1>{heading}</h1>
+          <p className="atlas-page-bar-count" aria-live="polite">
+            <strong>{total.toLocaleString()}</strong>
+            {total === 1 ? " photo" : " photos"}
+          </p>
+        </header>
+      ) : null}
+
       <FilterBar
         facets={facets}
         filters={filters}
@@ -304,21 +508,16 @@ export function GalleryShell({
         selecting={selection.selecting}
         selectedCount={selectedIds.length}
         onStartSelection={selection.start}
+        momentSearchSlot={
+          featureFlags.momentSearch ? (
+            <MomentSearch events={facets.events} />
+          ) : undefined
+        }
       />
 
       <div className="atlas-gallery-main">
-        {featureFlags.momentSearch || toolbarSlot ? (
-          <div className="atlas-gallery-toolbar">
-            {featureFlags.momentSearch ? (
-              <details className="atlas-search-disclosure">
-                <summary>Search the moments</summary>
-                <div className="atlas-search-disclosure-body">
-                  <MomentSearch events={facets.events} />
-                </div>
-              </details>
-            ) : null}
-            {toolbarSlot}
-          </div>
+        {toolbarSlot ? (
+          <div className="atlas-gallery-toolbar">{toolbarSlot}</div>
         ) : null}
 
         {state === "error-session" ? (
@@ -349,17 +548,48 @@ export function GalleryShell({
             </button>
           </div>
         ) : (
-          <VirtualPhotoGrid
-            photos={photos}
-            hasMore={cursor !== null}
-            loading={state === "loading"}
-            onOpenPhoto={openPhoto}
-            onLoadMore={() => void loadMore()}
-            selecting={selection.selecting}
-            selected={selection.selected}
-            onToggleSelection={selection.toggle}
-            onStartSelection={(photoId) => selection.toggle(photoId)}
-          />
+          <>
+            {chapterPhoto ? (
+              <div className="atlas-chapter">
+                <span className="atlas-chapter-kicker">Now in</span>
+                <strong>{chapterPhoto.eventName}</strong>
+                {chapterClock ? (
+                  <span className="atlas-chapter-clock">{chapterClock}</span>
+                ) : null}
+                <span className="atlas-chapter-position">
+                  {String(
+                    Math.min(currentIndex + 1, total),
+                  ).padStart(String(total).length, "0")}
+                  &thinsp;/&thinsp;{total}
+                </span>
+              </div>
+            ) : null}
+
+            <LightBar
+              timeline={timeline}
+              photos={photos}
+              currentIndex={currentIndex}
+              onJump={jumpToIndex}
+              jumping={jumping}
+            />
+
+            <VirtualPhotoGrid
+              ref={gridRef}
+              photos={photos}
+              hasMore={cursor !== null}
+              loading={state === "loading"}
+              onOpenPhoto={openPhoto}
+              onLoadMore={() => void loadMore()}
+              selecting={selection.selecting}
+              selected={selection.selected}
+              onToggleSelection={selection.toggle}
+              onStartSelection={(photoId) => selection.toggle(photoId)}
+              expandedBursts={expandedBursts}
+              onToggleBurst={toggleBurst}
+              onToggleBurstSelection={toggleBurstSelection}
+              onFirstVisiblePhotoChange={setCurrentIndex}
+            />
+          </>
         )}
       </div>
 
@@ -395,6 +625,7 @@ export function GalleryShell({
           onClose={closePhoto}
           position={activeIndex + 1}
           total={total}
+          filmstrip={{ photos, onSelect: selectPhoto }}
           previousPhoto={
             activeIndex > 0 ? photos[activeIndex - 1] : undefined
           }
@@ -419,6 +650,27 @@ export function GalleryShell({
       ) : null}
     </div>
   );
+}
+
+/**
+ * Wall-clock label for the chapter strip, in the wedding's timezone
+ * (matching the lightbox caption's formatting).
+ */
+function formatChapterClock(capturedAt: string | null): string | null {
+  if (!capturedAt) return null;
+  const parsed = new Date(capturedAt);
+  if (Number.isNaN(parsed.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Los_Angeles",
+    }).format(parsed);
+  } catch {
+    // A runtime without the requested IANA zone throws here; the chapter
+    // clock is decoration and must not take the gallery down with it.
+    return null;
+  }
 }
 
 function ErrorState({

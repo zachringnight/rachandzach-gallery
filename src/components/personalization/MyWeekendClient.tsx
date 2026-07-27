@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
+import type { ClientFaceDirectory } from "@/lib/people/face-types";
 import {
   clearMyWeekendPreference,
   getMyWeekendPreference,
@@ -12,7 +13,16 @@ import { MyWeekendSetup } from "@/components/personalization/MyWeekendSetup";
 import { MyWeekendGallery } from "@/components/personalization/MyWeekendGallery";
 
 export interface MyWeekendClientProps {
+  /** The picker roster: hidden people out, renames applied. */
   people: ClientGalleryFacets["people"];
+  /**
+   * Name resolution for a saved selection, hidden people included: hiding
+   * is picker-only, so a guest who already chose themselves must keep
+   * resolving to their real name even after being hidden from the picker.
+   */
+  identities: { slug: string; displayName: string }[];
+  /** How to draw each face; built server-side, never bundled. */
+  faces: ClientFaceDirectory;
 }
 
 /**
@@ -26,7 +36,11 @@ export interface MyWeekendClientProps {
  * deliberately client-only (no cookie, no server round trip to learn who is
  * asking), so this switch has to live in a client component somewhere.
  */
-export function MyWeekendClient({ people }: MyWeekendClientProps) {
+export function MyWeekendClient({
+  people,
+  identities,
+  faces,
+}: MyWeekendClientProps) {
   // undefined = not yet hydrated from localStorage. Deliberately NOT a
   // useState lazy initializer: that would run during SSR too (no real
   // localStorage there -> always null) and again on the client during
@@ -65,15 +79,41 @@ export function MyWeekendClient({ people }: MyWeekendClientProps) {
   }
 
   if (personSlug === null) {
-    return <MyWeekendSetup people={people} onSelect={handleSelect} />;
+    return (
+      <MyWeekendSetup
+        people={people}
+        faces={faces}
+        onSelect={handleSelect}
+      />
+    );
   }
 
-  const person = people.find((candidate) => candidate.slug === personSlug);
+  // Resolve from identities, not the picker roster: a hidden person's saved
+  // selection must still land on their own name.
+  const person = identities.find((candidate) => candidate.slug === personSlug);
+
+  // No identity at all means the saved slug is stale, not hidden -- hidden
+  // people are in `identities` precisely so they still resolve. The realistic
+  // case is a guest who picked an admin-added person before that person was
+  // removed: the preference lives only in this browser, so nothing cleaned it
+  // up. Rendering on would have given them a page titled "Guest's photos" with
+  // a link to a route that 404s. Drop the stale preference and hand them back
+  // the picker instead.
+  if (!person) {
+    clearMyWeekendPreference();
+    return (
+      <MyWeekendSetup people={people} faces={faces} onSelect={handleSelect} />
+    );
+  }
+
   return (
     <MyWeekendGallery
       personSlug={personSlug}
-      personName={person?.displayName ?? "Guest"}
+      personName={person.displayName}
       onChangePerson={handleChangePerson}
+      // Every surfaced person is a catalog identity (admin additions get a
+      // rachandzach_people row at creation), so the personalized route
+      // resolves for all of them.
       personalPageHref={`/${personSlug}`}
     />
   );

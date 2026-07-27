@@ -37,6 +37,57 @@ export interface ClientPhoto {
   } | null;
   /** Ordered small -> large; empty if none could be signed. */
   previews: ClientPreview[];
+  /**
+   * Dominant light sampled from the photograph itself at import/build time
+   * (design upgrade P3). Null when no sample exists (e.g. a recently
+   * approved guest upload).
+   */
+  light?: ClientPhotoLight | null;
+  /**
+   * Contact-sheet burst membership (design upgrade P4): assigned by the
+   * server over the full sorted result set, so pagination windows always
+   * agree. Absent/null for photos that are not part of a multi-frame burst.
+   */
+  burst?: ClientBurst | null;
+}
+
+export interface ClientPhotoLight {
+  /** '#rrggbb', sampled from the photograph. */
+  tint: string;
+  /** Mean relative luminance, 0-1. */
+  lum: number;
+}
+
+export interface ClientBurst {
+  /** Stable burst id: the id of the burst's first frame in sort order. */
+  id: string;
+  /** This frame's position within the burst, 0-based. */
+  index: number;
+  /** Total frames in the burst within the current result set. */
+  size: number;
+}
+
+/** One Light Bar gradient stop, averaged from real photo light. */
+export interface ClientTimelineStop {
+  /** Position within the segment, 0-1. */
+  at: number;
+  tint: string;
+  lum: number;
+}
+
+export interface ClientTimelineSegment {
+  slug: string;
+  name: string;
+  /** Index of the segment's first photo in the full sorted result set. */
+  start: number;
+  count: number;
+  stops: ClientTimelineStop[];
+}
+
+/** The whole filtered archive mapped onto the arc of the day (P3). */
+export interface ClientTimeline {
+  total: number;
+  segments: ClientTimelineSegment[];
 }
 
 export interface ClientGalleryPage {
@@ -44,11 +95,23 @@ export interface ClientGalleryPage {
   nextCursor: string | null;
   total: number;
   signedUrlExpiresAt: string;
+  /** Null for exact-id lookups, which have no archive order to map. */
+  timeline?: ClientTimeline | null;
 }
 
 export interface ClientGalleryFacets {
   events: { slug: string; name: string; count: number }[];
-  people: { slug: string; displayName: string; count: number }[];
+  people: {
+    slug: string;
+    displayName: string;
+    count: number;
+  }[];
+  /**
+   * Name resolution for people the pickers no longer offer (hiding is
+   * picker-only: a hidden person's filter and tags keep working, so labels
+   * must still resolve). Names only, never counts.
+   */
+  identities?: { slug: string; displayName: string }[];
 }
 
 export interface ClientPhotoDetail {

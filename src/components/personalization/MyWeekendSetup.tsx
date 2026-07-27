@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
+import type { ClientFaceDirectory } from "@/lib/people/face-types";
 import { PersonPicker } from "@/components/gallery/PersonPicker";
 
 export interface MyWeekendSetupProps {
   people: ClientGalleryFacets["people"];
+  faces: ClientFaceDirectory;
   onSelect: (personSlug: string) => void;
 }
 
@@ -16,7 +18,7 @@ export interface MyWeekendSetupProps {
  * "Everyone" chip (selected -> null); that state simply leaves the confirm
  * button disabled here, since "everyone" is not a valid My Weekend person.
  */
-export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
+export function MyWeekendSetup({ people, faces, onSelect }: MyWeekendSetupProps) {
   const [pending, setPending] = useState<string | null>(null);
 
   if (people.length === 0) {
@@ -32,13 +34,24 @@ export function MyWeekendSetup({ people, onSelect }: MyWeekendSetupProps) {
       <div className="atlas-person-setup-copy">
         <p className="atlas-kicker">Tell us who you are</p>
         <h2 id="person-setup-title">Your photos, in one place.</h2>
+        {/*
+         * The page header already says the selection stays private, so this
+         * line carries only what it does not: the photographs arrive grouped
+         * by event. Two columns of near-identical copy left the picker
+         * stranded in a third column beside a tall empty quadrant.
+         */}
+        <p className="atlas-person-setup-intro">
+          Your photos arrive grouped by event.
+        </p>
       </div>
-      <p className="atlas-person-setup-intro">
-        Pick your name to open the photographs you are in, grouped by event.
-        Your choice stays on this device only.
-      </p>
       <div className="atlas-person-setup-picker">
-        <PersonPicker people={people} selected={pending} onSelect={setPending} />
+        <PersonPicker
+          people={people}
+          selected={pending}
+          onSelect={setPending}
+          variant="faces"
+          faces={faces}
+        />
         <button
           type="button"
           disabled={!pending}

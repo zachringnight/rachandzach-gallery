@@ -230,7 +230,7 @@ export function MyWeekendGallery({
       {state === "empty" ? (
         <p className="atlas-personal-state">
           No confirmed photos of {personName} are in the archive yet. Check back
-          as more photographs are tagged.
+          as more photos are tagged.
         </p>
       ) : null}
 
@@ -284,6 +284,7 @@ export function MyWeekendGallery({
           }
           onPrev={openIndex > 0 ? prev : undefined}
           onNext={openIndex >= 0 && openIndex < photos.length - 1 ? next : undefined}
+          filmstrip={{ photos, onSelect: setOpenPhotoId }}
         />
       ) : null}
 

@@ -83,6 +83,9 @@ export function PhotoCard({
     <div
       className="atlas-photo-card group relative"
       style={{ width, height }}
+      // The shell reads this card's rect on open so the lightbox can expand
+      // out of the frame that was clicked.
+      data-photo-id={photo.id}
       data-selecting={selecting ? "true" : "false"}
       data-selected={selected ? "true" : "false"}
     >

@@ -378,6 +378,35 @@ describe("keyword dedupe against people", () => {
       { slug: "rachel-casciano", displayName: "Rachel Casciano" },
     ]);
   });
+
+  it("still dedupes the pre-rename catalog name after an admin rename", async () => {
+    // An admin rename replaces displayName, but the photo's embedded keyword
+    // still carries the original catalog name. Without previousDisplayName the
+    // Notes panel would show the corrected name as a chip AND the obsolete one
+    // as a keyword beside it.
+    const renamedSource = {
+      ...keywordSource,
+      listPhotos: async () => [
+        keywordPhoto({
+          id: "kw-renamed",
+          people: [
+            {
+              slug: "rachel-casciano",
+              displayName: "Rachel Soskin",
+              previousDisplayName: "Rachel Casciano",
+              confidence: "confirmed" as const,
+            },
+          ],
+          keywords: ["Rachel Casciano", "golden hour"],
+        }),
+      ],
+    };
+    const page = await getGalleryPage({ ids: ["kw-renamed"] }, renamedSource);
+    expect(page.photos[0].keywords).toEqual(["golden hour"]);
+    expect(page.photos[0].people).toEqual([
+      { slug: "rachel-casciano", displayName: "Rachel Soskin" },
+    ]);
+  });
 });
 
 describe("ids exact-order lookup", () => {

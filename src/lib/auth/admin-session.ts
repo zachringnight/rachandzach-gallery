@@ -11,6 +11,7 @@
  * gate (a Supabase auth cookie must exist); this function is the real check.
  */
 import { createServerClient } from "@/lib/supabase/server";
+import { isOpenAccess } from "@/lib/auth/open-access";
 
 export const ADMIN_EMAIL_ALLOWLIST = ["wedding@rachandzach.com"] as const;
 
@@ -46,6 +47,15 @@ export async function requireAdmin(): Promise<{
   userId: string;
   email: AdminEmail;
 }> {
+  // Open-access mode: see src/lib/auth/open-access.ts, which requires
+  // VERCEL_ENV !== "production" as well as the flag, so this bypass is
+  // structurally unreachable in production even if the variable is copied
+  // there. While on, anyone reaching /admin can rename, hide or remove guests
+  // and moderate uploads against the LIVE database.
+  if (isOpenAccess()) {
+    return { userId: "open-access", email: ADMIN_EMAIL_ALLOWLIST[0] };
+  }
+
   const supabase = await createServerClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {

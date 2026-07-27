@@ -1,4 +1,4 @@
-import { Inter, Manrope } from "next/font/google";
+import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import { clsx } from "clsx";
 
 import { siteConfig } from "@/content/site";
@@ -6,25 +6,44 @@ import { siteConfig } from "@/content/site";
 /**
  * Site typefaces (next/font, self-hosted at build time, SIL Open Font
  * License, production-safe):
- * - Manrope: the clean, contemporary display face for archive headlines and
- *   the typeset wordmark.
+ * Three roles, not one face at three sizes (P7):
+ * - Fraunces: the display face for headlines. A warm editorial serif with
+ *   optical sizing, chosen so the headlines finally speak to the `0719 + co.`
+ *   mark, which has always been a serif while every headline was a geometric
+ *   sans. Manrope did this job before and paired with Inter as the safest
+ *   combination available, which is exactly why the pages read as templated.
  * - Inter: the highly legible sans for controls, labels, and body UI.
+ * - IBM Plex Mono: the archive voice for data about photographs.
  *
  * The `variable` names feed the fallback chain in src/styles/tokens.css
- * (--font-display / --font-body). The root layout (packet 05) should attach
- * `displayFont.variable` and `bodyFont.variable` to <html> so every page
- * resolves the real faces; until then the token fallback stacks apply.
+ * (--font-display / --font-body / --font-archive). The root layout attaches
+ * each `.variable` to <html> so every page resolves the real faces; until
+ * then the token fallback stacks apply.
  */
-export const displayFont = Manrope({
+export const displayFont = Fraunces({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display-face",
+  axes: ["SOFT", "WONK", "opsz"],
 });
 
 export const bodyFont = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-body-face",
+});
+
+/**
+ * The archive voice: frame counts, capture times, positions, eyebrows, and
+ * anything else that is data about a photograph rather than prose. Giving
+ * that material its own monospaced face is what turns three sizes of one
+ * font into an actual system.
+ */
+export const archiveFont = IBM_Plex_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600"],
+  variable: "--font-archive-face",
 });
 
 export interface WordmarkProps {

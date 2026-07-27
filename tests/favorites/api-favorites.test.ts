@@ -107,12 +107,17 @@ function createFakeFavoritesDb(seed: {
             (photoIdSubset === null || photoIdSubset.includes(row.photo_id)),
         );
 
+      let limitCount: number | null = null;
       const selectApi = {
         eq(col: keyof FavRow, value: unknown) {
           filters[col] = value;
           return selectApi;
         },
         order() {
+          return selectApi;
+        },
+        limit(count: number) {
+          limitCount = count;
           return selectApi;
         },
         then(
@@ -124,8 +129,10 @@ function createFakeFavoritesDb(seed: {
               ? a.photo_id.localeCompare(b.photo_id)
               : a.created_at.localeCompare(b.created_at),
           );
+          const sliced =
+            limitCount === null ? rows : rows.slice(0, limitCount);
           return Promise.resolve({
-            data: rows.map(({ photo_id }) => ({ photo_id })),
+            data: sliced.map(({ photo_id }) => ({ photo_id })),
             error: null,
           }).then(onFulfilled, onRejected);
         },
@@ -299,6 +306,29 @@ describe("GET /api/favorites", () => {
         photoIds: [P1],
       });
     }
+  });
+
+  it("keeps a shortlist reachable for a slug whose catalog row is gone", async () => {
+    // Orphan recovery: person-keyed rows anchor their own reachability, so
+    // an identity deletion that interleaved with a favorite write (the
+    // favorites table has no FK to rachandzach_people) can never strand a
+    // guest's shortlist. Note the slug is absent from `people`.
+    grantSession();
+    const db = createFakeFavoritesDb({
+      people: [],
+      photos: [P1, P2],
+      favorites: [
+        { owner_kind: "person", owner_key: "aunt-carol", photo_id: P2 },
+        { owner_kind: "session", owner_key: SESSION_ID, photo_id: P1 },
+      ],
+    });
+    createAdminClientMock.mockReturnValue(db.client);
+
+    const response = await GET(getRequest("aunt-carol"));
+    expect(await response.json()).toEqual({
+      ownerKind: "person",
+      photoIds: [P2],
+    });
   });
 });
 

@@ -68,6 +68,16 @@ const photoProcessingGateMigrationPath = path.join(
   "migrations",
   "20260724124851_rachandzach_photo_processing_gate.sql",
 );
+const removeAddedPersonMigrationPath = path.join(
+  supabaseDir,
+  "migrations",
+  "20260726213000_rachandzach_remove_added_person.sql",
+);
+const addPersonMigrationPath = path.join(
+  supabaseDir,
+  "migrations",
+  "20260726233000_rachandzach_add_person.sql",
+);
 const configPath = path.join(supabaseDir, "config.toml");
 const seedPath = path.join(supabaseDir, "seed.sql");
 const envExamplePath = path.join(repoRoot, ".env.example");
@@ -660,13 +670,82 @@ describe("static: no secrets in committed files", () => {
   });
 });
 
+describe("static: remove-added-person migration (20260726213000)", () => {
+  const sql = () => mustRead(removeAddedPersonMigrationPath);
+
+  it("makes the reference checks and the delete one atomic statement set", () => {
+    const text = sql();
+    expect(text).toContain(
+      "create function public.rachandzach_remove_added_person(p_slug text)",
+    );
+    // The serialization point that closes the tag race: the catalog row is
+    // locked before any check, so a concurrent rachandzach_photo_people
+    // insert (FOR KEY SHARE via its person_id FK) cannot interleave between
+    // check and delete.
+    expect(text).toMatch(/from public\.rachandzach_people\s+where slug = p_slug\s+for update/);
+    // Both durable reference kinds gate the delete: photo tags and
+    // person-keyed guest favorites (a guest's shortlist).
+    expect(text).toContain("from public.rachandzach_photo_people");
+    expect(text).toMatch(/rachandzach_guest_favorites[\s\S]*owner_kind = 'person'/);
+    // Photographs are never named as a delete target.
+    expect(stripSqlComments(text)).not.toMatch(
+      /delete\s+from\s+public\.rachandzach_photos\b/i,
+    );
+    expect(text).toContain("set search_path = ''");
+  });
+
+  it("keeps the function service-role only", () => {
+    const text = sql();
+    expect(text).toContain(
+      "revoke all on function public.rachandzach_remove_added_person(text) from public, anon, authenticated;",
+    );
+    expect(text).toContain(
+      "grant execute on function public.rachandzach_remove_added_person(text) to service_role;",
+    );
+  });
+});
+
+describe("static: add-person migration (20260726233000)", () => {
+  const sql = () => mustRead(addPersonMigrationPath);
+
+  it("creates both rows in one function so no half-created person is ever visible", () => {
+    const text = sql();
+    expect(text).toContain("create function public.rachandzach_add_person(");
+    // Both inserts live inside the single transaction the function body is.
+    expect(text).toMatch(/insert into public\.rachandzach_people\s*\(slug, display_name\)/);
+    expect(text).toMatch(
+      /insert into public\.rachandzach_person_overrides\s*\(person_slug, display_name, added, updated_by\)/,
+    );
+    // A duplicate rolls BOTH inserts back via the exception subtransaction.
+    expect(text).toMatch(/exception when unique_violation then/);
+    // The whole point of the migration: the add path contains no delete of
+    // any kind, so there is no compensating statement left to cascade into
+    // rachandzach_photo_people. photo_count stays trigger-owned.
+    expect(stripSqlComments(text)).not.toMatch(/\bdelete\b/i);
+    expect(stripSqlComments(text)).not.toMatch(/photo_count/);
+    expect(text).toContain("set search_path = ''");
+  });
+
+  it("keeps the function service-role only", () => {
+    const text = sql();
+    expect(text).toContain(
+      "revoke all on function public.rachandzach_add_person(text, text, text) from public, anon, authenticated;",
+    );
+    expect(text).toContain(
+      "grant execute on function public.rachandzach_add_person(text, text, text) to service_role;",
+    );
+  });
+});
+
 describe("static: database.types.ts mirrors the migrations", () => {
-  it("declares every table and the rate-limit function", () => {
+  it("declares every table and the rachandzach functions", () => {
     const types = mustRead(databaseTypesPath);
     for (const table of ALL_TABLES) {
       expect(types).toMatch(new RegExp(`\\b${table}: \\{`));
     }
     expect(types).toContain("rachandzach_consume_rate_limit");
+    expect(types).toContain("rachandzach_remove_added_person");
+    expect(types).toContain("rachandzach_add_person");
     expect(types).toContain("npm run types:generate");
   });
 });
@@ -803,7 +882,10 @@ describe.skipIf(!serviceReady)("live: schema semantics via service role", () => 
 
   it("cascades rachandzach_upload_items when a batch is deleted", async () => {
     const client = service();
-    const receipt = `test-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    // rachandzach_upload_batches constrains receipt_hash to ^[0-9a-f]{32,64}$,
+    // so a "test-..." prefix fails the check (23514) rather than exercising
+    // the cascade this test exists to prove.
+    const receipt = hexId();
     const batch = await client
       .from("rachandzach_upload_batches")
       .insert({ receipt_hash: receipt, status: "draft" })
@@ -875,7 +957,9 @@ describe.skipIf(!serviceReady)("live: schema semantics via service role", () => 
 
   it("rachandzach_consume_rate_limit allows up to the limit, then denies", async () => {
     const client = service();
-    const key = `k${Date.now()}`.padEnd(64, "0").slice(0, 64);
+    // Same constraint on rachandzach_rate_limits.key_hash: a leading "k" is
+    // not hex, so the insert failed the check instead of testing the limiter.
+    const key = hexId();
     const call = () =>
       client.rpc("rachandzach_consume_rate_limit", {
         key_hash: key,
@@ -891,4 +975,14 @@ describe.skipIf(!serviceReady)("live: schema semantics via service role", () => 
     expect(second.data).toBe(true);
     expect(third.data).toBe(false);
   });
-});
+});/**
+ * A unique lowercase-hex id that satisfies the `^[0-9a-f]{32,64}$` checks on
+ * receipt_hash and key_hash. Two live tests previously built ids with a
+ * non-hex prefix and failed the constraint, which read as a production
+ * problem when it was only a malformed fixture.
+ */
+function hexId(): string {
+  return Array.from({ length: 32 }, () =>
+    Math.floor(Math.random() * 16).toString(16),
+  ).join("");
+}

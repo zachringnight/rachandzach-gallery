@@ -296,6 +296,10 @@ export function MomentSearch({ events }: MomentSearchProps) {
               ? () => setOpenPhotoId(results[openIndex + 1].photo.id)
               : undefined
           }
+          filmstrip={{
+            photos: results.map((result) => result.photo),
+            onSelect: setOpenPhotoId,
+          }}
         />
       ) : null}
     </div>

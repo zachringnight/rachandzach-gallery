@@ -58,7 +58,7 @@ function mockFetchFailing() {
 describe("FavoritesGallery empty state (derived during render)", () => {
   it("renders the empty message immediately, with no loading flash, when there are no favorites", () => {
     render(<FavoritesGallery />);
-    expect(screen.getByText(/you have not favorited any photos yet/i)).toBeDefined();
+    expect(screen.getByText(/tap the heart on any photo and it lands here/i)).toBeDefined();
     expect(screen.queryByText(/loading your favorites/i)).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe("FavoritesGallery empty state (derived during render)", () => {
       favoriteStore.toggle("photo-1"); // removes the only favorite
     });
 
-    expect(await screen.findByText(/you have not favorited any photos yet/i)).toBeDefined();
+    expect(await screen.findByText(/tap the heart on any photo and it lands here/i)).toBeDefined();
   });
 });
 

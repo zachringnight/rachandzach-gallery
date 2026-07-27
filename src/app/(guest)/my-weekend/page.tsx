@@ -4,7 +4,23 @@ import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
 import { getGalleryFacets } from "@/lib/gallery/query";
 import { featureFlags } from "@/content/features";
 import { MyWeekendClient } from "@/components/personalization/MyWeekendClient";
+import {
+  buildFaceDirectory,
+  loadPersonOverrides,
+  personIdentities,
+  surfacePeople,
+} from "@/lib/people/overrides";
 import { MomentSearch } from "@/components/search/MomentSearch";
+
+/*
+ * Faces are resolved here, in an authenticated server component, and passed
+ * down as props: importing the committed face manifest inside the
+ * "use client" PersonPicker compiled every guest's name slug and confidence
+ * score into a /_next/static chunk, and src/proxy.ts serves that path without
+ * authentication. Guest identities must only travel through gated data.
+ * buildFaceDirectory adds one photo query and ONE signing batch (~132 paths)
+ * on top of the facet read, so this page's load does not regress.
+ */
 
 // Reads the live facet set (people confirmed in the catalog); never static.
 export const dynamic = "force-dynamic";
@@ -24,24 +40,29 @@ export const metadata: Metadata = {
 export default async function MyWeekendPage() {
   const client = createAdminClient();
   const source = createSupabaseGalleryDataSource(client);
-  const facets = await getGalleryFacets(source);
+  const [facets, overrides] = await Promise.all([
+    getGalleryFacets(source),
+    loadPersonOverrides(client),
+  ]);
+  // Hidden people drop out, renames apply, admin-added people join.
+  const people = surfacePeople(facets.people, overrides);
+  // Hiding is picker-only: a guest who already selected themselves must
+  // still resolve to their real name, so identities include hidden people.
+  const identities = personIdentities(facets.people, overrides);
+  const faces = await buildFaceDirectory(client, people, overrides);
 
   return (
     <section className="atlas-guest-page">
-      <header className="atlas-guest-header">
-        <div>
-          <p className="atlas-kicker">Find me</p>
-          <h1>Your photos</h1>
-        </div>
-        <p>
-          Choose your name to open the confirmed photographs you are in. Your
-          selection stays private and is ready whenever you return.
+      <header className="atlas-page-bar">
+        <h1>Find me</h1>
+        <p className="atlas-page-bar-note">
+          Choose your name to open the photos you are in. Your selection
+          stays private on this device.
         </p>
-        <span aria-hidden="true">One private collection</span>
       </header>
 
       <div className="atlas-guest-body">
-        <MyWeekendClient people={facets.people} />
+        <MyWeekendClient people={people} identities={identities} faces={faces} />
       </div>
 
       {featureFlags.momentSearch ? (

@@ -12,6 +12,8 @@
  * the Node runtime that proxy.ts and every route handler run on.
  */
 
+import { isOpenAccess } from "@/lib/auth/open-access";
+
 export interface GallerySession {
   sessionId: string;
   issuedAt: number;
@@ -276,6 +278,19 @@ export async function verifyGuestSession(
  * GalleryAccessConfigError.
  */
 export async function requireGalleryAccess(): Promise<GallerySession> {
+  // Open-access mode: see src/lib/auth/open-access.ts. The proxy is only the
+  // first gate -- every guest page and API also calls this, by design -- so
+  // the check has to live in both places or the archive stays locked.
+  if (isOpenAccess()) {
+    const now = Math.floor(Date.now() / 1000);
+    return {
+      sessionId: "open-access",
+      issuedAt: now,
+      expiresAt: now + 3600,
+      version: SESSION_TOKEN_VERSION,
+    };
+  }
+
   // Dynamic import keeps next/headers out of proxy.ts's module graph
   // (request-scoped APIs are not available in the proxy runtime).
   const { cookies } = await import("next/headers");

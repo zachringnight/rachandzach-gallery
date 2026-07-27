@@ -86,6 +86,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      rachandzach_person_overrides: {
+        Row: {
+          person_slug: string;
+          display_name: string | null;
+          hidden: boolean;
+          added: boolean;
+          face_photo_id: string | null;
+          face_crop_x: number | null;
+          face_crop_y: number | null;
+          face_crop_size: number | null;
+          created_at: string;
+          updated_at: string;
+          updated_by: string;
+        };
+        Insert: {
+          person_slug: string;
+          display_name?: string | null;
+          hidden?: boolean;
+          added?: boolean;
+          face_photo_id?: string | null;
+          face_crop_x?: number | null;
+          face_crop_y?: number | null;
+          face_crop_size?: number | null;
+          created_at?: string;
+          updated_at?: string;
+          updated_by: string;
+        };
+        Update: {
+          person_slug?: string;
+          display_name?: string | null;
+          hidden?: boolean;
+          added?: boolean;
+          face_photo_id?: string | null;
+          face_crop_x?: number | null;
+          face_crop_y?: number | null;
+          face_crop_size?: number | null;
+          created_at?: string;
+          updated_at?: string;
+          updated_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rachandzach_person_overrides_face_photo_id_fkey";
+            columns: ["face_photo_id"];
+            isOneToOne: false;
+            referencedRelation: "rachandzach_photos";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       rachandzach_photos: {
         Row: {
           id: string;
@@ -541,6 +591,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      rachandzach_add_person: {
+        Args: {
+          p_slug: string;
+          p_display_name: string;
+          p_actor: string;
+        };
+        Returns: string;
+      };
       rachandzach_consume_rate_limit: {
         Args: {
           key_hash: string;
@@ -555,6 +613,12 @@ export type Database = {
           metadata: Json;
         };
         Returns: boolean;
+      };
+      rachandzach_remove_added_person: {
+        Args: {
+          p_slug: string;
+        };
+        Returns: string;
       };
     };
     Enums: {
