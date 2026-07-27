@@ -73,6 +73,11 @@ const removeAddedPersonMigrationPath = path.join(
   "migrations",
   "20260726213000_rachandzach_remove_added_person.sql",
 );
+const addPersonMigrationPath = path.join(
+  supabaseDir,
+  "migrations",
+  "20260726233000_rachandzach_add_person.sql",
+);
 const configPath = path.join(supabaseDir, "config.toml");
 const seedPath = path.join(supabaseDir, "seed.sql");
 const envExamplePath = path.join(repoRoot, ".env.example");
@@ -700,6 +705,38 @@ describe("static: remove-added-person migration (20260726213000)", () => {
   });
 });
 
+describe("static: add-person migration (20260726233000)", () => {
+  const sql = () => mustRead(addPersonMigrationPath);
+
+  it("creates both rows in one function so no half-created person is ever visible", () => {
+    const text = sql();
+    expect(text).toContain("create function public.rachandzach_add_person(");
+    // Both inserts live inside the single transaction the function body is.
+    expect(text).toMatch(/insert into public\.rachandzach_people\s*\(slug, display_name\)/);
+    expect(text).toMatch(
+      /insert into public\.rachandzach_person_overrides\s*\(person_slug, display_name, added, updated_by\)/,
+    );
+    // A duplicate rolls BOTH inserts back via the exception subtransaction.
+    expect(text).toMatch(/exception when unique_violation then/);
+    // The whole point of the migration: the add path contains no delete of
+    // any kind, so there is no compensating statement left to cascade into
+    // rachandzach_photo_people. photo_count stays trigger-owned.
+    expect(stripSqlComments(text)).not.toMatch(/\bdelete\b/i);
+    expect(stripSqlComments(text)).not.toMatch(/photo_count/);
+    expect(text).toContain("set search_path = ''");
+  });
+
+  it("keeps the function service-role only", () => {
+    const text = sql();
+    expect(text).toContain(
+      "revoke all on function public.rachandzach_add_person(text, text, text) from public, anon, authenticated;",
+    );
+    expect(text).toContain(
+      "grant execute on function public.rachandzach_add_person(text, text, text) to service_role;",
+    );
+  });
+});
+
 describe("static: database.types.ts mirrors the migrations", () => {
   it("declares every table and the rachandzach functions", () => {
     const types = mustRead(databaseTypesPath);
@@ -708,6 +745,7 @@ describe("static: database.types.ts mirrors the migrations", () => {
     }
     expect(types).toContain("rachandzach_consume_rate_limit");
     expect(types).toContain("rachandzach_remove_added_person");
+    expect(types).toContain("rachandzach_add_person");
     expect(types).toContain("npm run types:generate");
   });
 });

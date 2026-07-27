@@ -26,14 +26,15 @@ import {
  * Presentation state (face crop, rename, hidden flag) lives in
  * rachandzach_person_overrides. Identity lives in rachandzach_people:
  * "add" creates a real catalog row (so the person is taggable everywhere)
- * plus an override row carrying the added = true provenance marker, and
- * "remove" deletes that identity ONLY while nothing durable references it:
- * the moment a person has photo tags OR person-keyed guest favorites,
- * remove degrades to the soft hidden flag and destroys nothing. That
- * decision is made atomically inside the rachandzach_remove_added_person
- * RPC (see its migration header), never as a client-side check followed by
- * a separate delete. Photos and photo-person links are never deleted from
- * this module. See the migration headers for the crop scheme and the
+ * plus an override row carrying the added = true provenance marker -- both
+ * written atomically by the rachandzach_add_person RPC -- and "remove"
+ * deletes that identity ONLY while nothing durable references it: the
+ * moment a person has photo tags OR person-keyed guest favorites, remove
+ * degrades to the soft hidden flag and destroys nothing. Both decisions are
+ * made atomically inside their rachandzach_* RPCs (see the migration
+ * headers), never as a client-side statement pair that a concurrent tag
+ * write can interleave. Photos and photo-person links are never deleted
+ * from this module. See the migration headers for the crop scheme and the
  * added-people invariant.
  */
 
@@ -93,7 +94,7 @@ export async function loadGuestRoster(
     });
   }
   // Anomaly recovery only: an added override without a catalog row cannot be
-  // created any more (addPerson writes the catalog row first, and the
+  // created any more (addPerson writes both rows in one transaction, and the
   // backfill migration upgraded history), but if one ever appears it must
   // stay visible here so the admin can remove it rather than having it
   // silently vanish from the manager while still surfacing to guests.
@@ -342,12 +343,19 @@ export async function patchPerson(
  * this screen. photo_count stays 0 -- the catalog trigger maintains it as
  * tags are written.
  *
- * Write order is the invariant: catalog row FIRST, then the override. If the
- * override insert fails, the catalog row is removed again; if even that
- * compensation fails, the leftover is a plain catalog person (fully
- * functional, just missing the "added" provenance) -- never an added
- * override without a catalog row, which is the one state guest surfaces no
- * longer guard against.
+ * Both rows are written by ONE atomic rachandzach_add_person RPC (see its
+ * migration header): the person either exists fully (catalog row + added
+ * override) or not at all. The previous shape -- catalog insert, then
+ * override insert, then a compensating client-side delete on failure -- ran
+ * in three transactions, and during the gap /admin/catalog could tag the
+ * new person; the unconditional compensation then cascade-destroyed the
+ * committed tag (rachandzach_photo_people.person_id is ON DELETE CASCADE),
+ * or, when the override commit's response was merely lost, deleted the
+ * catalog row out from under a real override. No delete of
+ * rachandzach_people appears anywhere in this path any more. A duplicate
+ * slug surfaces as the same 409 the friendlier pre-check produces; the
+ * unique index and the override primary key stay the authoritative
+ * collision checks inside the RPC.
  */
 export async function addPerson(
   slug: string,
@@ -369,32 +377,20 @@ export async function addPerson(
     );
   }
 
-  const catalogInsert = await client
-    .from("rachandzach_people")
-    .insert({ slug, display_name: displayName });
-  if (catalogInsert.error) {
-    // The unique index is the authoritative collision check; the pre-check
-    // above only exists for the friendlier 409 message.
-    if (catalogInsert.error.code === "23505") {
-      throw new PersonAdminError(
-        "Someone already uses that slug. Pick a different one.",
-        409,
-      );
-    }
-    throw new Error(`Person add failed: ${catalogInsert.error.message}`);
+  const { data, error } = await client.rpc("rachandzach_add_person", {
+    p_slug: slug,
+    p_display_name: displayName,
+    p_actor: actorEmail,
+  });
+  if (error) {
+    throw new Error(`Person add failed: ${error.message}`);
   }
-
-  const overrideInsert = await client
-    .from("rachandzach_person_overrides")
-    .insert({
-      person_slug: slug,
-      display_name: displayName,
-      added: true,
-      updated_by: actorEmail,
-    });
-  if (overrideInsert.error) {
-    await client.from("rachandzach_people").delete().eq("slug", slug);
-    throw new Error(`Person add failed: ${overrideInsert.error.message}`);
+  if (data === "duplicate") {
+    // The RPC rolled back both inserts; nothing partial exists.
+    throw new PersonAdminError(
+      "Someone already uses that slug. Pick a different one.",
+      409,
+    );
   }
 }
 
