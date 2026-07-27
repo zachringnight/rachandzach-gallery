@@ -4,14 +4,19 @@
 from __future__ import annotations
 
 import csv
+import os
 import shutil
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
-REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+REPO = Path(__file__).resolve().parents[1]
+MASTER = Path(
+    os.environ.get("WEDDING_MASTER_ROOT")
+    or os.environ.get("SOURCE_PHOTO_DIR")
+    or "/Users/zsoskin/Rachel & Zach - Wedding Master Clean"
+)
 ANALYSIS = MASTER / "_Review" / "Untagged - Needs Review" / "_Face Match Analysis"
 CANDIDATES = ANALYSIS / "face-match-candidates.csv"
 REFERENCES = REPO / "metadata" / "identity-review" / "reference-crops.csv"

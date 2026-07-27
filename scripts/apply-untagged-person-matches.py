@@ -16,12 +16,12 @@ import re
 ROOT = Path(
     os.environ.get(
         "CLEAN_MASTER_DIR",
-        "/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean",
+        "/Users/zsoskin/Rachel & Zach - Wedding Master Clean",
     )
 ).resolve()
 METADATA = ROOT / "_Metadata"
 REVIEW_ROOT = ROOT / "_Review"
-REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
+REPO = Path(__file__).resolve().parents[1]
 FACE_ANALYSIS = REVIEW_ROOT / "Untagged - Needs Review" / "_Face Match Analysis"
 FACE_CANDIDATES = FACE_ANALYSIS / "face-match-candidates.csv"
 

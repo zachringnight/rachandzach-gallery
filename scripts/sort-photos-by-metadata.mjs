@@ -12,7 +12,7 @@ import {
 
 const rootDir = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, "");
 const sourceDir =
-  process.env.SOURCE_PHOTO_DIR || "/Users/zsoskin/Downloads/Rachel & Zach - Ali Beck Photography 2";
+  process.env.SOURCE_PHOTO_DIR || "/Users/zsoskin/Rachel & Zach - Ali Beck Photography 2";
 const correctionsFile = join(rootDir, "metadata", "people-corrections.csv");
 const agentReviewsDir = join(rootDir, "metadata", "agent-reviews");
 const outDir = join(rootDir, "metadata", "sorted");

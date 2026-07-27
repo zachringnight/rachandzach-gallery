@@ -40,7 +40,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const DEFAULT_MASTER_ROOT =
   process.env.WEDDING_MASTER_ROOT ||
   process.env.SOURCE_PHOTO_DIR ||
-  "/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean";
+  "/Users/zsoskin/Rachel & Zach - Wedding Master Clean";
 const DEFAULT_CATALOG_PATH = resolve(repoRoot, "src/generated/gallery-v2.json");
 const DEFAULT_REPORT_PATH = resolve(repoRoot, "metadata/verify/original-integrity-report.json");
 const DEFAULT_SAMPLE_SIZE = 100;

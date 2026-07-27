@@ -50,3 +50,17 @@ supabase/.temp/
 
 # Coding-agent git worktrees (full checkouts of this repo, inside this repo)
 .claude/worktrees/
+
+# Python bytecode caches; the face and metadata scripts are run in place.
+__pycache__/
+
+# Ad hoc one-off scripts written during a debugging session. Scratch by
+# convention: if a *.tmp.mjs turns out to be worth keeping, rename it into
+# scripts/ so it gets a header comment and review rather than lingering
+# untracked in the repo root.
+*.tmp.mjs
+
+# Python bytecode. These were tracked until 2026-07-27, which is how stale
+# absolute paths from before the repo moved stayed committed in the tree.
+__pycache__/
+*.pyc

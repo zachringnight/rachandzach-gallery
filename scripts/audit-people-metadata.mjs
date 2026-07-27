@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, "");
 const sourceDir =
-  process.env.SOURCE_PHOTO_DIR || "/Users/zsoskin/Downloads/Rachel & Zach - Ali Beck Photography 2";
+  process.env.SOURCE_PHOTO_DIR || "/Users/zsoskin/Rachel & Zach - Ali Beck Photography 2";
 const outDir = join(rootDir, "metadata", "audit");
 const excludedEvents = new Set(
   (process.env.GALLERY_EXCLUDE_EVENTS ?? "First Look")

@@ -7,7 +7,7 @@
  * Zach's end review swaps in or confirms the real hero selects.
  *
  * sourcePath is the output_path inside the read-only wedding master
- * (/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean). The
+ * (/Users/zsoskin/Rachel & Zach - Wedding Master Clean). The
  * originals are never modified; the src files under public/story/ are small
  * sRGB web derivatives generated with sharp, named with the first 8 chars of
  * the manifest image_data_hash so a swapped pick can never silently reuse a

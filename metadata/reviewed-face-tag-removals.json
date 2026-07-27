@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "purpose": "Photo/person tags that came from the source master's embedded metadata and are wrong. Additions cannot express this: every other overlay in this repo only ever adds. A removal deletes a human's original tag, so each row needs a reviewed reason and a named reviewer, and the list should stay short.",
+    "liveSyncCaveat": "scripts/sync-catalog-overlays.mjs is additive and never deletes. Nothing here propagates to Supabase. If the tag is already live it must be removed from the database deliberately and separately.",
+    "reviewedBy": "Zach",
+    "reviewedAt": "2026-07-27"
+  },
+  "removals": [
+    {
+      "photoId": "0325879ef0b1b86d2ab0b6cd9403d0a1",
+      "path": "09 Reception/rachelzach-755.jpg",
+      "personSlug": "daniel-cogan",
+      "displayName": "Daniel Cogan",
+      "reason": "Zach reviewed the full frame and confirmed Daniel Cogan is not in it. The three detected faces are Chris Gutierrez, a blurred background guest, and Maura Keith Gutierrez at 0.610 against her anchor; Daniel's best match across all three is 0.116. The audit had flagged this row as tagged-but-no-matching-face since the first run.",
+      "evidence": {
+        "bestSimilarityForPerson": 0.116,
+        "detectedFaces": 3,
+        "auditSeverity": "medium"
+      }
+    },
+    {
+      "photoId": "066cfe826990670bfbac38c0818916a0",
+      "path": "09 Reception/rachelzach-692.jpg",
+      "personSlug": "pa",
+      "displayName": "pa",
+      "reason": "Zach confirmed pa is a typo of Pat Burton, not a person. patrick-burton is already tagged on this same photo, so removing the typo loses nothing. It was the only photo carrying it, and it was already hidden from Find me.",
+      "evidence": {
+        "wasOnlyPhotoForSlug": true,
+        "realPersonAlreadyTagged": "patrick-burton"
+      }
+    }
+  ]
+}

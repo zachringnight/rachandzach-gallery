@@ -22,8 +22,12 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
-REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+REPO = Path(__file__).resolve().parents[1]
+MASTER = Path(
+    os.environ.get("WEDDING_MASTER_ROOT")
+    or os.environ.get("SOURCE_PHOTO_DIR")
+    or "/Users/zsoskin/Rachel & Zach - Wedding Master Clean"
+)
 MANIFEST = MASTER / "_Metadata" / "photo-manifest.csv"
 OUTPUT = MASTER / "_Review" / "Manual Face Match Analysis"
 YU_NET = REPO / "models" / "face_detection_yunet_2023mar.onnx"

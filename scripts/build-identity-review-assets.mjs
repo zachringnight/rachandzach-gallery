@@ -12,7 +12,7 @@ import {
 
 const rootDir = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, "");
 const sourceDir =
-  process.env.SOURCE_PHOTO_DIR || "/Users/zsoskin/Downloads/Rachel & Zach - Ali Beck Photography 2";
+  process.env.SOURCE_PHOTO_DIR || "/Users/zsoskin/Rachel & Zach - Ali Beck Photography 2";
 const queueFile = join(rootDir, "metadata", "sorted", "unconfirmed-review-queue.csv");
 const personManifestFile = join(rootDir, "metadata", "sorted", "person-photo-manifest.csv");
 const photoStatusFile = join(rootDir, "metadata", "sorted", "photo-status-manifest.csv");

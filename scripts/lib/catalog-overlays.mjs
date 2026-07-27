@@ -4,6 +4,7 @@ import { join } from "node:path";
 const PERSON_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const ATTENDANCE_PATH = join("metadata", "wedding-attendees.json");
 const FACE_TAGS_PATH = join("metadata", "reviewed-face-tag-additions.json");
+const FACE_TAG_REMOVALS_PATH = join("metadata", "reviewed-face-tag-removals.json");
 
 function invariant(condition, message) {
   if (!condition) throw new Error(`Catalog overlay invalid: ${message}`);
@@ -121,9 +122,43 @@ function validateFaceTags(manifest) {
   }
 }
 
-export function applyCatalogOverlays(catalog, attendance, faceTags) {
+function validateFaceTagRemovals(manifest, additions) {
+  if (manifest === null || manifest === undefined) return;
+  invariant(manifest.schemaVersion === 1, "face-tag removal schemaVersion must be 1");
+  invariant(Array.isArray(manifest.removals), "face-tag removals must be an array");
+  const added = new Set(
+    additions.map((a) => `${a.photoId}:${a.personSlug}`),
+  );
+  const seen = new Set();
+  for (const removal of manifest.removals) {
+    invariant(
+      typeof removal.photoId === "string" && removal.photoId.length > 0,
+      "face-tag removal photoId is required",
+    );
+    invariant(
+      PERSON_SLUG_PATTERN.test(removal.personSlug),
+      `face-tag removal has invalid slug ${removal.personSlug}`,
+    );
+    // A removal deletes someone's original tag, so it carries a written
+    // reason the same way an addition carries a similarity score.
+    invariant(
+      typeof removal.reason === "string" && removal.reason.length >= 20,
+      `face-tag removal ${removal.photoId}/${removal.personSlug} needs a reviewed reason`,
+    );
+    const key = `${removal.photoId}:${removal.personSlug}`;
+    invariant(!seen.has(key), `duplicate face-tag removal ${key}`);
+    invariant(
+      !added.has(key),
+      `face-tag ${key} is both added and removed; the two lists disagree`,
+    );
+    seen.add(key);
+  }
+}
+
+export function applyCatalogOverlays(catalog, attendance, faceTags, faceTagRemovals) {
   validateAttendance(attendance);
   validateFaceTags(faceTags);
+  validateFaceTagRemovals(faceTagRemovals, faceTags.additions);
   invariant(Array.isArray(catalog?.people), "catalog people must be an array");
   invariant(Array.isArray(catalog?.photos), "catalog photos must be an array");
 
@@ -182,6 +217,30 @@ export function applyCatalogOverlays(catalog, attendance, faceTags) {
     faceTagsAdded += 1;
   }
 
+  // Removals run after additions so the photoCount recount below sees the
+  // final state, and so an add/remove disagreement is caught by validation
+  // rather than resolved silently by ordering.
+  let faceTagsRemoved = 0;
+  let faceTagsAlreadyAbsent = 0;
+  for (const removal of faceTagRemovals?.removals ?? []) {
+    const photo = photosById.get(removal.photoId);
+    invariant(
+      photo,
+      `reviewed face tag removal references missing photo ${removal.photoId}`,
+    );
+    invariant(
+      photo.originalRelativePath === removal.path,
+      `reviewed face tag removal path drift for ${removal.photoId}`,
+    );
+    const index = photo.peopleSlugs.indexOf(removal.personSlug);
+    if (index === -1) {
+      faceTagsAlreadyAbsent += 1;
+      continue;
+    }
+    photo.peopleSlugs.splice(index, 1);
+    faceTagsRemoved += 1;
+  }
+
   const counts = new Map(catalog.people.map((person) => [person.slug, 0]));
   for (const photo of catalog.photos) {
     for (const slug of photo.peopleSlugs) {
@@ -204,6 +263,9 @@ export function applyCatalogOverlays(catalog, attendance, faceTags) {
     reviewedFaceTags: faceTags.additions.length,
     faceTagsAdded,
     faceTagsAlreadyPresent,
+    reviewedFaceTagRemovals: faceTagRemovals?.removals?.length ?? 0,
+    faceTagsRemoved,
+    faceTagsAlreadyAbsent,
   };
 }
 
@@ -216,5 +278,14 @@ export async function applyTrackedCatalogOverlays(catalog, repoRoot) {
       .readFile(join(repoRoot, FACE_TAGS_PATH), "utf8")
       .then((value) => JSON.parse(value)),
   ]);
-  return applyCatalogOverlays(catalog, attendance, faceTags);
+  // Optional: no removals file means no removals, which is how this repo
+  // behaved before removals existed.
+  const faceTagRemovals = await fs
+    .readFile(join(repoRoot, FACE_TAG_REMOVALS_PATH), "utf8")
+    .then((value) => JSON.parse(value))
+    .catch((error) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+  return applyCatalogOverlays(catalog, attendance, faceTags, faceTagRemovals);
 }

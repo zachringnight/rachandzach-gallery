@@ -14,8 +14,12 @@ from pathlib import Path
 import cv2
 
 
-REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+REPO = Path(__file__).resolve().parents[1]
+MASTER = Path(
+    os.environ.get("WEDDING_MASTER_ROOT")
+    or os.environ.get("SOURCE_PHOTO_DIR")
+    or "/Users/zsoskin/Rachel & Zach - Wedding Master Clean"
+)
 MANIFEST = MASTER / "_Metadata" / "photo-manifest.csv"
 REFERENCE = MASTER / "01 Day 1" / "rachelzachday1-164.jpg"
 OUTPUT = MASTER / "_Review" / "Ann Marie Hoppler Match Analysis"

@@ -67,6 +67,105 @@ function faceTags() {
   };
 }
 
+function removals(rows) {
+  return {
+    schemaVersion: 1,
+    source: { reviewedBy: "Test" },
+    removals: rows ?? [
+      {
+        photoId: "hash-one",
+        path: "Ceremony/one.jpg",
+        personSlug: "existing-person",
+        reason: "Reviewed the full frame and confirmed this person is not in it.",
+      },
+    ],
+  };
+}
+
+describe("catalog overlay removals", () => {
+  it("removes a tag the master supplied and recounts the person", () => {
+    const catalog = fixture();
+    const result = applyCatalogOverlays(catalog, attendance(), faceTags(), removals());
+    expect(catalog.photos[0].peopleSlugs).not.toContain("existing-person");
+    expect(result.faceTagsRemoved).toBe(1);
+    expect(
+      catalog.people.find((p) => p.slug === "existing-person").photoCount,
+    ).toBe(0);
+  });
+
+  it("is idempotent once the tag is already gone", () => {
+    const catalog = fixture();
+    applyCatalogOverlays(catalog, attendance(), faceTags(), removals());
+    const result = applyCatalogOverlays(catalog, attendance(), faceTags(), removals());
+    expect(result.faceTagsRemoved).toBe(0);
+    expect(result.faceTagsAlreadyAbsent).toBe(1);
+  });
+
+  it("behaves exactly as before when no removals file is supplied", () => {
+    const withArg = fixture();
+    const withoutArg = fixture();
+    const a = applyCatalogOverlays(withArg, attendance(), faceTags(), null);
+    const b = applyCatalogOverlays(withoutArg, attendance(), faceTags());
+    expect(withArg).toEqual(withoutArg);
+    expect(a.faceTagsRemoved).toBe(0);
+    expect(b.faceTagsRemoved).toBe(0);
+  });
+
+  it("fails closed when the same pair is both added and removed", () => {
+    expect(() =>
+      applyCatalogOverlays(
+        fixture(),
+        attendance(),
+        faceTags(),
+        removals([
+          {
+            photoId: "hash-one",
+            path: "Ceremony/one.jpg",
+            personSlug: "alias-target",
+            reason: "This contradicts the addition for the very same pair.",
+          },
+        ]),
+      ),
+    ).toThrow(/both added and removed/);
+  });
+
+  it("fails closed when a removal carries no reviewed reason", () => {
+    expect(() =>
+      applyCatalogOverlays(
+        fixture(),
+        attendance(),
+        faceTags(),
+        removals([
+          {
+            photoId: "hash-one",
+            path: "Ceremony/one.jpg",
+            personSlug: "existing-person",
+            reason: "too short",
+          },
+        ]),
+      ),
+    ).toThrow(/needs a reviewed reason/);
+  });
+
+  it("fails closed when a removal path no longer matches its photo", () => {
+    expect(() =>
+      applyCatalogOverlays(
+        fixture(),
+        attendance(),
+        faceTags(),
+        removals([
+          {
+            photoId: "hash-one",
+            path: "Ceremony/moved.jpg",
+            personSlug: "existing-person",
+            reason: "Reviewed the full frame and confirmed this person is not in it.",
+          },
+        ]),
+      ),
+    ).toThrow(/removal path drift/);
+  });
+});
+
 describe("catalog overlays", () => {
   it("adds seated identities and reviewed tags, then recomputes counts", () => {
     const catalog = fixture();
@@ -80,6 +179,11 @@ describe("catalog overlays", () => {
       reviewedFaceTags: 1,
       faceTagsAdded: 1,
       faceTagsAlreadyPresent: 0,
+      // Reported even with no removals file, so a run that silently stopped
+      // applying removals is visible rather than indistinguishable.
+      reviewedFaceTagRemovals: 0,
+      faceTagsRemoved: 0,
+      faceTagsAlreadyAbsent: 0,
     });
     expect(catalog.photos[0].peopleSlugs).toEqual([
       "alias-target",
