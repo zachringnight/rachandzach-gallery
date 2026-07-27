@@ -8,6 +8,7 @@
       "2d820a8fa0abbcd9a4bbeb54023bccf418fb22f5232b0cf568b6a1d1cab182e9",
       "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7",
       "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
+      "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
       "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68"
     ],
     "reviewedAt": "2026-07-27",
@@ -18,8 +19,8 @@
     "savedCropAnchorCount": 23,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 753,
-    "candidatesApproved": 576,
+    "candidatesReviewed": 755,
+    "candidatesApproved": 578,
     "candidatesRejected": 178,
     "reviewWaves": [
       {
@@ -409,6 +410,18 @@
             "reason": "Reviewed on the held sheet and denied."
           }
         ]
+      },
+      {
+        "wave": 7,
+        "auditFingerprint": "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
+        "reviewType": "Maura Keith Gutierrez, identified from a human-picked anchor face",
+        "reviewMethod": "Her stored profile is Chris Gutierrez, so no profile match could find her. Zach picked her face off a contact sheet of the photos tagged to her without Chris; that face was then matched across the archive. Eleven faces came back and Zach confirmed all eleven, nine of which fall in photos already tagged to her. These are the two that were not yet tagged. Scores are against that anchor face, not a centroid.",
+        "minSimilarity": 0.49,
+        "minMargin": 0.3,
+        "candidatesReviewed": 2,
+        "candidatesApproved": 2,
+        "candidatesRejected": 0,
+        "dependsOn": "The maura-keith-gutierrez profile defect recorded on wave 6 is still unfixed; her saved face still shows Chris until a crop is framed at /admin/faces."
       }
     ]
   },
@@ -6465,6 +6478,38 @@
       "margin": 0.329,
       "profileSource": "learned",
       "reviewWave": 6
+    },
+    {
+      "photoId": "0325879ef0b1b86d2ab0b6cd9403d0a1",
+      "path": "09 Reception/rachelzach-755.jpg",
+      "personSlug": "maura-keith-gutierrez",
+      "displayName": "Maura Keith Gutierrez",
+      "faceIndex": 2,
+      "similarity": 0.61,
+      "margin": 0.418,
+      "profileSource": "human-anchor",
+      "reviewWave": 7,
+      "anchorEvidence": {
+        "anchorPhoto": "01 Day 1/rachelzachday1-150.jpg",
+        "anchorFaceIndex": 1,
+        "note": "Similarity is measured against a face Zach identified as Maura, not against her stored profile: that profile is Chris Gutierrez. The margin is the lead over the best competing person profile (emily-stillman 0.192)."
+      }
+    },
+    {
+      "photoId": "53f9186ac30c526e64ba2bb0d87f8c59",
+      "path": "05 Ceremony/rachelzach-410.jpg",
+      "personSlug": "maura-keith-gutierrez",
+      "displayName": "Maura Keith Gutierrez",
+      "faceIndex": 4,
+      "similarity": 0.49,
+      "margin": 0.319,
+      "profileSource": "human-anchor",
+      "reviewWave": 7,
+      "anchorEvidence": {
+        "anchorPhoto": "01 Day 1/rachelzachday1-150.jpg",
+        "anchorFaceIndex": 1,
+        "note": "Similarity is measured against a face Zach identified as Maura, not against her stored profile: that profile is Chris Gutierrez. The margin is the lead over the best competing person profile (emily-stillman 0.171)."
+      }
     }
   ]
 }
