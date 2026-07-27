@@ -328,7 +328,13 @@
             "personSlug": "taylor-noyer",
             "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 18.6)."
           }
-        ]
+        ],
+        "humanConfirmation": {
+          "confirmedBy": "Zach",
+          "confirmedAt": "2026-07-27",
+          "scope": "All 84 wave-5 additions confirmed against the saved-profile/candidate contact sheets.",
+          "method": "Candidates were reviewed as numbered contact sheets pairing each committed saved profile with the proposed face. The 25 excluded candidates were reviewed separately and left excluded."
+        }
       }
     ]
   },
