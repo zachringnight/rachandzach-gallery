@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
   "source": {
-    "auditFingerprint": "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7",
+    "auditFingerprint": "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
     "auditFingerprints": [
       "89d7732b1be5606d7413bc21b5f634c0fb71b1af0e4dee964905ce02de6fd08b",
       "a6bb35488b45afb864280e3a16a656bd26b627d1d2fbe7552977105d76b90a45",
       "2d820a8fa0abbcd9a4bbeb54023bccf418fb22f5232b0cf568b6a1d1cab182e9",
-      "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7"
+      "af7c8fcf5b376e2a8912e7b6667eb25a3ce9d1203649f1f0e5e0107a5cb7eac7",
+      "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68"
     ],
     "reviewedAt": "2026-07-27",
     "reviewedBy": "Codex visual side-by-side review",
@@ -16,9 +17,9 @@
     "savedCropAnchorCount": 23,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 444,
-    "candidatesApproved": 300,
-    "candidatesRejected": 144,
+    "candidatesReviewed": 553,
+    "candidatesApproved": 384,
+    "candidatesRejected": 169,
     "reviewWaves": [
       {
         "wave": 1,
@@ -164,6 +165,170 @@
         "facesInRepeatedClusters": 31,
         "contextConfirmedBelowDefault": 2,
         "heldBackReason": "Candidates not approved were mismatches, duplicate-person detections in one photo, unknown recurring faces, or too distant, blurred, occluded, or back-facing to identify safely."
+      },
+      {
+        "wave": 5,
+        "auditFingerprint": "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
+        "reviewType": "Widened bucket (b) sweep: face-size floor lowered from 0.035 to 0.015",
+        "reviewMethod": "audit-archive-tags.py was re-run with --min-untagged-face-frac 0.015 and --min-untagged-det-score 0.60, writing a separate report so the calibrated baseline was untouched. All 109 strong-tier candidates were rendered as saved profile beside candidate face and reviewed. Candidates too dark to judge were held on a measured luminance floor rather than on score, the Parker/Riley Soskin lookalike pair was held for an explicit human call, and pairs an earlier wave had already rejected were left rejected. Wedding originals were opened read-only for rendering and were not changed.",
+        "minSimilarity": 0.62,
+        "minMargin": 0.08,
+        "minFaceFraction": 0.015,
+        "candidatesReviewed": 109,
+        "candidatesApproved": 84,
+        "candidatesRejected": 25,
+        "rejections": [
+          {
+            "photoId": "77bccc8fde65fb16e0f3c8ace2a260a3",
+            "path": "10 Dancing/rachelzach-948.jpg",
+            "personSlug": "adam-lynn",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 42.0)."
+          },
+          {
+            "photoId": "b01eebff96441a32a1db64b0b600586d",
+            "path": "10 Dancing/rachelzach-1051.jpg",
+            "personSlug": "aly-gilboa",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 35.4)."
+          },
+          {
+            "photoId": "cc45e82a0a7f12e87dd706fd894938a2",
+            "path": "01 Day 1/rachelzachday1-295.jpg",
+            "personSlug": "aly-gilboa",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Candidate facial structure does not match the saved profile."
+          },
+          {
+            "photoId": "c91b911a28bec3bafea9b252d3263a96",
+            "path": "10 Dancing/rachelzach-970.jpg",
+            "personSlug": "brendan-greene",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 29.8)."
+          },
+          {
+            "photoId": "0c73d39d372b7302a0ef7005bcbe52f7",
+            "path": "10 Dancing/rachelzach-1084.jpg",
+            "personSlug": "carter-cheskey",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 28.5)."
+          },
+          {
+            "photoId": "b188fd1adf728d9cc73f10fc951b1e8a",
+            "path": "01 Day 1/rachelzachday1-296.jpg",
+            "personSlug": "dan-casciano",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Centered candidate face does not match the saved profile."
+          },
+          {
+            "photoId": "e0c01c2ce4e986e1efc85fb606c0e071",
+            "path": "10 Dancing/rachelzach-1050.jpg",
+            "personSlug": "daniel-shin",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 31.4)."
+          },
+          {
+            "photoId": "59e5b8fc5088863c689622fc1b75a22d",
+            "path": "09 Reception/rachelzach-736.jpg",
+            "personSlug": "dave-gilboa",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Candidate facial structure does not match the saved profile clearly enough to propagate."
+          },
+          {
+            "photoId": "17cecaf277ad4951a91f342e39f0919f",
+            "path": "10 Dancing/rachelzach-936.jpg",
+            "personSlug": "jacquie-michaelsen",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 37.5)."
+          },
+          {
+            "photoId": "495969b087ee9e6c60c5e1edb9718571",
+            "path": "10 Dancing/rachelzach-945.jpg",
+            "personSlug": "jason-howarth",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 29.9)."
+          },
+          {
+            "photoId": "e0c01c2ce4e986e1efc85fb606c0e071",
+            "path": "10 Dancing/rachelzach-1050.jpg",
+            "personSlug": "jody-post",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 29.7)."
+          },
+          {
+            "photoId": "0cd436cc6fe8e799db702465e15a1b9f",
+            "path": "09 Reception/rachelzach-664.jpg",
+            "personSlug": "jorie-soskin",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Centered candidate face does not match the saved profile."
+          },
+          {
+            "photoId": "36db8684e02530a668ccb0eee2840f57",
+            "path": "01 Day 1/rachelzachday1-133.jpg",
+            "personSlug": "jorie-soskin",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Candidate is too blurred to confirm against the saved profile."
+          },
+          {
+            "photoId": "a52f260de5268b11129a39ba2fd67e4d",
+            "path": "05 Ceremony/rachelzach-363.jpg",
+            "personSlug": "jorie-soskin",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Candidate is too blurred and obstructed to confirm against the saved profile."
+          },
+          {
+            "photoId": "4b95ad2b0edd5654faaf874f7fd38c7b",
+            "path": "10 Dancing/rachelzach-983.jpg",
+            "personSlug": "kelsey-nuelle",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 50.1)."
+          },
+          {
+            "photoId": "47fba0f6f0e82fbbe6c40f65f5ba8de6",
+            "path": "12 After Party/rachelzach-1125.jpg",
+            "personSlug": "lindsey-miller",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 6.8)."
+          },
+          {
+            "photoId": "9b975338c44bce1ee525ffef3e476dd7",
+            "path": "02 Getting Ready/rachelzach-17.jpg",
+            "personSlug": "maddie-slomovitz",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Candidate facial structure does not match the saved profile."
+          },
+          {
+            "photoId": "10fba8a0eafab311ef38ff8761b07d4c",
+            "path": "12 After Party/rachelzach-1152.jpg",
+            "personSlug": "maura-keith-gutierrez",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 41.2)."
+          },
+          {
+            "photoId": "fe4966f0613c8c5d3dd7ff5f393e7d1e",
+            "path": "05 Ceremony/rachelzach-286.jpg",
+            "personSlug": "parker-soskin",
+            "reason": "Parker/Riley Soskin are the one cross-person pair whose impostor peak (0.592) overlaps the genuine p05 (0.575); this needs an explicit human call, not a score."
+          },
+          {
+            "photoId": "f6bf8a12203b920ae0b9e108484ea7e1",
+            "path": "10 Dancing/rachelzach-1081.jpg",
+            "personSlug": "patti-soskin",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 40.9)."
+          },
+          {
+            "photoId": "1dd76293d7ae8cbeeb88585734cacf97",
+            "path": "05 Ceremony/rachelzach-301.jpg",
+            "personSlug": "riley-soskin",
+            "reason": "Parker/Riley Soskin are the one cross-person pair whose impostor peak (0.592) overlaps the genuine p05 (0.575); this needs an explicit human call, not a score."
+          },
+          {
+            "photoId": "a401eceaaeb0d20f8badb7cd0ed562ca",
+            "path": "05 Ceremony/rachelzach-306.jpg",
+            "personSlug": "riley-soskin",
+            "reason": "Parker/Riley Soskin are the one cross-person pair whose impostor peak (0.592) overlaps the genuine p05 (0.575); this needs an explicit human call, not a score."
+          },
+          {
+            "photoId": "cfa6380118b3e04cc6a9add76eb3dbeb",
+            "path": "05 Ceremony/rachelzach-316.jpg",
+            "personSlug": "riley-soskin",
+            "reason": "Parker/Riley Soskin are the one cross-person pair whose impostor peak (0.592) overlaps the genuine p05 (0.575); this needs an explicit human call, not a score."
+          },
+          {
+            "photoId": "641b951f10537552075fe24def76a680",
+            "path": "01 Day 1/rachelzachday1-265.jpg",
+            "personSlug": "siri-ramos",
+            "reason": "Deferred to the wave 3 rejection of this same pair: Candidate remains too blurred and partially occluded to confirm, even after full-resolution re-review."
+          },
+          {
+            "photoId": "03dd77486372b1345cbce215e8284fce",
+            "path": "12 After Party/rachelzach-1138.jpg",
+            "personSlug": "taylor-noyer",
+            "reason": "Candidate is too dark to confirm against the saved profile (mean luminance 18.6)."
+          }
+        ]
       }
     ]
   },
@@ -3179,6 +3344,930 @@
       "profileSource": "learned",
       "reviewWave": 4,
       "contextEvidence": "Matched the same dark suit, white shirt, hair, and side profile against tagged photo 14 Film/rachelzachfilm-65.jpg."
+    },
+    {
+      "photoId": "429cbc0d798c6f4b185d31dbbe914121",
+      "path": "09 Reception/rachelzach-882.jpg",
+      "personSlug": "lars-lattimer",
+      "displayName": "Lars Lattimer",
+      "faceIndex": 15,
+      "similarity": 0.841,
+      "margin": 0.677,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "258a11dc0603cf3a43ec24fb8a1d0a2e",
+      "path": "05 Ceremony/rachelzach-404.jpg",
+      "personSlug": "libby-rush",
+      "displayName": "Libby Rush",
+      "faceIndex": 2,
+      "similarity": 0.828,
+      "margin": 0.534,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "aafd555108f326d3e15d52f145b570f8",
+      "path": "05 Ceremony/rachelzach-408.jpg",
+      "personSlug": "libby-rush",
+      "displayName": "Libby Rush",
+      "faceIndex": 1,
+      "similarity": 0.823,
+      "margin": 0.548,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "5fe37a5aeda47ae5d2f83bc6fabbe703",
+      "path": "05 Ceremony/rachelzach-398.jpg",
+      "personSlug": "jamie-levine",
+      "displayName": "Jamie Levine",
+      "faceIndex": 1,
+      "similarity": 0.813,
+      "margin": 0.643,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "ffb44b05556b2430b22935ca8c205f46",
+      "path": "05 Ceremony/rachelzach-400.jpg",
+      "personSlug": "jamie-levine",
+      "displayName": "Jamie Levine",
+      "faceIndex": 3,
+      "similarity": 0.808,
+      "margin": 0.647,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "94eb14245304870ca12e30ed49dd59c2",
+      "path": "07 Cocktail Hour/rachelzach-622.jpg",
+      "personSlug": "nate-waldron",
+      "displayName": "Nate Waldron",
+      "faceIndex": 4,
+      "similarity": 0.805,
+      "margin": 0.578,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "8a20b2d0d9fc7cccf8de3090356b7dd6",
+      "path": "09 Reception/rachelzach-657.jpg",
+      "personSlug": "tav-scott",
+      "displayName": "Tav Scott",
+      "faceIndex": 1,
+      "similarity": 0.796,
+      "margin": 0.589,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "05dfd35315f73e311954302034c76d38",
+      "path": "05 Ceremony/rachelzach-407.jpg",
+      "personSlug": "libby-rush",
+      "displayName": "Libby Rush",
+      "faceIndex": 0,
+      "similarity": 0.795,
+      "margin": 0.558,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "618eccf75afc8baacb17afc99c835e10",
+      "path": "06 Friends & Family/rachelzach-476.jpg",
+      "personSlug": "tara-brown",
+      "displayName": "Tara Brown",
+      "faceIndex": 3,
+      "similarity": 0.768,
+      "margin": 0.588,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "183b56d39ff09c9eb4dfd1d341a04824",
+      "path": "09 Reception/rachelzach-715.jpg",
+      "personSlug": "jamie-levine",
+      "displayName": "Jamie Levine",
+      "faceIndex": 0,
+      "similarity": 0.764,
+      "margin": 0.568,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "179baa6253c58d3899d3a16e72c66583",
+      "path": "05 Ceremony/rachelzach-401.jpg",
+      "personSlug": "phil-quist",
+      "displayName": "Phil Quist",
+      "faceIndex": 9,
+      "similarity": 0.759,
+      "margin": 0.575,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "0e18a672dea62a876a7528656b5e0585",
+      "path": "06 Friends & Family/rachelzach-467.jpg",
+      "personSlug": "sally-stringham",
+      "displayName": "Sally Stringham",
+      "faceIndex": 2,
+      "similarity": 0.752,
+      "margin": 0.516,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "28d770ae66d85638f513ec1108ad55cb",
+      "path": "05 Ceremony/rachelzach-253.jpg",
+      "personSlug": "jason-howarth",
+      "displayName": "Jason Howarth",
+      "faceIndex": 13,
+      "similarity": 0.743,
+      "margin": 0.602,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "5bf2e728b83292063d39ba3a29202ec2",
+      "path": "06 Friends & Family/rachelzach-473.jpg",
+      "personSlug": "tara-brown",
+      "displayName": "Tara Brown",
+      "faceIndex": 6,
+      "similarity": 0.742,
+      "margin": 0.501,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "429cbc0d798c6f4b185d31dbbe914121",
+      "path": "09 Reception/rachelzach-882.jpg",
+      "personSlug": "sean-morse",
+      "displayName": "Sean Morse",
+      "faceIndex": 7,
+      "similarity": 0.738,
+      "margin": 0.588,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "8b1150348a72e18ae7eab9cf41557eff",
+      "path": "05 Ceremony/rachelzach-409.jpg",
+      "personSlug": "scott-lattimer",
+      "displayName": "Scott Lattimer",
+      "faceIndex": 10,
+      "similarity": 0.735,
+      "margin": 0.583,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "0e18a672dea62a876a7528656b5e0585",
+      "path": "06 Friends & Family/rachelzach-467.jpg",
+      "personSlug": "tim-jackowski",
+      "displayName": "Tim Jackowski",
+      "faceIndex": 12,
+      "similarity": 0.734,
+      "margin": 0.492,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "ffb44b05556b2430b22935ca8c205f46",
+      "path": "05 Ceremony/rachelzach-400.jpg",
+      "personSlug": "tim-jackowski",
+      "displayName": "Tim Jackowski",
+      "faceIndex": 14,
+      "similarity": 0.732,
+      "margin": 0.475,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f1502e3fb70ceaa841532e2380dc2be7",
+      "path": "01 Day 1/rachelzachday1-231.jpg",
+      "personSlug": "siri-ramos",
+      "displayName": "Siri Ramos",
+      "faceIndex": 16,
+      "similarity": 0.73,
+      "margin": 0.564,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "05dfd35315f73e311954302034c76d38",
+      "path": "05 Ceremony/rachelzach-407.jpg",
+      "personSlug": "keagen-edwards",
+      "displayName": "Keagen Edwards",
+      "faceIndex": 8,
+      "similarity": 0.729,
+      "margin": 0.564,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "54654c7c4e505b58c19e93fc19275d84",
+      "path": "01 Day 1/rachelzachday1-256.jpg",
+      "personSlug": "jon-mohr",
+      "displayName": "Jon Mohr",
+      "faceIndex": 0,
+      "similarity": 0.723,
+      "margin": 0.45,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "0e18a672dea62a876a7528656b5e0585",
+      "path": "06 Friends & Family/rachelzach-467.jpg",
+      "personSlug": "phil-campbell",
+      "displayName": "Phil Campbell",
+      "faceIndex": 10,
+      "similarity": 0.722,
+      "margin": 0.584,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "50e6006129569894a9dd4bfb879b03d4",
+      "path": "05 Ceremony/rachelzach-298.jpg",
+      "personSlug": "leeann-howarth",
+      "displayName": "LeeAnn Howarth",
+      "faceIndex": 15,
+      "similarity": 0.718,
+      "margin": 0.522,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "a2a97945ae8d59ed03679f76976e9a48",
+      "path": "05 Ceremony/rachelzach-416.jpg",
+      "personSlug": "alex-dubov",
+      "displayName": "Alex Dubov",
+      "faceIndex": 14,
+      "similarity": 0.716,
+      "margin": 0.497,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "a8b1b2fa44fc7aa698fb905278f6b0bd",
+      "path": "06 Friends & Family/rachelzach-466.jpg",
+      "personSlug": "jeffry-lurie",
+      "displayName": "Jeffry Lurie",
+      "faceIndex": 14,
+      "similarity": 0.716,
+      "margin": 0.462,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "d3a348905dfe0bada6a2a5de06657bd5",
+      "path": "01 Day 1/rachelzachday1-288.jpg",
+      "personSlug": "pasha-hashemi",
+      "displayName": "Pasha Hashemi",
+      "faceIndex": 0,
+      "similarity": 0.716,
+      "margin": 0.592,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "fa2e0dec37e87f8c8a59ded39014ac97",
+      "path": "05 Ceremony/rachelzach-303.jpg",
+      "personSlug": "robbie-soskin",
+      "displayName": "Robbie Soskin",
+      "faceIndex": 0,
+      "similarity": 0.716,
+      "margin": 0.429,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f0bdc7766f537a0b376fcccf16362f8a",
+      "path": "07 Cocktail Hour/rachelzach-646.jpg",
+      "personSlug": "alex-dubov",
+      "displayName": "Alex Dubov",
+      "faceIndex": 8,
+      "similarity": 0.712,
+      "margin": 0.548,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "8b1150348a72e18ae7eab9cf41557eff",
+      "path": "05 Ceremony/rachelzach-409.jpg",
+      "personSlug": "libby-rush",
+      "displayName": "Libby Rush",
+      "faceIndex": 3,
+      "similarity": 0.711,
+      "margin": 0.503,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f1502e3fb70ceaa841532e2380dc2be7",
+      "path": "01 Day 1/rachelzachday1-231.jpg",
+      "personSlug": "ty-damon",
+      "displayName": "Ty Damon",
+      "faceIndex": 13,
+      "similarity": 0.709,
+      "margin": 0.518,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "429cbc0d798c6f4b185d31dbbe914121",
+      "path": "09 Reception/rachelzach-882.jpg",
+      "personSlug": "bryant-kohler",
+      "displayName": "Bryant Kohler",
+      "faceIndex": 0,
+      "similarity": 0.708,
+      "margin": 0.604,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "fa8ffffa4b6739631cc0b8e615040b41",
+      "path": "05 Ceremony/rachelzach-228.jpg",
+      "personSlug": "frankie-bennett",
+      "displayName": "Frankie Bennett",
+      "faceIndex": 3,
+      "similarity": 0.708,
+      "margin": 0.545,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "d975d08c0ca588931a11625e0144dc27",
+      "path": "06 Friends & Family/rachelzach-480.jpg",
+      "personSlug": "jeffry-lurie",
+      "displayName": "Jeffry Lurie",
+      "faceIndex": 15,
+      "similarity": 0.707,
+      "margin": 0.384,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "265cc0bfd10e8d3b870ffc50a5d0d776",
+      "path": "01 Day 1/rachelzachday1-299.jpg",
+      "personSlug": "natalie-lane",
+      "displayName": "Natalie Lane",
+      "faceIndex": 1,
+      "similarity": 0.698,
+      "margin": 0.528,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "0e18a672dea62a876a7528656b5e0585",
+      "path": "06 Friends & Family/rachelzach-467.jpg",
+      "personSlug": "rachel-casciano",
+      "displayName": "Rachel Casciano",
+      "faceIndex": 3,
+      "similarity": 0.695,
+      "margin": 0.504,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "429cbc0d798c6f4b185d31dbbe914121",
+      "path": "09 Reception/rachelzach-882.jpg",
+      "personSlug": "scott-lattimer",
+      "displayName": "Scott Lattimer",
+      "faceIndex": 16,
+      "similarity": 0.695,
+      "margin": 0.345,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "7a66c809f9aece63a6c446ea2b0fd20e",
+      "path": "01 Day 1/rachelzachday1-290.jpg",
+      "personSlug": "maddie-slomovitz",
+      "displayName": "Maddie Slomovitz",
+      "faceIndex": 5,
+      "similarity": 0.694,
+      "margin": 0.398,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "6179db4725ec32ae7fc704dd0eeda181",
+      "path": "06 Friends & Family/rachelzach-472.jpg",
+      "personSlug": "tara-brown",
+      "displayName": "Tara Brown",
+      "faceIndex": 5,
+      "similarity": 0.689,
+      "margin": 0.495,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f1502e3fb70ceaa841532e2380dc2be7",
+      "path": "01 Day 1/rachelzachday1-231.jpg",
+      "personSlug": "jules-gesink",
+      "displayName": "Jules Gesink",
+      "faceIndex": 8,
+      "similarity": 0.688,
+      "margin": 0.482,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "75a146703e679c5fe9da0b547f236c3a",
+      "path": "05 Ceremony/rachelzach-387.jpg",
+      "personSlug": "zach-soskin",
+      "displayName": "Zach Soskin",
+      "faceIndex": 1,
+      "similarity": 0.687,
+      "margin": 0.53,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "0e18a672dea62a876a7528656b5e0585",
+      "path": "06 Friends & Family/rachelzach-467.jpg",
+      "personSlug": "jake-lurie",
+      "displayName": "Jake Lurie",
+      "faceIndex": 16,
+      "similarity": 0.685,
+      "margin": 0.348,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "d86cda1dce8bf66c1392920b2635a7fb",
+      "path": "09 Reception/rachelzach-842.jpg",
+      "personSlug": "zach-soskin",
+      "displayName": "Zach Soskin",
+      "faceIndex": 1,
+      "similarity": 0.684,
+      "margin": 0.487,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "186be61226cbe596003cd8b8c6f2022b",
+      "path": "14 Film/rachelzachfilm-217.jpg",
+      "personSlug": "jules-gesink",
+      "displayName": "Jules Gesink",
+      "faceIndex": 4,
+      "similarity": 0.681,
+      "margin": 0.49,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "4a169b215c0e411360f19a1659e044fe",
+      "path": "09 Reception/rachelzach-679.jpg",
+      "personSlug": "lars-lattimer",
+      "displayName": "Lars Lattimer",
+      "faceIndex": 0,
+      "similarity": 0.679,
+      "margin": 0.522,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "ff550cc2093f0cb6528c0cc3fe985ff7",
+      "path": "14 Film/rachelzachfilm-162.jpg",
+      "personSlug": "erin-ankin",
+      "displayName": "Erin Ankin",
+      "faceIndex": 13,
+      "similarity": 0.677,
+      "margin": 0.476,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "3b4fb3460c1706b5a63a963cc24fc587",
+      "path": "10 Dancing/rachelzach-1069.jpg",
+      "personSlug": "adi-greene",
+      "displayName": "Adi Greene",
+      "faceIndex": 6,
+      "similarity": 0.676,
+      "margin": 0.487,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "9e5fd9646c213658eccc8a4332a4edf0",
+      "path": "05 Ceremony/rachelzach-381.jpg",
+      "personSlug": "kayla-kohler",
+      "displayName": "Kayla Kohler",
+      "faceIndex": 1,
+      "similarity": 0.676,
+      "margin": 0.427,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "5e1d0cc1d065f7c7f607beabc9fcffd9",
+      "path": "06 Friends & Family/rachelzach-478.jpg",
+      "personSlug": "jeff-attila",
+      "displayName": "Jeff Attila",
+      "faceIndex": 4,
+      "similarity": 0.672,
+      "margin": 0.538,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "367cb62fc9b6fb4f64ab98b7e3c35a09",
+      "path": "01 Day 1/rachelzachday1-200.jpg",
+      "personSlug": "jorie-soskin",
+      "displayName": "Jorie Soskin",
+      "faceIndex": 1,
+      "similarity": 0.67,
+      "margin": 0.528,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "0e18a672dea62a876a7528656b5e0585",
+      "path": "06 Friends & Family/rachelzach-467.jpg",
+      "personSlug": "jorie-soskin",
+      "displayName": "Jorie Soskin",
+      "faceIndex": 8,
+      "similarity": 0.669,
+      "margin": 0.444,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "60a521ddc52f200d6d8ecd7a362d58b4",
+      "path": "05 Ceremony/rachelzach-317.jpg",
+      "personSlug": "todd-lurie",
+      "displayName": "Todd Lurie",
+      "faceIndex": 14,
+      "similarity": 0.667,
+      "margin": 0.424,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "7b3ee9094e2d421addd4ce6546024b5a",
+      "path": "01 Day 1/rachelzachday1-257.jpg",
+      "personSlug": "allan-caplan",
+      "displayName": "Allan Caplan",
+      "faceIndex": 7,
+      "similarity": 0.667,
+      "margin": 0.509,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "6322f961a7e1dad6148bea7e52c3a836",
+      "path": "07 Cocktail Hour/rachelzach-621.jpg",
+      "personSlug": "nate-waldron",
+      "displayName": "Nate Waldron",
+      "faceIndex": 4,
+      "similarity": 0.666,
+      "margin": 0.523,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "628ddbb3980bc70ae61d19dd0b5eea25",
+      "path": "05 Ceremony/rachelzach-229.jpg",
+      "personSlug": "carter-cheskey",
+      "displayName": "Carter Cheskey",
+      "faceIndex": 11,
+      "similarity": 0.663,
+      "margin": 0.474,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f88ed68e585617ff0905e5ea8bc988d3",
+      "path": "06 Friends & Family/rachelzach-469.jpg",
+      "personSlug": "tim-jackowski",
+      "displayName": "Tim Jackowski",
+      "faceIndex": 12,
+      "similarity": 0.662,
+      "margin": 0.462,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f6f0d707d4c8146fdde67a7073ae1d66",
+      "path": "05 Ceremony/rachelzach-420.jpg",
+      "personSlug": "ashley-dubov",
+      "displayName": "Ashley Dubov",
+      "faceIndex": 1,
+      "similarity": 0.661,
+      "margin": 0.452,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "4be56be4b73ec6251171218e31d36778",
+      "path": "06 Friends & Family/rachelzach-471.jpg",
+      "personSlug": "jeffry-lurie",
+      "displayName": "Jeffry Lurie",
+      "faceIndex": 12,
+      "similarity": 0.66,
+      "margin": 0.371,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "1dd76293d7ae8cbeeb88585734cacf97",
+      "path": "05 Ceremony/rachelzach-301.jpg",
+      "personSlug": "phil-campbell",
+      "displayName": "Phil Campbell",
+      "faceIndex": 0,
+      "similarity": 0.659,
+      "margin": 0.468,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "43f08b74af7f2eeca2f7c34975cbfcbd",
+      "path": "09 Reception/rachelzach-756.jpg",
+      "personSlug": "jules-gesink",
+      "displayName": "Jules Gesink",
+      "faceIndex": 7,
+      "similarity": 0.658,
+      "margin": 0.43,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "3c69b5fb403761671e056b5032ce8c0a",
+      "path": "09 Reception/rachelzach-670.jpg",
+      "personSlug": "rachel-casciano",
+      "displayName": "Rachel Casciano",
+      "faceIndex": 0,
+      "similarity": 0.654,
+      "margin": 0.48,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "7dc0198e82a4c804b7a4d9ab3c1d6d14",
+      "path": "09 Reception/rachelzach-740.jpg",
+      "personSlug": "jules-gesink",
+      "displayName": "Jules Gesink",
+      "faceIndex": 13,
+      "similarity": 0.654,
+      "margin": 0.496,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "bd356e10b474e8936da240fc74461828",
+      "path": "01 Day 1/rachelzachday1-176.jpg",
+      "personSlug": "phil-campbell",
+      "displayName": "Phil Campbell",
+      "faceIndex": 4,
+      "similarity": 0.654,
+      "margin": 0.508,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "e9df187beb3f5d5154ccb647015e1a24",
+      "path": "07 Cocktail Hour/rachelzach-571.jpg",
+      "personSlug": "david-benrud",
+      "displayName": "David Benrud",
+      "faceIndex": 0,
+      "similarity": 0.653,
+      "margin": 0.48,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "ac7e4741c5118870f3313fe82385c5d4",
+      "path": "01 Day 1/rachelzachday1-204.jpg",
+      "personSlug": "scott-lattimer",
+      "displayName": "Scott Lattimer",
+      "faceIndex": 1,
+      "similarity": 0.65,
+      "margin": 0.473,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "0af94b13dfd02208f122710005c95910",
+      "path": "05 Ceremony/rachelzach-397.jpg",
+      "personSlug": "tara-brown",
+      "displayName": "Tara Brown",
+      "faceIndex": 4,
+      "similarity": 0.649,
+      "margin": 0.455,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "591457ed15eacaad3b61f65f8a5318b1",
+      "path": "07 Cocktail Hour/rachelzach-561.jpg",
+      "personSlug": "siri-ramos",
+      "displayName": "Siri Ramos",
+      "faceIndex": 11,
+      "similarity": 0.649,
+      "margin": 0.466,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "5f8ebf9b596ffdcfd2db436e9578b5ae",
+      "path": "14 Film/rachelzachfilm-42.jpg",
+      "personSlug": "steve-hecklin",
+      "displayName": "Steve Hecklin",
+      "faceIndex": 2,
+      "similarity": 0.649,
+      "margin": 0.493,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "e42bc344a4ceab8341b839f24e2088bb",
+      "path": "09 Reception/rachelzach-737.jpg",
+      "personSlug": "keagen-edwards",
+      "displayName": "Keagen Edwards",
+      "faceIndex": 1,
+      "similarity": 0.649,
+      "margin": 0.482,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f3d85dcb51c01b340dcce3776c4d8ff6",
+      "path": "05 Ceremony/rachelzach-300.jpg",
+      "personSlug": "leeann-howarth",
+      "displayName": "LeeAnn Howarth",
+      "faceIndex": 21,
+      "similarity": 0.647,
+      "margin": 0.484,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "56d391e2c24ef3923462486c32583f31",
+      "path": "09 Reception/rachelzach-920.jpg",
+      "personSlug": "dan-casciano",
+      "displayName": "Dan Casciano",
+      "faceIndex": 0,
+      "similarity": 0.646,
+      "margin": 0.381,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "cfa6380118b3e04cc6a9add76eb3dbeb",
+      "path": "05 Ceremony/rachelzach-316.jpg",
+      "personSlug": "robbie-soskin",
+      "displayName": "Robbie Soskin",
+      "faceIndex": 8,
+      "similarity": 0.64,
+      "margin": 0.409,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "b62e5a1275b6826f211a30891d233060",
+      "path": "14 Film/rachelzachfilm-156.jpg",
+      "personSlug": "aly-gilboa",
+      "displayName": "Aly Gilboa",
+      "faceIndex": 2,
+      "similarity": 0.639,
+      "margin": 0.385,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f1502e3fb70ceaa841532e2380dc2be7",
+      "path": "01 Day 1/rachelzachday1-231.jpg",
+      "personSlug": "kelsey-nuelle",
+      "displayName": "Kelsey Nuelle",
+      "faceIndex": 10,
+      "similarity": 0.638,
+      "margin": 0.412,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "50e6006129569894a9dd4bfb879b03d4",
+      "path": "05 Ceremony/rachelzach-298.jpg",
+      "personSlug": "max-gordichuk",
+      "displayName": "Max Gordichuk",
+      "faceIndex": 17,
+      "similarity": 0.637,
+      "margin": 0.394,
+      "profileSource": "saved-crop",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "66f3041dfa1fe641087e843636233c9f",
+      "path": "01 Day 1/rachelzachday1-118.jpg",
+      "personSlug": "greg-foster",
+      "displayName": "Greg Foster",
+      "faceIndex": 0,
+      "similarity": 0.637,
+      "margin": 0.392,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "a8b1b2fa44fc7aa698fb905278f6b0bd",
+      "path": "06 Friends & Family/rachelzach-466.jpg",
+      "personSlug": "adam-stillman",
+      "displayName": "Adam Stillman",
+      "faceIndex": 11,
+      "similarity": 0.637,
+      "margin": 0.482,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "fa8ffffa4b6739631cc0b8e615040b41",
+      "path": "05 Ceremony/rachelzach-228.jpg",
+      "personSlug": "brendan-greene",
+      "displayName": "Brendan Greene",
+      "faceIndex": 4,
+      "similarity": 0.636,
+      "margin": 0.428,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "ffb44b05556b2430b22935ca8c205f46",
+      "path": "05 Ceremony/rachelzach-400.jpg",
+      "personSlug": "lauren-lurie",
+      "displayName": "Lauren Lurie",
+      "faceIndex": 16,
+      "similarity": 0.636,
+      "margin": 0.505,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "5f8ebf9b596ffdcfd2db436e9578b5ae",
+      "path": "14 Film/rachelzachfilm-42.jpg",
+      "personSlug": "leeann-howarth",
+      "displayName": "LeeAnn Howarth",
+      "faceIndex": 4,
+      "similarity": 0.633,
+      "margin": 0.501,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "9e5fd9646c213658eccc8a4332a4edf0",
+      "path": "05 Ceremony/rachelzach-381.jpg",
+      "personSlug": "maddie-slomovitz",
+      "displayName": "Maddie Slomovitz",
+      "faceIndex": 0,
+      "similarity": 0.633,
+      "margin": 0.415,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "a8b1b2fa44fc7aa698fb905278f6b0bd",
+      "path": "06 Friends & Family/rachelzach-466.jpg",
+      "personSlug": "sally-stringham",
+      "displayName": "Sally Stringham",
+      "faceIndex": 2,
+      "similarity": 0.629,
+      "margin": 0.464,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "f169f7c5d07328eb504aeb25fd6b20f2",
+      "path": "05 Ceremony/rachelzach-318.jpg",
+      "personSlug": "jorie-soskin",
+      "displayName": "Jorie Soskin",
+      "faceIndex": 3,
+      "similarity": 0.629,
+      "margin": 0.43,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "28d770ae66d85638f513ec1108ad55cb",
+      "path": "05 Ceremony/rachelzach-253.jpg",
+      "personSlug": "scott-lattimer",
+      "displayName": "Scott Lattimer",
+      "faceIndex": 14,
+      "similarity": 0.625,
+      "margin": 0.403,
+      "profileSource": "learned",
+      "reviewWave": 5
+    },
+    {
+      "photoId": "3b4fb3460c1706b5a63a963cc24fc587",
+      "path": "10 Dancing/rachelzach-1069.jpg",
+      "personSlug": "pasha-hashemi",
+      "displayName": "Pasha Hashemi",
+      "faceIndex": 5,
+      "similarity": 0.622,
+      "margin": 0.466,
+      "profileSource": "learned",
+      "reviewWave": 5
     }
   ]
 }
