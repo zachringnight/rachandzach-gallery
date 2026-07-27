@@ -25,12 +25,13 @@ WORKSPACE = Path(__file__).resolve().parent.parent
 LIGHTROOM_ROOT = Path(
     os.environ.get(
         "LIGHTROOM_PHOTO_DIR",
-        "/Users/zsoskin/Downloads/Rachel & Zach - Ali Beck Photography 2",
+        "/Users/zsoskin/Rachel & Zach - Ali Beck Photography 2",
     )
 ).resolve()
 GOOGLE_ROOT = Path(
     os.environ.get(
-        "GOOGLE_PHOTO_DIR", "/Users/zsoskin/Downloads/Takeout/Google Photos"
+        "GOOGLE_PHOTO_DIR",
+        "/Users/zsoskin/Documents/Downloads_Sorted/Archives_Exports/Takeout/Google Photos",
     )
 ).resolve()
 OUTPUT_ROOT = Path(
