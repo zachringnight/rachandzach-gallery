@@ -25,7 +25,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
-ROOT = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+ROOT = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 METADATA = ROOT / "_Metadata"
 REVIEW = ROOT / "_Review"
 SNEAK_DIR = ROOT / "13 Sneak Peek"

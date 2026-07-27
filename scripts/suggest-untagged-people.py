@@ -21,7 +21,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
 REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 UNTAGGED_DIR = MASTER / "_Review" / "Untagged - Needs Review"
 UNTAGGED_CSV = UNTAGGED_DIR / "review.csv"
 REFERENCE_CSV = REPO / "metadata" / "identity-review" / "reference-crops.csv"

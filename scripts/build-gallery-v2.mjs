@@ -35,7 +35,7 @@ const execFileAsync = promisify(execFile);
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const DEFAULT_SOURCE_ROOT =
   process.env.WEDDING_MASTER_ROOT ||
-  "/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean";
+  "/Users/zsoskin/Rachel & Zach - Wedding Master Clean";
 
 function parseArgs(argv) {
   const args = {

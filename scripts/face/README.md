@@ -53,7 +53,7 @@ uv run --no-project --python .venv-faces/bin/python \
 ```
 
 Phase 1 (slow, resumable): reads originals from the source master (READ-ONLY,
-`/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean`), decodes each
+`/Users/zsoskin/Rachel & Zach - Wedding Master Clean`), decodes each
 JPEG at a bounded long edge (2048 px, JPEG draft-mode fast path), detects at a
 bounded det size (640), embeds every face, and appends one JSON line per photo
 to `metadata/faces/detections.jsonl`. Ctrl-C any time; the next run resumes

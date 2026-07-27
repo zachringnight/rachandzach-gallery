@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
 REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 ANALYSIS = MASTER / "_Review" / "Untagged - Needs Review" / "_Face Match Analysis"
 CANDIDATES = ANALYSIS / "face-match-candidates.csv"
 REFERENCES = REPO / "metadata" / "identity-review" / "reference-crops.csv"

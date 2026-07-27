@@ -15,7 +15,7 @@ import cv2
 
 
 REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 MANIFEST = MASTER / "_Metadata" / "photo-manifest.csv"
 REFERENCE = MASTER / "01 Day 1" / "rachelzachday1-164.jpg"
 OUTPUT = MASTER / "_Review" / "Ann Marie Hoppler Match Analysis"

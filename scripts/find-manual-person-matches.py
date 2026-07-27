@@ -23,7 +23,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
 REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 MANIFEST = MASTER / "_Metadata" / "photo-manifest.csv"
 OUTPUT = MASTER / "_Review" / "Manual Face Match Analysis"
 YU_NET = REPO / "models" / "face_detection_yunet_2023mar.onnx"

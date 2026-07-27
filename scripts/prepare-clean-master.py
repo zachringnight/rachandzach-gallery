@@ -36,7 +36,7 @@ GOOGLE_ROOT = Path(
 OUTPUT_ROOT = Path(
     os.environ.get(
         "CLEAN_MASTER_DIR",
-        "/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean",
+        "/Users/zsoskin/Rachel & Zach - Wedding Master Clean",
     )
 ).resolve()
 CACHE_ROOT = Path(

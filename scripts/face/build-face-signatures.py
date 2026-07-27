@@ -42,7 +42,7 @@ import numpy as np
 from PIL import Image, ImageOps
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_MASTER = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+DEFAULT_MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 CATALOG_PATH = REPO / "src" / "generated" / "gallery-v2.json"
 OUT_DIR = REPO / "metadata" / "faces"
 DETECTIONS_PATH = OUT_DIR / "detections.jsonl"

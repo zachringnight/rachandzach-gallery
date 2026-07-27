@@ -17,7 +17,7 @@ import re
 from pathlib import Path
 
 
-ROOT = Path("/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean")
+ROOT = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 METADATA = ROOT / "_Metadata"
 REVIEW_ROOT = ROOT / "_Review"
 REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
