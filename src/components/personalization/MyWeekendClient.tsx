@@ -91,10 +91,25 @@ export function MyWeekendClient({
   // Resolve from identities, not the picker roster: a hidden person's saved
   // selection must still land on their own name.
   const person = identities.find((candidate) => candidate.slug === personSlug);
+
+  // No identity at all means the saved slug is stale, not hidden -- hidden
+  // people are in `identities` precisely so they still resolve. The realistic
+  // case is a guest who picked an admin-added person before that person was
+  // removed: the preference lives only in this browser, so nothing cleaned it
+  // up. Rendering on would have given them a page titled "Guest's photos" with
+  // a link to a route that 404s. Drop the stale preference and hand them back
+  // the picker instead.
+  if (!person) {
+    clearMyWeekendPreference();
+    return (
+      <MyWeekendSetup people={people} faces={faces} onSelect={handleSelect} />
+    );
+  }
+
   return (
     <MyWeekendGallery
       personSlug={personSlug}
-      personName={person?.displayName ?? "Guest"}
+      personName={person.displayName}
       onChangePerson={handleChangePerson}
       // Every surfaced person is a catalog identity (admin additions get a
       // rachandzach_people row at creation), so the personalized route
