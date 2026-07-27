@@ -606,6 +606,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      rachandzach_remove_added_person: {
+        Args: {
+          p_slug: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
