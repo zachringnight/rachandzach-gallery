@@ -18,7 +18,9 @@ import { applyCatalogOverlays } from "../lib/catalog-overlays.mjs";
 const RECURRING_CONFIRMATION_KIND = "human-recurring-cluster";
 const RECURRING_REVIEW_TYPE =
   "Human identity assignment for recurring unnamed face clusters";
-const CLUSTER_ID_PATTERN = /^z\d{3}$/;
+// z### are zero-tag review clusters; c#### come from the signature
+// builder's unresolved clusters. Both are human-confirmed the same way.
+const CLUSTER_ID_PATTERN = /^(z\d{3}|c\d{4})$/;
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const HASH_PATTERN = /^[0-9a-f]{32}$/;
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
@@ -32,6 +34,11 @@ const manifestPath = join(
   repoRoot,
   "metadata",
   "reviewed-face-tag-additions.json",
+);
+const removalsPath = join(
+  repoRoot,
+  "metadata",
+  "reviewed-face-tag-removals.json",
 );
 
 function invariant(condition, message) {
@@ -343,22 +350,42 @@ async function atomicWriteJson(path, value) {
 
 function parseArguments(argv) {
   const write = argv.includes("--write");
-  const positional = argv.filter((argument) => argument !== "--write");
+  // --report must match whichever report the tagger was built from; the
+  // fingerprint check below is what stops decisions being applied against a
+  // different set of clusters than the reviewer actually saw.
+  const reportIndex = argv.indexOf("--report");
+  const selectedReport =
+    reportIndex === -1 ? reportPath : resolve(argv[reportIndex + 1] ?? "");
+  invariant(
+    reportIndex === -1 || (argv[reportIndex + 1] ?? "").length > 0,
+    "--report needs a path",
+  );
+  const positional = argv.filter(
+    (argument, index) =>
+      argument !== "--write" &&
+      index !== reportIndex &&
+      index !== reportIndex + 1,
+  );
   invariant(
     positional.length === 1,
-    "usage: import-recurring-face-decisions.mjs <decisions.json> [--write]",
+    "usage: import-recurring-face-decisions.mjs <decisions.json> [--report <report.json>] [--write]",
   );
-  return { decisionPath: resolve(positional[0]), write };
+  return { decisionPath: resolve(positional[0]), reportPath: selectedReport, write };
 }
 
 async function main() {
-  const { decisionPath, write } = parseArguments(process.argv.slice(2));
-  const [report, catalog, attendance, manifest, decisionFile] =
+  const { decisionPath, reportPath: selectedReport, write } =
+    parseArguments(process.argv.slice(2));
+  const [report, catalog, attendance, manifest, removals, decisionFile] =
     await Promise.all([
-      readJson(reportPath),
+      readJson(selectedReport),
       readJson(catalogPath),
       readJson(attendancePath),
       readJson(manifestPath),
+      readJson(removalsPath).catch((error) => {
+        if (error.code === "ENOENT") return null;
+        throw error;
+      }),
       readJson(decisionPath),
     ]);
   const { manifest: updatedManifest, summary } =
@@ -373,10 +400,14 @@ async function main() {
   let overlay = null;
   if (write) {
     const updatedCatalog = clone(catalog);
+    // Removals must travel with the additions. Without them a catalog
+    // rebuilt from the master would quietly resurrect every tag a human
+    // deleted, and nothing in the output would say so.
     overlay = applyCatalogOverlays(
       updatedCatalog,
       attendance,
       updatedManifest,
+      removals,
     );
     await atomicWriteJson(manifestPath, updatedManifest);
     await atomicWriteJson(catalogPath, updatedCatalog);

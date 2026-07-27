@@ -85,7 +85,7 @@ function validateFaceTags(manifest) {
         `face-tag ${addition.photoId}/${addition.personSlug} is missing a manual-confirmation review wave`,
       );
       invariant(
-        /^z\d{3}$/.test(addition.clusterId),
+        /^(z\d{3}|c\d{4})$/.test(addition.clusterId),
         `face-tag ${addition.photoId}/${addition.personSlug} has invalid recurring cluster`,
       );
       invariant(

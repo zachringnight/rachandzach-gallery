@@ -622,21 +622,25 @@ def build_signatures(records: dict[str, dict], catalog: dict) -> dict:
                     "support": len(rows),
                 }
             )
-        samples = sorted(members, key=lambda i: -faces[i].frac)[:3]
+        ordered = sorted(members, key=lambda i: -faces[i].frac)
+        def face_ref(i: int) -> dict:
+            return {
+                "photoId": faces[i].photo_id,
+                "faceIndex": faces[i].index,
+                "bbox": faces[i].bbox,
+            }
         unresolved.append(
             {
                 "clusterId": f"c{cid:04d}",
                 "faceCount": len(members),
                 "photoCount": len(cluster_photos[cid]),
                 "topCoTags": top_tags,
-                "sampleFaces": [
-                    {
-                        "photoId": faces[i].photo_id,
-                        "faceIndex": faces[i].index,
-                        "bbox": faces[i].bbox,
-                    }
-                    for i in samples
-                ],
+                # The three biggest faces, for a quick read of who this is.
+                "sampleFaces": [face_ref(i) for i in ordered[:3]],
+                # Every face in the cluster. Naming a cluster tags all of
+                # them, so a truncated list would silently drop photos: the
+                # largest cluster here is 21 faces against 3 samples.
+                "members": [face_ref(i) for i in ordered],
             }
         )
     unresolved.sort(key=lambda entry: (-entry["faceCount"], entry["clusterId"]))

@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-07-27T20:50:17.805Z",
+  "exportedAt": "2026-07-27T22:03:07.956Z",
   "people": {
     "alyssa-scott": {
       "photoId": "a43bc4d818a73412d3bb272d553aaa35",
@@ -55,6 +55,14 @@
         "x": 0.73,
         "y": 0.0707277288645825,
         "size": 0.27
+      }
+    },
+    "danny-listrani": {
+      "photoId": "741929fdcfafd9ac23dfa148afc6aca7",
+      "crop": {
+        "x": 0.352584,
+        "y": 0.135269,
+        "size": 0.403982
       }
     },
     "david-burton": {

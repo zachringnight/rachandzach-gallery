@@ -247,10 +247,37 @@ decisions remain explicit rows in
 recorded thresholds when visual context confirms a face below the default
 saved-profile score.
 
-### 5. Private recurring-face tagger
+### 5. Unresolved-cluster report
+
+```bash
+npm run faces:unresolved
+```
+
+Step 1 names 118 of 131 tagged people. What it cannot name it lists as
+unresolved clusters: recurring faces grouped confidently but attached to
+nobody. These are the people still missing from the gallery, and the zero-tag
+review does not reach them -- it covers only photos with faces and no tags at
+all.
+
+This converts those clusters into the same report schema the tagger already
+reads, so the tagger's loader is untouched. Clusters rank by face count, so
+the largest stranger leads and single sightings fall to the bottom.
+
+Two things it will not do. A cluster holding two faces from one photograph is
+not one person -- one person cannot be in a frame twice -- so it is dropped
+and listed under `impureClusters` rather than offered for naming; centroid
+merging produces a few of these and it is likely why they never resolved. And
+it refuses to run against signatures that predate the `members` field, because
+`sampleFaces` caps at three: naming a 21-face cluster from samples alone would
+tag 3 photographs and silently drop 18.
+
+### 6. Private recurring-face tagger
 
 ```bash
 npm run faces:recurring
+
+# or against the unresolved clusters from step 5
+npm run faces:recurring -- --report metadata/faces/unresolved-cluster-review.json
 ```
 
 Builds and opens

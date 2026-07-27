@@ -109,7 +109,7 @@ export function buildRecurringFaceTaggerModel({
     .filter((cluster) => cluster.repeated)
     .map((cluster) => {
       invariant(
-        /^z\d{3}$/.test(cluster.clusterId),
+        /^(z\d{3}|c\d{4})$/.test(cluster.clusterId),
         `invalid cluster ${String(cluster.clusterId)}`,
       );
       invariant(
@@ -1244,14 +1244,30 @@ async function findDerivative(photoId) {
 }
 
 async function main() {
-  const open = process.argv.includes("--open");
-  const unknown = process.argv.slice(2).filter((argument) => argument !== "--open");
+  const argv = process.argv.slice(2);
+  const open = argv.includes("--open");
+  // --report points at any report in this schema. It defaults to the zero-tag
+  // review; build-unresolved-cluster-report.mjs emits the much larger set of
+  // clusters the signature builder could not name.
+  const reportIndex = argv.indexOf("--report");
+  const selectedReport =
+    reportIndex === -1 ? reportPath : resolve(argv[reportIndex + 1] ?? "");
+  invariant(
+    reportIndex === -1 || selectedReport !== resolve(""),
+    "--report needs a path",
+  );
+  const unknown = argv.filter(
+    (argument, index) =>
+      argument !== "--open" &&
+      index !== reportIndex &&
+      index !== reportIndex + 1,
+  );
   invariant(
     unknown.length === 0,
     `unknown argument ${String(unknown[0])}`,
   );
   const [report, catalog, faceFiles] = await Promise.all([
-    readJson(reportPath),
+    readJson(selectedReport),
     readJson(catalogPath),
     fs.readdir(committedFacesRoot),
   ]);
