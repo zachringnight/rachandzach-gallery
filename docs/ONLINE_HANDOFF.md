@@ -133,7 +133,16 @@ degrades to the same soft hide. The favorites condition matters because
 favorites key on `(owner_kind = "person", owner_key = slug)` independently of
 photo tags, so deleting the catalog row would strand a guest's shortlist.
 
-That decision is made atomically inside
+Creation is atomic too: `rachandzach_add_person(p_slug, p_display_name,
+p_actor)`, added by `20260726233000_rachandzach_add_person.sql` and **applied
+to the live project**, writes the catalog row and the override row in one
+transaction. The previous sequence -- catalog insert, override insert, then an
+unconditional compensating delete in a separate transaction -- could destroy a
+tag committed inside that window via the foreign key cascade, which was
+reproduced against the live database before the fix. No client-side delete of
+`rachandzach_people` remains in either path.
+
+The removal decision is made atomically inside
 `rachandzach_remove_added_person(p_slug)`, added by
 `20260726213000_rachandzach_remove_added_person.sql`, which **was applied to
 the live project** (additive: one `rachandzach_` function, pinned

@@ -14,29 +14,34 @@ import {
  * Minimal in-memory stand-in for the Supabase query builder, covering only
  * the chains addPerson/removePerson/patchPerson use: select/eq/maybeSingle,
  * insert, upsert-on-person_slug, delete/eq, and the
- * rachandzach_remove_added_person RPC (whose reference-checking semantics
- * the fake mirrors; the REAL atomicity lives in the migration and is pinned
- * by tests/database/schema.test.ts plus the live suite in
+ * rachandzach_add_person / rachandzach_remove_added_person RPCs (whose
+ * observable semantics the fakes mirror; the REAL atomicity lives in the
+ * migrations and is pinned by tests/database/schema.test.ts plus the live
+ * suites in tests/admin/add-person-live.test.ts and
  * tests/admin/remove-person-live.test.ts). The point of these tests is the
- * REMOVE SEMANTICS -- an added person with photo links OR person-keyed
+ * ADD/REMOVE SEMANTICS -- an added person with photo links OR person-keyed
  * favorites must degrade to a soft hide, never a cascade delete or a
- * stranded shortlist -- plus the add-order invariant (catalog row first)
- * and the design rule that removePerson itself never deletes from
- * rachandzach_people (only the atomic RPC may).
+ * stranded shortlist; a duplicate add must create nothing at all -- plus
+ * the design rule that neither path ever touches rachandzach_people with a
+ * client-side insert or delete (only the atomic RPCs may).
  */
 type Row = Record<string, unknown>;
 
 interface FakeStore {
   tables: Map<string, Row[]>;
-  failNextInsert: string | null;
-  /** Tables that a FakeQuery delete (NOT the rpc) actually ran against. */
+  /** Force the next rachandzach_add_person rpc to report this outcome. */
+  forceAddRpcResult: "duplicate" | "error" | null;
+  /** Tables that a FakeQuery insert (NOT an rpc) actually ran against. */
+  clientInserts: string[];
+  /** Tables that a FakeQuery delete (NOT an rpc) actually ran against. */
   clientDeletes: string[];
 }
 
 function makeStore(seed: Record<string, Row[]>): FakeStore {
   return {
     tables: new Map(Object.entries(seed).map(([k, v]) => [k, [...v]])),
-    failNextInsert: null,
+    forceAddRpcResult: null,
+    clientInserts: [],
     clientDeletes: [],
   };
 }
@@ -98,11 +103,7 @@ class FakeQuery {
   }
 
   insert(values: Row | Row[]) {
-    if (this.store.failNextInsert === this.table) {
-      this.store.failNextInsert = null;
-      this.result = { error: { message: "injected insert failure" } };
-      return this;
-    }
+    this.store.clientInserts.push(this.table);
     const list = Array.isArray(values) ? values : [values];
     for (const value of list) {
       if (
@@ -201,10 +202,58 @@ function fakeRemoveAddedPersonRpc(
   return { data: "deleted", error: null };
 }
 
+/**
+ * Fake of the rachandzach_add_person RPC with the same observable semantics
+ * as the migration: create BOTH rows or NEITHER. 'duplicate' means the
+ * unique_violation handler rolled everything back; the forceAddRpcResult
+ * knob stands in for a conflicting write that landed between the server's
+ * friendly pre-check and the RPC, or for a transport failure.
+ */
+function fakeAddPersonRpc(
+  store: FakeStore,
+  slug: string,
+  displayName: string,
+  actor: string,
+): { data: string | null; error: { message: string } | null } {
+  if (store.forceAddRpcResult === "error") {
+    return { data: null, error: { message: "injected rpc failure" } };
+  }
+  const people = store.tables.get("rachandzach_people") ?? [];
+  const overrides = store.tables.get("rachandzach_person_overrides") ?? [];
+  if (
+    store.forceAddRpcResult === "duplicate" ||
+    people.some((row) => row.slug === slug) ||
+    overrides.some((row) => row.person_slug === slug)
+  ) {
+    return { data: "duplicate", error: null };
+  }
+  people.push({ id: `id-rpc-${people.length}`, slug, display_name: displayName });
+  overrides.push({
+    ...OVERRIDE_DEFAULTS,
+    person_slug: slug,
+    display_name: displayName,
+    added: true,
+    updated_by: actor,
+  });
+  store.tables.set("rachandzach_people", people);
+  store.tables.set("rachandzach_person_overrides", overrides);
+  return { data: "added", error: null };
+}
+
 function fakeClient(store: FakeStore) {
   return {
     from: (table: string) => new FakeQuery(store, table),
     rpc: (name: string, args: Record<string, unknown>) => {
+      if (name === "rachandzach_add_person") {
+        return Promise.resolve(
+          fakeAddPersonRpc(
+            store,
+            String(args.p_slug),
+            String(args.p_display_name),
+            String(args.p_actor),
+          ),
+        );
+      }
       if (name !== "rachandzach_remove_added_person") {
         return Promise.resolve({
           data: null,
@@ -240,6 +289,10 @@ describe("addPerson", () => {
       added: true,
       updated_by: ACTOR,
     });
+    // Design rule: both rows come from the atomic RPC, never from
+    // client-side inserts a compensation might later have to undo.
+    expect(store.clientInserts).toEqual([]);
+    expect(store.clientDeletes).toEqual([]);
   });
 
   it("rejects a slug already in the catalog with a 409", async () => {
@@ -254,20 +307,37 @@ describe("addPerson", () => {
     ).rejects.toMatchObject({ name: "PersonAdminError", status: 409 });
   });
 
-  it("removes the catalog row again when the override insert fails", async () => {
-    // The one order that must never survive a partial failure is an added
-    // override without a catalog row; the compensation path guarantees the
-    // leftover is at worst a plain catalog person.
+  it("maps an RPC 'duplicate' (a write that beat the pre-check) to the same 409, with nothing created", async () => {
+    // The RPC's unique_violation handler rolls BOTH inserts back, so a slug
+    // race can never leave a catalog row without its override or vice
+    // versa; the server just reports the same 409 the pre-check produces.
     const store = makeStore({
       rachandzach_people: [],
       rachandzach_person_overrides: [],
     });
-    store.failNextInsert = "rachandzach_person_overrides";
+    store.forceAddRpcResult = "duplicate";
+    await expect(
+      addPerson("aunt-carol", "Aunt Carol", ACTOR, fakeClient(store)),
+    ).rejects.toMatchObject({ name: "PersonAdminError", status: 409 });
+    expect(store.tables.get("rachandzach_people")).toHaveLength(0);
+    expect(store.tables.get("rachandzach_person_overrides")).toHaveLength(0);
+    expect(store.clientDeletes).toEqual([]);
+  });
+
+  it("surfaces an RPC failure without running any compensating delete", async () => {
+    // The old shape deleted the catalog row client-side when the second
+    // insert failed -- the exact statement that cascade-destroyed tags
+    // committed during the gap. Failure handling must never delete.
+    const store = makeStore({
+      rachandzach_people: [],
+      rachandzach_person_overrides: [],
+    });
+    store.forceAddRpcResult = "error";
     await expect(
       addPerson("aunt-carol", "Aunt Carol", ACTOR, fakeClient(store)),
     ).rejects.toThrow(/Person add failed/);
-    expect(store.tables.get("rachandzach_people")).toHaveLength(0);
-    expect(store.tables.get("rachandzach_person_overrides")).toHaveLength(0);
+    expect(store.clientDeletes).toEqual([]);
+    expect(store.clientInserts).toEqual([]);
   });
 });
 

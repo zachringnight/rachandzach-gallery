@@ -591,6 +591,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      rachandzach_add_person: {
+        Args: {
+          p_slug: string;
+          p_display_name: string;
+          p_actor: string;
+        };
+        Returns: string;
+      };
       rachandzach_consume_rate_limit: {
         Args: {
           key_hash: string;
