@@ -17,10 +17,14 @@ import re
 from pathlib import Path
 
 
-ROOT = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
+ROOT = Path(
+    os.environ.get("WEDDING_MASTER_ROOT")
+    or os.environ.get("SOURCE_PHOTO_DIR")
+    or "/Users/zsoskin/Rachel & Zach - Wedding Master Clean"
+)
 METADATA = ROOT / "_Metadata"
 REVIEW_ROOT = ROOT / "_Review"
-REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
+REPO = Path(__file__).resolve().parents[1]
 INPUT = REPO / "metadata" / "manual-followup-identifications.json"
 HELPERS = REPO / "scripts" / "apply-contact-name-matches.py"
 FOLLOWUP_DIR = REVIEW_ROOT / "Manual Follow-up Identifications"

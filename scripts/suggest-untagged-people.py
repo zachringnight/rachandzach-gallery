@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 import shutil
 from collections import defaultdict
 from pathlib import Path
@@ -20,8 +21,12 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
-REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
-MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
+REPO = Path(__file__).resolve().parents[1]
+MASTER = Path(
+    os.environ.get("WEDDING_MASTER_ROOT")
+    or os.environ.get("SOURCE_PHOTO_DIR")
+    or "/Users/zsoskin/Rachel & Zach - Wedding Master Clean"
+)
 UNTAGGED_DIR = MASTER / "_Review" / "Untagged - Needs Review"
 UNTAGGED_CSV = UNTAGGED_DIR / "review.csv"
 REFERENCE_CSV = REPO / "metadata" / "identity-review" / "reference-crops.csv"

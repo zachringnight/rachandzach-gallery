@@ -5,7 +5,7 @@
  * fetched for a photo hash to that photo's GalleryPhotoRecord.fileSha256.
  * Uses ONLY the shared local fixtures (tests/fixtures/shared) -- no network,
  * no Supabase, and the real archive at
- * "/Users/zsoskin/Downloads/Rachel & Zach - Wedding Master Clean" is never
+ * "/Users/zsoskin/Rachel & Zach - Wedding Master Clean" is never
  * touched. "Downloading" a fixture here means reading its bytes from disk,
  * standing in for what a signed-URL fetch would return: the manifest never
  * resizes/recompresses/rewrites originals, so a real download's bytes are

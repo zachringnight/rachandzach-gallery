@@ -25,12 +25,16 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 
-ROOT = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
+ROOT = Path(
+    os.environ.get("WEDDING_MASTER_ROOT")
+    or os.environ.get("SOURCE_PHOTO_DIR")
+    or "/Users/zsoskin/Rachel & Zach - Wedding Master Clean"
+)
 METADATA = ROOT / "_Metadata"
 REVIEW = ROOT / "_Review"
 SNEAK_DIR = ROOT / "13 Sneak Peek"
 ARCHIVE = REVIEW / "Sneak Peek Duplicate Exports"
-REPO = Path("/Users/zsoskin/Downloads/rachandzach-gallery")
+REPO = Path(__file__).resolve().parents[1]
 HELPERS = REPO / "scripts" / "apply-contact-name-matches.py"
 REPORT_CSV = METADATA / "sneak-peek-consolidation.csv"
 REPORT_JSON = METADATA / "sneak-peek-consolidation.json"

@@ -31,6 +31,7 @@ import argparse
 import base64
 import hashlib
 import json
+import os
 import queue
 import sys
 import threading
@@ -42,7 +43,11 @@ import numpy as np
 from PIL import Image, ImageOps
 
 REPO = Path(__file__).resolve().parents[2]
-DEFAULT_MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
+DEFAULT_MASTER = Path(
+    os.environ.get("WEDDING_MASTER_ROOT")
+    or os.environ.get("SOURCE_PHOTO_DIR")
+    or "/Users/zsoskin/Rachel & Zach - Wedding Master Clean"
+)
 CATALOG_PATH = REPO / "src" / "generated" / "gallery-v2.json"
 OUT_DIR = REPO / "metadata" / "faces"
 DETECTIONS_PATH = OUT_DIR / "detections.jsonl"
