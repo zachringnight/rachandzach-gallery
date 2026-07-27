@@ -70,9 +70,6 @@ function validateFaceTags(manifest) {
       addition.reviewWave === undefined || reviewWave,
       `face-tag ${addition.photoId}/${addition.personSlug} references unknown review wave`,
     );
-    const minSimilarity =
-      reviewWave?.minSimilarity ?? manifest.source.minSimilarity;
-    const minMargin = reviewWave?.minMargin ?? manifest.source.minMargin;
     invariant(
       typeof addition.photoId === "string" && addition.photoId.length > 0,
       "face-tag photoId is required",
@@ -81,16 +78,43 @@ function validateFaceTags(manifest) {
       PERSON_SLUG_PATTERN.test(addition.personSlug),
       `face-tag has invalid slug ${addition.personSlug}`,
     );
-    invariant(
-      Number.isFinite(addition.similarity) &&
-        addition.similarity >= minSimilarity,
-      `face-tag ${addition.photoId}/${addition.personSlug} is below similarity threshold`,
-    );
-    invariant(
-      Number.isFinite(addition.margin) &&
-        addition.margin >= minMargin,
-      `face-tag ${addition.photoId}/${addition.personSlug} is below margin threshold`,
-    );
+    if (addition.confirmationKind === "human-recurring-cluster") {
+      invariant(
+        reviewWave?.manualConfirmation === true,
+        `face-tag ${addition.photoId}/${addition.personSlug} is missing a manual-confirmation review wave`,
+      );
+      invariant(
+        /^z\d{3}$/.test(addition.clusterId),
+        `face-tag ${addition.photoId}/${addition.personSlug} has invalid recurring cluster`,
+      );
+      invariant(
+        Number.isInteger(addition.faceIndex) && addition.faceIndex >= 0,
+        `face-tag ${addition.photoId}/${addition.personSlug} has invalid face index`,
+      );
+      invariant(
+        /^[0-9a-f]{64}$/.test(addition.clusterFingerprint),
+        `face-tag ${addition.photoId}/${addition.personSlug} has invalid cluster fingerprint`,
+      );
+      invariant(
+        typeof addition.contextEvidence === "string" &&
+          addition.contextEvidence.length >= 20,
+        `face-tag ${addition.photoId}/${addition.personSlug} needs human confirmation context`,
+      );
+    } else {
+      const minSimilarity =
+        reviewWave?.minSimilarity ?? manifest.source.minSimilarity;
+      const minMargin = reviewWave?.minMargin ?? manifest.source.minMargin;
+      invariant(
+        Number.isFinite(addition.similarity) &&
+          addition.similarity >= minSimilarity,
+        `face-tag ${addition.photoId}/${addition.personSlug} is below similarity threshold`,
+      );
+      invariant(
+        Number.isFinite(addition.margin) &&
+          addition.margin >= minMargin,
+        `face-tag ${addition.photoId}/${addition.personSlug} is below margin threshold`,
+      );
+    }
     const key = `${addition.photoId}:${addition.personSlug}`;
     invariant(!pairs.has(key), `duplicate face-tag pair ${key}`);
     pairs.add(key);

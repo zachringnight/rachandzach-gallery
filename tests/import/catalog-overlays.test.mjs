@@ -150,4 +150,54 @@ describe("catalog overlays", () => {
       "references unknown review wave",
     );
   });
+
+  it("accepts an explicit human recurring-cluster confirmation without inventing a model score", () => {
+    const tags = faceTags();
+    tags.source.reviewWaves = [
+      {
+        wave: 5,
+        manualConfirmation: true,
+      },
+    ];
+    tags.additions[0] = {
+      photoId: "hash-one",
+      path: "Ceremony/one.jpg",
+      personSlug: "alias-target",
+      confirmationKind: "human-recurring-cluster",
+      reviewWave: 5,
+      clusterId: "z001",
+      faceIndex: 0,
+      clusterFingerprint: "a".repeat(64),
+      contextEvidence:
+        "Zach identified the same recurring face across two private review photos.",
+    };
+
+    expect(() =>
+      applyCatalogOverlays(fixture(), attendance(), tags),
+    ).not.toThrow();
+  });
+
+  it("fails closed when a human recurring-cluster tag lacks its confirmation context", () => {
+    const tags = faceTags();
+    tags.source.reviewWaves = [
+      {
+        wave: 5,
+        manualConfirmation: true,
+      },
+    ];
+    tags.additions[0] = {
+      photoId: "hash-one",
+      path: "Ceremony/one.jpg",
+      personSlug: "alias-target",
+      confirmationKind: "human-recurring-cluster",
+      reviewWave: 5,
+      clusterId: "z001",
+      faceIndex: 0,
+      clusterFingerprint: "a".repeat(64),
+    };
+
+    expect(() =>
+      applyCatalogOverlays(fixture(), attendance(), tags),
+    ).toThrow("needs human confirmation context");
+  });
 });

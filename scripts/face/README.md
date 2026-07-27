@@ -181,12 +181,62 @@ decisions remain explicit rows in
 recorded thresholds when visual context confirms a face below the default
 saved-profile score.
 
+### 5. Private recurring-face tagger
+
+```bash
+npm run faces:recurring
+```
+
+Builds and opens
+`metadata/faces/recurring-face-tagger/index.html`, a local-only review surface
+for the repeated unnamed clusters produced by step 4. It currently shows 13
+same-face groups (31 face instances across 10 photographs) and lets Zach:
+
+- compare every crop in a group and open the full photograph with the face
+  boxed;
+- search all 189 current catalog identities, including seated attendees who
+  do not have a tagged photograph or saved face yet;
+- compare a selected identity with its committed saved face when one exists;
+- confirm one identity for the entire cluster or hold it for later; and
+- restore or download the review decisions as JSON.
+
+The page saves drafts in browser local storage. Its HTML, private preview
+references, and decisions stay under ignored local paths; it contains no
+embeddings and deliberately omits model-similarity suggestions so the
+reviewer makes the identity decision.
+
+Import a downloaded decision file in read-only mode first:
+
+```bash
+npm run faces:recurring:apply -- \
+  ~/Downloads/rachandzach-recurring-face-decisions.json
+```
+
+Add `--write` only after the dry-run is correct. Write mode validates the
+exact report fingerprint, every cluster and person, photo-path drift, and
+same-person conflicts before writing the tracked additive face-tag overlay and
+generated local catalog. Each file is replaced atomically. Human cluster
+assignments are recorded as their own review wave without inventing a model
+similarity score.
+
+The importer never syncs live data. Use the existing narrow sync separately:
+
+```bash
+node scripts/sync-catalog-overlays.mjs
+node scripts/sync-catalog-overlays.mjs --execute
+```
+
+The first command is read-only. `--execute` writes an ignored pre-state backup,
+performs only additive confirmed tag upserts, and verifies the live result.
+
 ## Privacy and safety rails
 
 - Source master opened read-only; only the catalog and `metadata/faces/` are
   written.
 - The zero-tag review does not open the source master at all; it uses local
   preview derivatives and keeps its contact sheets private.
+- The recurring-face tagger uses those same local derivatives; its generated
+  page and browser decisions remain gitignored.
 - Embeddings, signatures, and reports stay on local disk (gitignored), service
   workflows never see them in this phase.
 - The audit is a review list: a human confirms every row against the actual

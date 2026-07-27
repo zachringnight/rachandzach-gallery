@@ -27,7 +27,10 @@
     "merge:agent-reviews": "node scripts/merge-agent-reviews.mjs",
     "sort:metadata": "node scripts/sort-photos-by-metadata.mjs",
     "build:identity-review": "node scripts/build-identity-review-assets.mjs",
-    "build:naming-tool": "node scripts/build-naming-tool.mjs"
+    "build:naming-tool": "node scripts/build-naming-tool.mjs",
+    "faces:recurring": "node scripts/face/build-recurring-face-tagger.mjs --open",
+    "faces:recurring:build": "node scripts/face/build-recurring-face-tagger.mjs",
+    "faces:recurring:apply": "node scripts/face/import-recurring-face-decisions.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

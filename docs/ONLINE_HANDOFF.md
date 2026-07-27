@@ -212,6 +212,24 @@ privately sorted for a later identification pass. Reports and review sheets
 stay gitignored under `metadata/faces/`; wedding originals were never opened
 for this fourth pass and were not changed.
 
+That later pass now has a private local tagging surface. Run
+`npm run faces:recurring` to build and open the ignored
+`metadata/faces/recurring-face-tagger/index.html`. It presents the 13 recurring
+groups (31 face instances across 10 photographs), lets Zach open every full
+photo with the face boxed, and searches all 189 catalog identities. Selecting
+a person shows their committed saved face when one exists; attendees with no
+saved face remain selectable. Drafts persist in browser local storage, and
+the page exports only cluster decisions—never embeddings or saved-profile
+similarity suggestions.
+
+`npm run faces:recurring:apply -- <decisions.json>` is read-only by default.
+`--write` validates the exact report fingerprint, recurring membership, roster
+identity, photo path, and duplicate-person conflicts before updating the
+tracked additive overlay and generated local catalog. Human assignments become
+a separate review wave without a fabricated similarity score. This importer
+never writes live data; the existing sync command remains a separate explicit
+dry-run/`--execute` step with its pre-write backup and live verification.
+
 `scripts/sync-catalog-overlays.mjs` is read-only by default and uses
 `--execute` for the narrow additive live sync. It creates missing people only
 through the atomic `rachandzach_add_person` RPC, upserts reviewed joins, writes
@@ -222,13 +240,17 @@ live data curation above is complete and verified.
 
 Fresh local verification on that branch:
 
-- focused catalog-overlay coverage passed 6 tests
+- focused catalog-overlay and recurring-face workflow coverage passed 14 tests
 - Python compilation, the post-sync face audit, and the zero-tag regrouping
   pass completed successfully
 - `npm run verify` passed typecheck; lint completed with zero errors and 18
-  warnings; Vitest passed 1,037 tests with 17 documented skips;
+  warnings; Vitest passed 1,045 tests with 17 documented skips;
   production build passed; Chromium end-to-end passed 83 tests with 28
   documented skips
+- the private recurring-face tool was inspected at 1440px and 390px: all 13
+  clusters, 31 face crops, 10 private previews, the saved-face reference,
+  full-photo dialog, local decision state, and JSON export loaded without
+  console errors or horizontal overflow
 - `git diff --check` passed
 
 ### TEMPORARY: Preview is unauthenticated (2026-07-26)
@@ -275,7 +297,8 @@ That is enforced in code, not by convention.
 | P0 | Zach/admin | Before announcing cloud save | Complete the two consent-dependent file-transfer rows in the authenticated acceptance pass below using a personal Google Drive and Dropbox account. |
 | DONE | Codex | 2026-07-26 | Checked Vercel runtime errors after production smoke traffic; none were returned. |
 | DONE | Codex | 2026-07-27 | Reviewed all 151 remaining saved-face suggestions, then exhaustively reviewed all 56 zero-tag photos with detected faces. Applied 146 confirmed links across the two passes and verified all 300 tracked links live with zero pending writes. |
-| P2 | Zach/admin | Later curation session | Revisit the 15 intentionally held-back saved-face comparisons and the 13 privately sorted recurring unknown-face clusters only if a clearer saved profile, photo, or identity becomes available. Reports and contact sheets remain gitignored; no rejected suggestion is auto-applied. |
+| READY | Zach/admin | Next curation session | Run `npm run faces:recurring`, name any recognizable recurring group once, hold uncertain groups, and download the decisions. The private tool propagates a confirmed identity only to that cluster's represented photos; no rejected or held cluster is auto-applied. |
+| P2 | Zach/admin | Later curation session | Revisit the 15 intentionally held-back saved-face comparisons only if a clearer saved profile, photo, or identity becomes available. Reports and contact sheets remain gitignored; no rejected suggestion is auto-applied. |
 | P2 | Engineer | Future maintenance | Add a live-database integration harness to replace the intentional schema/catalog skips when repeatable production-like DB testing becomes worthwhile. |
 | DONE | Codex | 2026-07-25 | Removed the merged `codex/wedding-premium-overhaul` exception from the CI and Vercel branch allowlists after confirming it had no commits outside `main`. |
 | P2 | Zach plus shared-project owners | Future infrastructure decision | Decide whether the wedding app should remain in the shared Supabase project. Any isolation or RLS cleanup requires a cross-app migration plan. |
