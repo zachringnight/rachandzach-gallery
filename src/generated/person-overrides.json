@@ -105,6 +105,14 @@
         "size": 0.166689765297822
       }
     },
+    "maura-keith-gutierrez": {
+      "photoId": "94e78a7739f4dd3d96ea2405cc1aab9a",
+      "crop": {
+        "x": 0.427321,
+        "y": 0.091484,
+        "size": 0.381962
+      }
+    },
     "max-gordichuk": {
       "photoId": "b3c734c56db63b9843f70372d0399c1e",
       "crop": {
@@ -248,5 +256,12 @@
     "toby-auwerter": "Toby AuWerter",
     "tom-myers": "Tom Myers",
     "tom-sonntag": "Tom Sonntag"
+  },
+  "handAuthored": {
+    "note": "maura-keith-gutierrez was written here directly, not exported from Supabase. scripts/export-face-overrides.mjs rebuilds this file from rachandzach_person_overrides and WILL drop it unless the same crop is also framed at /admin/faces. Every other entry here is a real exported pick.",
+    "slugs": [
+      "maura-keith-gutierrez"
+    ],
+    "recordedAt": "2026-07-27"
   }
 }
