@@ -1,13 +1,16 @@
 {
-  "schemaVersion": 1,
-  "purpose": "Slugs whose LEARNED signature is known to be the wrong person. The audit drops the learned clusters for these and uses the hand-picked /admin/faces crop instead. Without this, saved_crop_anchors skips anyone who already has a learned signature, so a corrected crop would never reach the recognition profile. Keep this list short and evidenced: it overrides multi-photo learning with a single frame.",
-  "corrections": [
+  "schemaVersion": 2,
+  "purpose": "Slugs whose LEARNED signature is known to be the wrong person. The audit drops the learned clusters for these and uses the hand-picked /admin/faces crop instead. Without this, saved_crop_anchors skips anyone who already has a learned signature, so a corrected crop would never reach the recognition profile. Keep this list short and evidenced: it overrides multi-photo learning with a single frame. A correction is a stopgap, not a fix. When the clustering finally learns the right face, retire it here rather than leaving it to quietly discard a good signature.",
+  "corrections": [],
+  "resolved": [
     {
       "slug": "maura-keith-gutierrez",
-      "reason": "The learned signature is Chris Gutierrez, her husband. chris-gutierrez has no learned signature of his own, so co-occurrence naming attached his face cluster to her slug. Confirmed three ways: her committed saved face and his are the same man; the face Zach identified as Maura scores 0.655 against this signature's own top match and nothing else above 0.183; and Zach confirmed all eleven archive faces matching his pick, nine of which sit in photos already tagged to her.",
       "recordedOn": "2026-07-27",
-      "supersededBy": "hand-picked crop at /admin/faces",
-      "anchorPhoto": "01 Day 1/rachelzachday1-150.jpg"
+      "resolvedOn": "2026-07-27",
+      "anchorPhoto": "01 Day 1/rachelzachday1-150.jpg",
+      "wasWrongBecause": "The learned signature was Chris Gutierrez, her husband. chris-gutierrez had no learned signature of his own, so co-occurrence naming attached his face cluster to her slug. Confirmed three ways: her committed saved face and his were the same man; the face Zach identified as Maura scored 0.655 against that signature's own top match and nothing else above 0.183; and Zach confirmed all eleven archive faces matching his pick, nine of which sat in photos already tagged to her.",
+      "resolution": "Rebuilding signatures after waves 5-7 separated the couple. The two tags added for her in wave 7 gave co-occurrence enough signal to name them apart, and Chris earned a signature of his own for the first time. Hers now scores 0.720 against the anchor face Zach picked and 0.060 against Chris's; his scores 0.849 against his own face and 0.021 against hers. Both are learned from many photos (17 and 9 faces), which is stronger evidence than the single crop this correction substituted, so it was retired rather than left in place to discard a good signature.",
+      "keptAnchors": "Both still have hand-picked /admin/faces crops backing their guest-facing thumbnails. Only the recognition override was retired."
     }
   ]
 }
