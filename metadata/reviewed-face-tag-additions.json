@@ -10,7 +10,8 @@
       "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
       "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
       "7bc2e288273295a7029573c97e76eee43f1fe6bdff925ac2f5086598810b5f68",
-      "2b262da3fac115b71f385e0a7604e62600d24fd3a9c63950585890a9183fd8c5"
+      "2b262da3fac115b71f385e0a7604e62600d24fd3a9c63950585890a9183fd8c5",
+      "dc904d11f72724558dcc70396379e2e5e7934482f466b97c415fbc484b256edb"
     ],
     "reviewedAt": "2026-07-27",
     "reviewedBy": "Codex visual side-by-side review",
@@ -20,8 +21,8 @@
     "savedCropAnchorCount": 23,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 770,
-    "candidatesApproved": 591,
+    "candidatesReviewed": 786,
+    "candidatesApproved": 607,
     "candidatesRejected": 180,
     "reviewWaves": [
       {
@@ -452,6 +453,18 @@
             "reason": "Zach reviewed the wave-8 sheet and confirmed this is not Jorie Soskin."
           }
         ]
+      },
+      {
+        "wave": 9,
+        "auditFingerprint": "dc904d11f72724558dcc70396379e2e5e7934482f466b97c415fbc484b256edb",
+        "reviewType": "Widened sweep re-run on the rebuilt profiles",
+        "reviewMethod": "The default-threshold pass had converged to nothing new, but the widened one had not been re-run since the signatures were rebuilt. Re-running it with the face-size floor at 0.015 and the detector floor at 0.60 surfaced 22 candidates, 6 of which earlier waves had already decided and were left alone. Zach reviewed the remaining 16 as saved profile beside proposed face and approved all of them. Nine are people who only gained a signature in the last two rebuilds, so no earlier sweep could have proposed them.",
+        "minSimilarity": 0.481,
+        "minMargin": 0.256,
+        "minFaceFraction": 0.015,
+        "candidatesReviewed": 16,
+        "candidatesApproved": 16,
+        "candidatesRejected": 0
       }
     ]
   },
@@ -6691,6 +6704,182 @@
         "wave": 6,
         "note": "Denied in wave 6 on the earlier profiles and approved here by Zach on the rebuilt ones. Recorded so the reversal is visible rather than silent."
       }
+    },
+    {
+      "photoId": "09e29cd170cc9dfc9a24d480616b5f6d",
+      "path": "07 Cocktail Hour/rachelzach-533.jpg",
+      "personSlug": "chris-gutierrez",
+      "displayName": "Chris Gutierrez",
+      "faceIndex": 4,
+      "similarity": 0.792,
+      "margin": 0.631,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "ffb44b05556b2430b22935ca8c205f46",
+      "path": "05 Ceremony/rachelzach-400.jpg",
+      "personSlug": "tim-myers",
+      "displayName": "Tim Myers",
+      "faceIndex": 4,
+      "similarity": 0.778,
+      "margin": 0.56,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "8b1150348a72e18ae7eab9cf41557eff",
+      "path": "05 Ceremony/rachelzach-409.jpg",
+      "personSlug": "maura-keith-gutierrez",
+      "displayName": "Maura Keith-Gutierrez",
+      "faceIndex": 2,
+      "similarity": 0.736,
+      "margin": 0.54,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "258a11dc0603cf3a43ec24fb8a1d0a2e",
+      "path": "05 Ceremony/rachelzach-404.jpg",
+      "personSlug": "maura-keith-gutierrez",
+      "displayName": "Maura Keith-Gutierrez",
+      "faceIndex": 1,
+      "similarity": 0.719,
+      "margin": 0.513,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "429cbc0d798c6f4b185d31dbbe914121",
+      "path": "09 Reception/rachelzach-882.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 2,
+      "similarity": 0.672,
+      "margin": 0.507,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "8b1150348a72e18ae7eab9cf41557eff",
+      "path": "05 Ceremony/rachelzach-409.jpg",
+      "personSlug": "tim-myers",
+      "displayName": "Tim Myers",
+      "faceIndex": 4,
+      "similarity": 0.664,
+      "margin": 0.418,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "628ddbb3980bc70ae61d19dd0b5eea25",
+      "path": "05 Ceremony/rachelzach-229.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 5,
+      "similarity": 0.661,
+      "margin": 0.415,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "94eb14245304870ca12e30ed49dd59c2",
+      "path": "07 Cocktail Hour/rachelzach-622.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 2,
+      "similarity": 0.661,
+      "margin": 0.409,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "ec0d53a368f8dd1c12112d53c83cabff",
+      "path": "01 Day 1/rachelzachday1-241.jpg",
+      "personSlug": "tim-myers",
+      "displayName": "Tim Myers",
+      "faceIndex": 18,
+      "similarity": 0.649,
+      "margin": 0.435,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "94e78a7739f4dd3d96ea2405cc1aab9a",
+      "path": "01 Day 1/rachelzachday1-150.jpg",
+      "personSlug": "chris-gutierrez",
+      "displayName": "Chris Gutierrez",
+      "faceIndex": 0,
+      "similarity": 0.615,
+      "margin": 0.429,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "e9df187beb3f5d5154ccb647015e1a24",
+      "path": "07 Cocktail Hour/rachelzach-571.jpg",
+      "personSlug": "alyssa-scott",
+      "displayName": "Alyssa Scott",
+      "faceIndex": 1,
+      "similarity": 0.608,
+      "margin": 0.409,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "92ac97938d58dcf7630a675dafd1411a",
+      "path": "05 Ceremony/rachelzach-227.jpg",
+      "personSlug": "phil-becker",
+      "displayName": "Phil Becker",
+      "faceIndex": 2,
+      "similarity": 0.502,
+      "margin": 0.34,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "41445daf20ed0ff6f92c54f432fab5d0",
+      "path": "05 Ceremony/rachelzach-405.jpg",
+      "personSlug": "tim-myers",
+      "displayName": "Tim Myers",
+      "faceIndex": 1,
+      "similarity": 0.497,
+      "margin": 0.337,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "176a7027dbfb9529e7e812f1f130876e",
+      "path": "14 Film/rachelzachfilm-167.jpg",
+      "personSlug": "paul-cohn",
+      "displayName": "Paul Cohn",
+      "faceIndex": 5,
+      "similarity": 0.486,
+      "margin": 0.307,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "4dd10e6c41420c4911eb753c1a762cec",
+      "path": "07 Cocktail Hour/rachelzach-588.jpg",
+      "personSlug": "ann-marie-hoppler",
+      "displayName": "Ann Marie Hoppler",
+      "faceIndex": 3,
+      "similarity": 0.482,
+      "margin": 0.276,
+      "profileSource": "learned",
+      "reviewWave": 9
+    },
+    {
+      "photoId": "19a5000bf9bcadf75a1980d4fba69ce4",
+      "path": "09 Reception/rachelzach-752.jpg",
+      "personSlug": "tim-myers",
+      "displayName": "Tim Myers",
+      "faceIndex": 0,
+      "similarity": 0.481,
+      "margin": 0.256,
+      "profileSource": "learned",
+      "reviewWave": 9
     }
   ]
 }
