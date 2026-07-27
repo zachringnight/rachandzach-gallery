@@ -50,3 +50,9 @@ supabase/.temp/
 
 # Coding-agent git worktrees (full checkouts of this repo, inside this repo)
 .claude/worktrees/
+
+# Ad hoc one-off scripts written during a debugging session. Scratch by
+# convention: if a *.tmp.mjs turns out to be worth keeping, rename it into
+# scripts/ so it gets a header comment and review rather than lingering
+# untracked in the repo root.
+*.tmp.mjs
