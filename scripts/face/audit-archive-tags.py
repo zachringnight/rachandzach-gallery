@@ -26,10 +26,19 @@ Two buckets:
 Usage (from the repo root):
   uv run --no-project --python .venv-faces/bin/python \
       scripts/face/audit-archive-tags.py
+
+Bucket (b)'s floors are flags so a wider review wave can surface the
+mid-ground guests the calibrated defaults exclude. Run bare to reproduce the
+calibrated report; widen into a SEPARATE report so the baseline survives:
+  ... audit-archive-tags.py --min-untagged-face-frac 0.015 \
+      --min-untagged-det-score 0.60 \
+      --report-json metadata/faces/audit-report-wide.json \
+      --report-md metadata/faces/audit-report-wide.md
 """
 
 from __future__ import annotations
 
+import argparse
 import base64
 import hashlib
 import json
@@ -69,18 +78,40 @@ MIN_UNTAGGED_MARGIN = 0.08
 MIN_USABLE_DET_SCORE = 0.70
 MIN_USABLE_FACE_FRAC = 0.025
 
-PARAMS = {
-    "tPresent": T_PRESENT,
-    "tAbsentHard": T_ABSENT_HARD,
-    "tIdent": T_IDENT,
-    "minUntaggedFaceFrac": MIN_UNTAGGED_FACE_FRAC,
-    "minUntaggedDetScore": MIN_UNTAGGED_DET_SCORE,
-    "tUntagged": T_UNTAGGED,
-    "tUntaggedStrong": T_UNTAGGED_STRONG,
-    "minUntaggedMargin": MIN_UNTAGGED_MARGIN,
-    "minUsableDetScore": MIN_USABLE_DET_SCORE,
-    "minUsableFaceFrac": MIN_USABLE_FACE_FRAC,
-}
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    # Bucket (b) floors only. Every default is the calibrated constant above,
+    # so a bare run reproduces the existing report byte for byte; the params
+    # feed the inputs fingerprint, so a widened run cannot be mistaken for a
+    # calibrated one. Bucket (a) and the "usable face" floors stay fixed:
+    # they define what the audit considers answerable at all.
+    parser.add_argument(
+        "--min-untagged-face-frac", type=float, default=MIN_UNTAGGED_FACE_FRAC,
+        help="face height as a fraction of the image long edge (default "
+             f"{MIN_UNTAGGED_FACE_FRAC}; lower to surface background guests)",
+    )
+    parser.add_argument(
+        "--min-untagged-det-score", type=float, default=MIN_UNTAGGED_DET_SCORE,
+        help=f"detector confidence floor (default {MIN_UNTAGGED_DET_SCORE})",
+    )
+    parser.add_argument(
+        "--min-untagged-sim", type=float, default=T_UNTAGGED,
+        help=f"cosine similarity floor (default {T_UNTAGGED})",
+    )
+    parser.add_argument(
+        "--min-untagged-margin", type=float, default=MIN_UNTAGGED_MARGIN,
+        help="required lead over the runner-up PERSON (default "
+             f"{MIN_UNTAGGED_MARGIN}; this is what keeps lookalike relatives "
+             "apart, so lower it with care)",
+    )
+    parser.add_argument(
+        "--untagged-strong-sim", type=float, default=T_UNTAGGED_STRONG,
+        help=f"strong-tier similarity (default {T_UNTAGGED_STRONG})",
+    )
+    parser.add_argument("--report-json", type=Path, default=REPORT_JSON_PATH)
+    parser.add_argument("--report-md", type=Path, default=REPORT_MD_PATH)
+    return parser.parse_args()
 
 
 def load_detections() -> dict[str, dict]:
@@ -209,6 +240,20 @@ def saved_crop_anchors(
 
 
 def main() -> None:
+    args = parse_args()
+    params = {
+        "tPresent": T_PRESENT,
+        "tAbsentHard": T_ABSENT_HARD,
+        "tIdent": T_IDENT,
+        "minUntaggedFaceFrac": args.min_untagged_face_frac,
+        "minUntaggedDetScore": args.min_untagged_det_score,
+        "tUntagged": args.min_untagged_sim,
+        "tUntaggedStrong": args.untagged_strong_sim,
+        "minUntaggedMargin": args.min_untagged_margin,
+        "minUsableDetScore": MIN_USABLE_DET_SCORE,
+        "minUsableFaceFrac": MIN_USABLE_FACE_FRAC,
+    }
+
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
     signatures = json.loads(SIGNATURES_PATH.read_text(encoding="utf-8"))
     overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
@@ -315,7 +360,10 @@ def main() -> None:
         tag_set = set(tags)
         best_by_person: dict[str, dict] = {}
         for i, face in enumerate(faces):
-            if face["score"] < MIN_UNTAGGED_DET_SCORE or fracs[i] < MIN_UNTAGGED_FACE_FRAC:
+            if (
+                face["score"] < params["minUntaggedDetScore"]
+                or fracs[i] < params["minUntaggedFaceFrac"]
+            ):
                 continue
             ranked = sorted(
                 ((float(per_face[i]), slug) for slug, per_face in person_best.items()),
@@ -327,7 +375,10 @@ def main() -> None:
             runner_sim = ranked[1][0] if len(ranked) > 1 else -1.0
             if top_slug in tag_set:
                 continue
-            if top_sim < T_UNTAGGED or (top_sim - runner_sim) < MIN_UNTAGGED_MARGIN:
+            if (
+                top_sim < params["tUntagged"]
+                or (top_sim - runner_sim) < params["minUntaggedMargin"]
+            ):
                 continue
             entry = {
                 "photoId": photo["id"],
@@ -340,7 +391,9 @@ def main() -> None:
                 "faceIndex": face["i"],
                 "faceFrac": round(fracs[i], 3),
                 "detScore": face["score"],
-                "tier": "strong" if top_sim >= T_UNTAGGED_STRONG else "review",
+                "tier": (
+                    "strong" if top_sim >= params["tUntaggedStrong"] else "review"
+                ),
                 "profileSource": (
                     "saved-crop" if top_slug not in learned_set else "learned"
                 ),
@@ -375,12 +428,12 @@ def main() -> None:
             separators=(",", ":"),
         ).encode()
     )
-    fingerprint.update(json.dumps(PARAMS, sort_keys=True).encode())
+    fingerprint.update(json.dumps(params, sort_keys=True).encode())
 
     report = {
         "schemaVersion": 2,
         "inputsFingerprint": fingerprint.hexdigest(),
-        "params": PARAMS,
+        "params": params,
         "savedCropAnchors": anchor_details,
         "summary": {
             "photosAudited": len(detections),
@@ -406,16 +459,17 @@ def main() -> None:
         "confidentFaceButUntagged": untagged_items,
     }
 
-    with REPORT_JSON_PATH.open("w", encoding="utf-8") as handle:
+    args.report_json.parent.mkdir(parents=True, exist_ok=True)
+    with args.report_json.open("w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=1)
         handle.write("\n")
-    REPORT_MD_PATH.write_text(render_markdown(report), encoding="utf-8")
+    args.report_md.write_text(render_markdown(report), encoding="utf-8")
     summary = report["summary"]
     print(
         f"audit: {summary['tagsChecked']} tags checked across {summary['photosAudited']} photos\n"
         f"  (a) tagged-but-no-matching-face: {summary['taggedButNoMatchingFace']}\n"
         f"  (b) confident-face-but-untagged: {summary['confidentFaceButUntagged']}\n"
-        f"wrote {REPORT_JSON_PATH}\nwrote {REPORT_MD_PATH}"
+        f"wrote {args.report_json}\nwrote {args.report_md}"
     )
 
 

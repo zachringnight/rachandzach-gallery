@@ -118,6 +118,33 @@ by confidence:
   >= 0.55 with >= 0.08 margin over the runner-up person. Incidental background
   guests never flag by design. `strong` tier at >= 0.62 is near-certain.
 
+Bucket (b)'s floors are flags, so a wider review wave can reach the
+mid-ground guests the defaults exclude. Every default is the calibrated
+constant, so a bare run still reproduces the report byte for byte; the params
+feed the inputs fingerprint, so a widened report can never be mistaken for a
+calibrated one. Always widen into a SEPARATE report so the baseline survives:
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/audit-archive-tags.py \
+    --min-untagged-face-frac 0.015 --min-untagged-det-score 0.60 \
+    --min-untagged-sim 0.48 \
+    --report-json metadata/faces/audit-report-wide.json \
+    --report-md metadata/faces/audit-report-wide.md
+```
+
+Measured 2026-07-27 on this archive: dropping the face fraction from 0.035 to
+0.015 took bucket (b) from 15 rows to 284 (109 of them `strong`, across 60
+people and 83 photos). Those were withheld purely on face size, not match
+quality; the top of the strong tier sits at 0.72-0.84 with margins up to 0.68.
+Keep `--min-untagged-margin` at 0.08 unless you have a reason: that guard is
+what holds the Soskin siblings apart (impostor max 0.592).
+
+Two things to watch when reviewing a widened wave. Where both the saved
+profile and the candidate wear sunglasses, shared occlusion can inflate
+similarity, so confirm on face shape and hair rather than the score. And small
+faces are often underexposed; a crop too dark to judge is a hold, not a yes.
+
 ## Thresholds and calibration
 
 All thresholds live as named constants at the top of each script and were
@@ -150,7 +177,21 @@ uv run --no-project --python .venv-faces/bin/python \
 
 Renders the committed saved profile beside the proposed detected face using
 only `public/faces/*.webp` and local 1600px derivatives. It never opens
-originals or changes tags. Sheets stay under ignored `metadata/faces/` and
+originals or changes tags.
+
+`--report` selects which audit report supplies candidates (default: the
+calibrated one). Because the calibrated report already drops mid-ground faces
+upstream, lowering `--min-sim` alone can never surface them; point `--report`
+at a widened run instead, and give it its own `--output-dir` so an earlier
+wave's sheets are not deleted:
+
+```bash
+uv run --no-project --python .venv-faces/bin/python \
+    scripts/face/render-tag-review-sheets.py \
+    --report metadata/faces/audit-report-wide.json \
+    --min-sim 0.62 --min-margin 0.08 \
+    --output-dir metadata/faces/review-strong-wave
+``` Sheets stay under ignored `metadata/faces/` and
 must be reviewed visually before a pair is added to the tracked
 `metadata/reviewed-face-tag-additions.json` overlay.
 

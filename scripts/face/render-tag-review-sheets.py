@@ -39,6 +39,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--min-sim", type=float, default=0.72)
     parser.add_argument("--min-margin", type=float, default=0.15)
+    # Which audit report to draw candidates from. The default calibrated report
+    # excludes mid-ground faces upstream, so a widened wave must point this at
+    # the report produced by audit-archive-tags.py --min-untagged-face-frac.
+    parser.add_argument("--report", type=Path, default=REPORT_PATH)
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -181,7 +185,7 @@ def render_cell(
 
 def main() -> None:
     args = parse_args()
-    report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+    report = json.loads(args.report.read_text(encoding="utf-8"))
     detections = load_detections()
     items = [
         item
