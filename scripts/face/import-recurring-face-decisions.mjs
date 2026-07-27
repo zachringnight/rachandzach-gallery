@@ -18,7 +18,9 @@ import { applyCatalogOverlays } from "../lib/catalog-overlays.mjs";
 const RECURRING_CONFIRMATION_KIND = "human-recurring-cluster";
 const RECURRING_REVIEW_TYPE =
   "Human identity assignment for recurring unnamed face clusters";
-const CLUSTER_ID_PATTERN = /^z\d{3}$/;
+// z### are zero-tag review clusters; c#### come from the signature
+// builder's unresolved clusters. Both are human-confirmed the same way.
+const CLUSTER_ID_PATTERN = /^(z\d{3}|c\d{4})$/;
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const HASH_PATTERN = /^[0-9a-f]{32}$/;
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;

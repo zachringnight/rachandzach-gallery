@@ -30,7 +30,8 @@
     "build:naming-tool": "node scripts/build-naming-tool.mjs",
     "faces:recurring": "node scripts/face/build-recurring-face-tagger.mjs --open",
     "faces:recurring:build": "node scripts/face/build-recurring-face-tagger.mjs",
-    "faces:recurring:apply": "node scripts/face/import-recurring-face-decisions.mjs"
+    "faces:recurring:apply": "node scripts/face/import-recurring-face-decisions.mjs",
+    "faces:unresolved": "node scripts/face/build-unresolved-cluster-report.mjs"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

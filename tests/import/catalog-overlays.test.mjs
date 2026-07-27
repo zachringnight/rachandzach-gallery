@@ -281,6 +281,50 @@ describe("catalog overlays", () => {
     ).not.toThrow();
   });
 
+  it("accepts a signature-builder cluster id as well as a zero-tag one", () => {
+    const tags = faceTags();
+    tags.source.reviewWaves = [{ wave: 5, manualConfirmation: true }];
+    tags.additions[0] = {
+      photoId: "hash-one",
+      path: "Ceremony/one.jpg",
+      personSlug: "alias-target",
+      confirmationKind: "human-recurring-cluster",
+      reviewWave: 5,
+      // c#### comes from signatures.json unresolvedClusters; z### from the
+      // zero-tag review. A human confirms both the same way.
+      clusterId: "c0116",
+      faceIndex: 0,
+      clusterFingerprint: "a".repeat(64),
+      contextEvidence:
+        "Zach named the recurring unnamed cluster from the private tagger.",
+    };
+
+    expect(() =>
+      applyCatalogOverlays(fixture(), attendance(), tags),
+    ).not.toThrow();
+  });
+
+  it("still rejects a cluster id in neither form", () => {
+    const tags = faceTags();
+    tags.source.reviewWaves = [{ wave: 5, manualConfirmation: true }];
+    tags.additions[0] = {
+      photoId: "hash-one",
+      path: "Ceremony/one.jpg",
+      personSlug: "alias-target",
+      confirmationKind: "human-recurring-cluster",
+      reviewWave: 5,
+      clusterId: "cluster-116",
+      faceIndex: 0,
+      clusterFingerprint: "a".repeat(64),
+      contextEvidence:
+        "Zach named the recurring unnamed cluster from the private tagger.",
+    };
+
+    expect(() => applyCatalogOverlays(fixture(), attendance(), tags)).toThrow(
+      /invalid recurring cluster/,
+    );
+  });
+
   it("fails closed when a human recurring-cluster tag lacks its confirmation context", () => {
     const tags = faceTags();
     tags.source.reviewWaves = [
