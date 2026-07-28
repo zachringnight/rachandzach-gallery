@@ -79,7 +79,29 @@ function validateFaceTags(manifest) {
       PERSON_SLUG_PATTERN.test(addition.personSlug),
       `face-tag has invalid slug ${addition.personSlug}`,
     );
-    if (addition.confirmationKind === "human-recurring-cluster") {
+    if (addition.confirmationKind === "human-face-naming") {
+      // Rachel named this face herself in the local naming session. Like the
+      // recurring-cluster kind, it carries no model score because none was
+      // used: the evidence is a person who was there saying who it is.
+      invariant(
+        reviewWave?.manualConfirmation === true,
+        `face-tag ${addition.photoId}/${addition.personSlug} is missing a manual-confirmation review wave`,
+      );
+      invariant(
+        addition.faceIndex === null ||
+          (Number.isInteger(addition.faceIndex) && addition.faceIndex >= 0),
+        `face-tag ${addition.photoId}/${addition.personSlug} has invalid face index`,
+      );
+      invariant(
+        /^[0-9a-f]{64}$/.test(addition.reviewFingerprint),
+        `face-tag ${addition.photoId}/${addition.personSlug} has invalid review fingerprint`,
+      );
+      invariant(
+        typeof addition.contextEvidence === "string" &&
+          addition.contextEvidence.length >= 20,
+        `face-tag ${addition.photoId}/${addition.personSlug} needs human confirmation context`,
+      );
+    } else if (addition.confirmationKind === "human-recurring-cluster") {
       invariant(
         reviewWave?.manualConfirmation === true,
         `face-tag ${addition.photoId}/${addition.personSlug} is missing a manual-confirmation review wave`,

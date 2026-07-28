@@ -13,7 +13,7 @@
  * size, the per-file `x-signature` token header, `removeFingerprintOnSuccess`,
  * and `uploadDataDuringCreation`.
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import {
   GUEST_PENDING_BUCKET,
@@ -261,9 +261,36 @@ export function UploadClient() {
     () => items.length > 0 && items.every((item) => item.status === "done"),
     [items],
   );
-  if (allDone && phase === "uploading") {
-    setPhase("ready");
-  }
+  // Effect, not a bare call in the render body. Setting state during render
+  // makes React re-render before committing and risks a loop; it also raced
+  // the auto-submit below, which keys off this exact transition. Wrapped in
+  // an async IIFE so the setState is not a synchronous statement in the
+  // effect body (react-hooks/set-state-in-effect), matching the pattern used
+  // elsewhere in this codebase; it still resolves on the same tick.
+  useEffect(() => {
+    if (!allDone || phase !== "uploading") return;
+    void (async () => {
+      setPhase("ready");
+    })();
+  }, [allDone, phase]);
+
+  /*
+   * Hand the batch in as soon as the bytes are up, instead of waiting for a
+   * second click.
+   *
+   * Uploading only moves files into quarantine; nothing reaches /admin/review
+   * until the submit call lands. So a guest who watched every progress bar
+   * fill and then closed the tab used to lose the whole batch silently -- no
+   * error, no receipt, and no trace anywhere an admin would look. That is the
+   * worst failure this app can have: the guest believes they contributed.
+   *
+   * `submit` early-returns without a batch ref and flips back to "ready" on
+   * failure, so the button below survives as the retry path.
+   */
+  const autoSubmit = allDone && phase === "ready" && !error;
+  useEffect(() => {
+    if (autoSubmit) void submit();
+  }, [autoSubmit, submit]);
 
   const controls = useMemo(
     () => ({
@@ -350,18 +377,20 @@ export function UploadClient() {
             Upload {items.length > 0 ? `${items.length} ` : ""}photos
           </button>
         ) : null}
+        {/* Only reachable when auto-submit failed: the effect above hands the
+            batch in on its own, and only an error keeps the guest here. */}
         {phase === "ready" ? (
           <button
             type="button"
             onClick={() => void submit()}
             className="atlas-inline-action"
           >
-            Submit for review
+            Try sending again
           </button>
         ) : null}
         {phase === "submitting" ? (
           <span className="atlas-upload-note">
-            Submitting...
+            Sending your photos to Rach and Zach...
           </span>
         ) : null}
       </div>

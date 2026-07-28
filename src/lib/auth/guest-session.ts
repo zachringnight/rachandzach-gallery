@@ -61,7 +61,15 @@ export const PUBLIC_ROUTES = {
     "/",
     "/weekend",
     "/nyc",
+    // Public collateral for /nyc (see src/content/nyc.ts). These are the only
+    // files in public/nyc/, and every one of them is deliberately servable
+    // without a guest session: the hero photo, the 1200x630 link-preview card
+    // that social apps fetch anonymously, and the optional saved still of
+    // Rachel's Instagram post. A new asset under public/nyc/ that is not
+    // listed here 404s behind the password gate.
     "/nyc/rachel-running.jpg",
+    "/nyc/nyc-share.jpg",
+    "/nyc/instagram-post.jpg",
     "/playlists",
     "/marathon",
     "/enter",

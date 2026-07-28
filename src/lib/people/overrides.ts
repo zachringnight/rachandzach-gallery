@@ -313,14 +313,21 @@ export async function buildFaceDirectory(
 function pickFacePreview(
   previews: { object_path: string; bucket: string; width: number; format: string }[],
 ): { object_path: string; bucket: string } | null {
-  // Smallest webp at or above the face width; webp for broad <img> support.
-  const webp = previews
-    .filter((p) => p.format === "webp")
-    .sort((a, b) => a.width - b.width);
-  const atLeast = webp.find((p) => p.width >= FACE_PREVIEW_WIDTH);
-  const pick = atLeast ?? webp[webp.length - 1] ?? null;
+  /*
+   * Smallest AVIF at or above the face width, falling back to any format.
+   *
+   * This preferred WebP "for broad <img> support", but the gallery already
+   * renders AVIF everywhere (pickTarget in PhotoImage.tsx takes it whenever
+   * it exists), so the caution bought nothing while costing ~26% on every
+   * tile. These are 480px sources CSS-cropped into roughly 80px discs, so the
+   * bytes are pure overhead: 26 people carry hand-picked crops, which was
+   * ~810 KB of WebP on /my-weekend and is ~600 KB as AVIF.
+   */
+  const byWidth = (a: { width: number }, b: { width: number }) => a.width - b.width;
+  const avif = previews.filter((p) => p.format === "avif").sort(byWidth);
+  const pick =
+    avif.find((p) => p.width >= FACE_PREVIEW_WIDTH) ?? avif[avif.length - 1] ?? null;
   if (pick) return pick;
-  const any = [...previews].sort((a, b) => a.width - b.width);
-  const anyAtLeast = any.find((p) => p.width >= FACE_PREVIEW_WIDTH);
-  return anyAtLeast ?? any[any.length - 1] ?? null;
+  const any = [...previews].sort(byWidth);
+  return any.find((p) => p.width >= FACE_PREVIEW_WIDTH) ?? any[any.length - 1] ?? null;
 }

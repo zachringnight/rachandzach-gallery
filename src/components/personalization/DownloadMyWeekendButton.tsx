@@ -72,7 +72,7 @@ export function DownloadMyWeekendButton({
               label={
                 multipart
                   ? `Download part ${index + 1} of ${batches.length}`
-                  : "Download my photos"
+                  : `Download ${personName}'s photos`
               }
               zipFilename={
                 multipart ? partZipFilename(baseFilename, index, batches.length) : baseFilename

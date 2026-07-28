@@ -41,9 +41,32 @@ them.
 
 ## Non-negotiable protections
 
-- Treat the wedding clean master and every source original as read-only. Never
-  rename, move, delete, overwrite, recompress, or upload source media to an
-  external tool.
+- **Source pixels are immutable.** Never recompress, resize, crop, convert the
+  format of, rename, move, or delete anything in the wedding clean master or
+  any source original, and never upload source media to an external tool.
+  There is exactly one wedding day; a lost or degraded frame does not come
+  back. This half is non-negotiable.
+- **Embedded metadata on the master may be written.** Names in
+  `XMP-iptcExt:PersonInImage`, `XMP-dc:Subject`, and `IPTC:Keywords` are the
+  point of having those fields: they travel with the photograph into Apple
+  Photos, Lightroom, or whatever exists in twenty years, long outliving this
+  site. Several scripts already do this (`normalize-clean-master-metadata.py`,
+  `write-additions-to-master.py`, and others); that is intended, not a
+  violation.
+  - Zach keeps multiple independent backups of the originals (confirmed
+    2026-07-28), which is what makes in-place metadata writes acceptable. If
+    that ever stops being true, this permission stops with it.
+  - Still write metadata additively, never destructively: union new names onto
+    what a photo already carries rather than replacing the set, and do not
+    strip fields you did not write.
+  - A metadata write must never alter the image data. exiftool's tag writes do
+    not, but a resize/recompress dressed up as a "metadata pass" would, so
+    keep the two operations separate and obvious.
+
+  This used to read "treat the master as read-only, never overwrite", which
+  swept metadata writes in with recompression. Ten scripts broke it routinely,
+  so the rule flagged everything and therefore protected nothing. It is split
+  here so the prohibition that matters is the one that gets enforced.
 - Never expose guest identities, private metadata, signed media URLs, passwords,
   tokens, OAuth material, `.env.cloud`, or production environment values.
 - Keep private Supabase buckets private. Originals leave through short-lived

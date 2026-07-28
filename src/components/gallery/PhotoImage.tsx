@@ -20,16 +20,55 @@ export interface PhotoImageProps {
   onError?: () => void;
 }
 
-function pickTarget(
+/**
+ * Smaller is better, at equal pixel dimensions. AVIF runs roughly 26-34%
+ * under WebP here and far under JPEG, with no visible difference at the
+ * qualities this pipeline encodes.
+ */
+const FORMAT_PREFERENCE: Record<ClientPreview["format"], number> = {
+  avif: 0,
+  webp: 1,
+  jpeg: 2,
+};
+
+/**
+ * Choose which stored derivative to display: first the pixel width the tier
+ * needs, then the cheapest format available AT that width.
+ *
+ * Width and format are picked in that order deliberately. The previous
+ * implementation sorted on width alone and took the first match, so which
+ * FORMAT it landed on was decided by whatever order PostgREST happened to
+ * return the join in. It did select AVIF, but only because the composite-key
+ * order puts avif before webp and Array.sort is stable -- change the join,
+ * the key, or the sort and every image in the gallery would have silently
+ * fallen back to WebP and gotten a third larger. That is now explicit.
+ *
+ * Selecting by width first also means the lightbox automatically upgrades the
+ * moment a 2400 AVIF exists, with no change here.
+ */
+export function pickTarget(
   previews: ClientPreview[],
   tier: PhotoImageTier,
   targetWidth: number,
 ): ClientPreview | null {
   if (previews.length === 0) return null;
-  const ordered = [...previews].sort((a, b) => a.width - b.width);
-  if (tier === "thumbnail") return ordered[0];
-  if (tier === "lightbox") return ordered[ordered.length - 1];
-  return ordered.find((preview) => preview.width >= targetWidth) ?? ordered[ordered.length - 1];
+  const widths = [...new Set(previews.map((preview) => preview.width))].sort(
+    (a, b) => a - b,
+  );
+  const width =
+    tier === "thumbnail"
+      ? widths[0]
+      : tier === "lightbox"
+        ? widths[widths.length - 1]
+        : (widths.find((candidate) => candidate >= targetWidth) ??
+          widths[widths.length - 1]);
+  return (
+    previews
+      .filter((preview) => preview.width === width)
+      .sort(
+        (a, b) => FORMAT_PREFERENCE[a.format] - FORMAT_PREFERENCE[b.format],
+      )[0] ?? null
+  );
 }
 
 /**

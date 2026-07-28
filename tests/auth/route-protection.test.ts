@@ -90,7 +90,12 @@ describe("proxy: public routes stay open", () => {
     "/",
     "/weekend",
     "/nyc",
+    // Public collateral for /nyc. The share card is fetched anonymously by
+    // social apps building link previews, so it must never sit behind the
+    // password gate.
     "/nyc/rachel-running.jpg",
+    "/nyc/nyc-share.jpg",
+    "/nyc/instagram-post.jpg",
     "/playlists",
     "/marathon",
     "/enter",

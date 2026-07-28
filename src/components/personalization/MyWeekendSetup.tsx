@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
 import type { ClientFaceDirectory } from "@/lib/people/face-types";
 import { PersonPicker } from "@/components/gallery/PersonPicker";
@@ -9,18 +8,27 @@ export interface MyWeekendSetupProps {
   people: ClientGalleryFacets["people"];
   faces: ClientFaceDirectory;
   onSelect: (personSlug: string) => void;
+  /** The guest's own name, if they have claimed one. Marks their tile. */
+  claimedSlug?: string | null;
 }
 
 /**
- * First-visit picker: choose a confirmed name, then confirm. Reuses task
- * 06's PersonPicker for the searchable list so the interaction and visual
+ * First-visit picker: tap a face, land on that person's photos. There is no
+ * confirm step -- picking your own name out of a wall of faces is already the
+ * decision, and making guests then find a button was the single most-reported
+ * friction on this screen.
+ *
+ * Reuses PersonPicker for the searchable list so the interaction and visual
  * language match the Photos filter exactly. PersonPicker always offers an
- * "Everyone" chip (selected -> null); that state simply leaves the confirm
- * button disabled here, since "everyone" is not a valid My Weekend person.
+ * "Everyone" tile (selected -> null), which is not a valid person here and is
+ * simply ignored.
  */
-export function MyWeekendSetup({ people, faces, onSelect }: MyWeekendSetupProps) {
-  const [pending, setPending] = useState<string | null>(null);
-
+export function MyWeekendSetup({
+  people,
+  faces,
+  onSelect,
+  claimedSlug = null,
+}: MyWeekendSetupProps) {
   if (people.length === 0) {
     return (
       <p className="atlas-personal-state">
@@ -32,36 +40,30 @@ export function MyWeekendSetup({ people, faces, onSelect }: MyWeekendSetupProps)
   return (
     <section className="atlas-person-setup" aria-labelledby="person-setup-title">
       <div className="atlas-person-setup-copy">
-        <p className="atlas-kicker">Tell us who you are</p>
-        <h2 id="person-setup-title">Your photos, in one place.</h2>
+        <p className="atlas-kicker">Everyone at the wedding</p>
+        <h2 id="person-setup-title">Find yourself, or anyone else.</h2>
         {/*
-         * The page header already says the selection stays private, so this
-         * line carries only what it does not: the photographs arrive grouped
-         * by event. Two columns of near-identical copy left the picker
-         * stranded in a third column beside a tall empty quadrant.
+         * Deliberately invites browsing other people. Tapping a face opens
+         * that person's photographs and nothing more -- it does not tell the
+         * site who you are, so looking up the couple or your table is free.
          */}
         <p className="atlas-person-setup-intro">
-          Your photos arrive grouped by event.
+          Tap any face to see their photos, grouped by event.
         </p>
       </div>
       <div className="atlas-person-setup-picker">
         <PersonPicker
           people={people}
-          selected={pending}
-          onSelect={setPending}
+          // Marks the guest's own tile if they have claimed one. Purely a
+          // "you are here" cue: PersonPicker treats this as the active tile,
+          // and tapping any other face still just navigates.
+          selected={claimedSlug}
+          onSelect={(slug) => {
+            if (slug) onSelect(slug);
+          }}
           variant="faces"
           faces={faces}
         />
-        <button
-          type="button"
-          disabled={!pending}
-          onClick={() => {
-            if (pending) onSelect(pending);
-          }}
-          className="atlas-inline-action disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Show my photos
-        </button>
       </div>
     </section>
   );
