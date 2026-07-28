@@ -66,7 +66,6 @@ function useSquareTileSize(): [React.RefObject<HTMLDivElement | null>, number] {
 export interface MyWeekendGalleryProps {
   personSlug: string;
   personName: string;
-  onChangePerson: () => void;
 }
 
 type LoadState = "loading" | "ready" | "empty" | "error";
@@ -113,7 +112,6 @@ async function fetchAllForPerson(personSlug: string): Promise<ClientPhoto[]> {
 export function MyWeekendGallery({
   personSlug,
   personName,
-  onChangePerson,
 }: MyWeekendGalleryProps) {
   const [state, setState] = useState<LoadState>("loading");
   const [photos, setPhotos] = useState<ClientPhoto[]>([]);
@@ -169,12 +167,15 @@ export function MyWeekendGallery({
       <div className="atlas-weekend-collection-header">
         <div className="atlas-weekend-collection-heading">
           <div>
-            <p className="atlas-kicker">Find me</p>
+            {/* Person-neutral wording: this renders for whoever is being
+                viewed, which is frequently not the guest reading it. "Find
+                me" and "your collection" both quietly asserted otherwise. */}
+            <p className="atlas-kicker">Guest gallery</p>
             <h2>{personName}&rsquo;s photos</h2>
             {state === "ready" ? (
               <p className="atlas-weekend-photo-count">
                 {photos.length.toLocaleString()}{" "}
-                {photos.length === 1 ? "photo" : "photos"} in your collection
+                {photos.length === 1 ? "photo" : "photos"}
               </p>
             ) : null}
           </div>
@@ -188,13 +189,10 @@ export function MyWeekendGallery({
                 Play slideshow
               </button>
             ) : null}
-            <button
-                type="button"
-                onClick={onChangePerson}
-                className="atlas-secondary-action"
-              >
-              Not {personName}?
-            </button>
+            {/* No "Not you?" here any more. This gallery renders for whoever
+                the guest is LOOKING at, which is often not them, so an
+                identity control belongs with the rest of the identity UI in
+                PersonGalleryClient rather than duplicated on every view. */}
           </div>
         </div>
 
@@ -212,11 +210,11 @@ export function MyWeekendGallery({
       </div>
 
       {state === "loading" ? (
-        <p className="atlas-personal-state">Gathering your photos…</p>
+        <p className="atlas-personal-state">Gathering the photos…</p>
       ) : null}
       {state === "error" ? (
         <p className="atlas-personal-state">
-          We could not load your photos right now. Refresh to try again.
+          We could not load these photos right now. Refresh to try again.
         </p>
       ) : null}
       {state === "empty" ? (

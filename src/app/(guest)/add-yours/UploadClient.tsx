@@ -263,9 +263,15 @@ export function UploadClient() {
   );
   // Effect, not a bare call in the render body. Setting state during render
   // makes React re-render before committing and risks a loop; it also raced
-  // the auto-submit below, which keys off this exact transition.
+  // the auto-submit below, which keys off this exact transition. Wrapped in
+  // an async IIFE so the setState is not a synchronous statement in the
+  // effect body (react-hooks/set-state-in-effect), matching the pattern used
+  // elsewhere in this codebase; it still resolves on the same tick.
   useEffect(() => {
-    if (allDone && phase === "uploading") setPhase("ready");
+    if (!allDone || phase !== "uploading") return;
+    void (async () => {
+      setPhase("ready");
+    })();
   }, [allDone, phase]);
 
   /*

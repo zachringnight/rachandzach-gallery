@@ -7,9 +7,7 @@ import type { ClientFaceDirectory } from "@/lib/people/face-types";
 import {
   clearMyWeekendPreference,
   getMyWeekendPreference,
-  setMyWeekendPreference,
 } from "@/lib/personalization/my-weekend";
-import { migrateFavoritesToPerson } from "@/lib/favorites/sync";
 import { personHref } from "@/lib/people/person-href";
 import { MyWeekendSetup } from "@/components/personalization/MyWeekendSetup";
 
@@ -68,13 +66,11 @@ export function MyWeekendClient({
   }, []);
 
   // Resolve from identities, not the picker roster: a hidden person's saved
-  // selection must still land on their own name. No identity at all means the
-  // saved slug is stale, not hidden -- hidden people are in `identities`
-  // precisely so they still resolve. The realistic case is a guest who picked
-  // an admin-added person before that person was removed; the preference lives
-  // only in this browser, so nothing cleaned it up. Sending them on would have
-  // pushed them to a route that 404s, so the stale preference is dropped and
-  // they get the picker back.
+  // selection must still resolve to their own name. No identity at all means
+  // the saved slug is stale (hidden people ARE in `identities` precisely so
+  // they still resolve). The realistic case is a guest who picked an
+  // admin-added person before that person was removed; the preference lives
+  // only in this browser, so nothing cleaned it up.
   const saved = personSlug
     ? (identities.find((candidate) => candidate.slug === personSlug) ?? null)
     : null;
@@ -84,32 +80,43 @@ export function MyWeekendClient({
     if (staleSelection) clearMyWeekendPreference();
   }, [staleSelection]);
 
-  // A returning guest goes straight to their own page rather than to a second
-  // rendering of it here. replace(), not push(), so Back leaves the site as
-  // the guest expects instead of bouncing off this redirect forever.
-  useEffect(() => {
-    if (saved) router.replace(personHref(saved.slug));
-  }, [saved, router]);
-
+  /*
+   * Tapping a face BROWSES. It does not claim an identity.
+   *
+   * Guests want to look at photos of other people -- the couple, their table,
+   * whoever they spent the night talking to -- and doing that must not
+   * silently rewrite who this browser says they are. This used to call
+   * setMyWeekendPreference() and migrateFavoritesToPerson() on every tap,
+   * which meant opening someone else's photos reassigned your identity AND
+   * pushed your saved hearts onto their record server-side (the favorites
+   * sync reads this same preference; see getPersonSlug in
+   * src/lib/favorites/sync.ts). Browsing is not a claim.
+   *
+   * Claiming "this is me" now happens deliberately, on the person's own page.
+   */
   const handleSelect = useCallback(
     (slug: string) => {
-      setMyWeekendPreference(slug);
-      // Favorites v2: hearts collected under the anonymous session now belong
-      // to this person. Fire-and-forget; failures leave the local store intact
-      // and the merge retries on the next selection or sync load.
-      migrateFavoritesToPerson(slug);
       router.push(personHref(slug));
     },
     [router],
   );
 
   if (personSlug === undefined) {
-    return <p className="atlas-personal-state">Loading your photos…</p>;
+    return <p className="atlas-personal-state">Loading the guest list…</p>;
   }
 
-  if (saved) {
-    return <p className="atlas-personal-state">Opening your photos…</p>;
-  }
-
-  return <MyWeekendSetup people={people} faces={faces} onSelect={handleSelect} />;
+  /*
+   * The picker always renders, even for a guest who has already claimed a
+   * name. It used to redirect them straight to their own page, which quietly
+   * made this route unusable for its other job: finding anybody else.
+   * `saved` is passed down only so their own tile can be marked.
+   */
+  return (
+    <MyWeekendSetup
+      people={people}
+      faces={faces}
+      onSelect={handleSelect}
+      claimedSlug={saved?.slug ?? null}
+    />
+  );
 }

@@ -8,6 +8,8 @@ export interface MyWeekendSetupProps {
   people: ClientGalleryFacets["people"];
   faces: ClientFaceDirectory;
   onSelect: (personSlug: string) => void;
+  /** The guest's own name, if they have claimed one. Marks their tile. */
+  claimedSlug?: string | null;
 }
 
 /**
@@ -21,7 +23,12 @@ export interface MyWeekendSetupProps {
  * "Everyone" tile (selected -> null), which is not a valid person here and is
  * simply ignored.
  */
-export function MyWeekendSetup({ people, faces, onSelect }: MyWeekendSetupProps) {
+export function MyWeekendSetup({
+  people,
+  faces,
+  onSelect,
+  claimedSlug = null,
+}: MyWeekendSetupProps) {
   if (people.length === 0) {
     return (
       <p className="atlas-personal-state">
@@ -33,22 +40,24 @@ export function MyWeekendSetup({ people, faces, onSelect }: MyWeekendSetupProps)
   return (
     <section className="atlas-person-setup" aria-labelledby="person-setup-title">
       <div className="atlas-person-setup-copy">
-        <p className="atlas-kicker">Tell us who you are</p>
-        <h2 id="person-setup-title">Your photos, in one place.</h2>
+        <p className="atlas-kicker">Everyone at the wedding</p>
+        <h2 id="person-setup-title">Find yourself, or anyone else.</h2>
         {/*
-         * The page header already says the selection stays private, so this
-         * line carries only what it does not: the photographs arrive grouped
-         * by event. Two columns of near-identical copy left the picker
-         * stranded in a third column beside a tall empty quadrant.
+         * Deliberately invites browsing other people. Tapping a face opens
+         * that person's photographs and nothing more -- it does not tell the
+         * site who you are, so looking up the couple or your table is free.
          */}
         <p className="atlas-person-setup-intro">
-          Tap your face to open your photos, grouped by event.
+          Tap any face to see their photos, grouped by event.
         </p>
       </div>
       <div className="atlas-person-setup-picker">
         <PersonPicker
           people={people}
-          selected={null}
+          // Marks the guest's own tile if they have claimed one. Purely a
+          // "you are here" cue: PersonPicker treats this as the active tile,
+          // and tapping any other face still just navigates.
+          selected={claimedSlug}
           onSelect={(slug) => {
             if (slug) onSelect(slug);
           }}
