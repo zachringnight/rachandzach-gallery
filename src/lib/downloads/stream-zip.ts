@@ -21,65 +21,21 @@
  */
 import { BlobWriter, HttpReader, ZipWriter } from "@zip.js/zip.js";
 import { ZIP_FALLBACK_WARNING_BYTES, type OriginalDownload } from "./contracts";
+import { supportsFileSystemAccessZip } from "./zip-planning";
 
-// --- Pure helpers (unit-tested) ----------------------------------------------
-
-/**
- * True when the browser supports the File System Access save-to-disk API.
- * Always false outside a browser (SSR, Node tests) and false on browsers
- * that only implement the older download-Blob model (Safari, Firefox as of
- * this writing).
+/*
+ * The pure planning helpers moved to ./zip-planning so callers can do the
+ * batch maths WITHOUT pulling zip.js (~60 KB gzipped) into their bundle.
+ * Re-exported here so existing importers and tests keep working unchanged;
+ * anything importing them from this module still gets the engine, so the
+ * bundle-sensitive call sites import from ./zip-planning directly.
  */
-export function supportsFileSystemAccessZip(): boolean {
-  if (typeof window === "undefined") return false;
-  const candidate = (window as unknown as { showSaveFilePicker?: unknown })
-    .showSaveFilePicker;
-  return typeof candidate === "function";
-}
-
-export function totalBytes(items: readonly Pick<OriginalDownload, "bytes">[]): number {
-  return items.reduce((sum, item) => sum + item.bytes, 0);
-}
-
-/**
- * Whether to show a "this is a lot of data" warning before starting the
- * fallback (Blob-in-memory) ZIP path. Never warns when the File System Access
- * path is available, since that path streams to disk instead of RAM.
- */
-export function needsFallbackSizeWarning(
-  items: readonly Pick<OriginalDownload, "bytes">[],
-  hasFileSystemAccess: boolean = supportsFileSystemAccessZip(),
-): boolean {
-  if (hasFileSystemAccess) return false;
-  return totalBytes(items) > ZIP_FALLBACK_WARNING_BYTES;
-}
-
-/**
- * Splits a selection into batches that each stay at/under maxBytesPerBatch,
- * for the bounded-Blob fallback path. Order is preserved; batches are never
- * empty; a single item larger than the cap still gets a solo batch (it
- * cannot be split further -- the size-warning UI is what protects memory in
- * that case, not batching).
- */
-export function splitIntoBoundedBatches<T extends Pick<OriginalDownload, "bytes">>(
-  items: readonly T[],
-  maxBytesPerBatch: number = ZIP_FALLBACK_WARNING_BYTES,
-): T[][] {
-  const batches: T[][] = [];
-  let current: T[] = [];
-  let currentBytes = 0;
-  for (const item of items) {
-    if (current.length > 0 && currentBytes + item.bytes > maxBytesPerBatch) {
-      batches.push(current);
-      current = [];
-      currentBytes = 0;
-    }
-    current.push(item);
-    currentBytes += item.bytes;
-  }
-  if (current.length > 0) batches.push(current);
-  return batches;
-}
+export {
+  needsFallbackSizeWarning,
+  splitIntoBoundedBatches,
+  supportsFileSystemAccessZip,
+  totalBytes,
+} from "./zip-planning";
 
 // --- Browser streaming (not unit-tested; needs a real browser) --------------
 

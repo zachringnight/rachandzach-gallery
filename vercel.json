@@ -2,6 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "ignoreCommand": "node scripts/vercel-ignore-build.mjs",
+  "//regions": "Run functions next to the database. Supabase is in us-west-2; with no region set, functions default to iad1 on the US east coast, so every catalog read and every preview-signing call crossed the continent (~60ms each way). Nearly every route here is dynamic and blocks on several such round trips, so being near Postgres beats being near the visitor. sfo1 is the closest Vercel region to us-west-2. East-coast guests trade a little HTML TTFB for a much shorter server-side chain.",
+  "regions": ["sfo1"],
   "headers": [
     {
       "source": "/story/:path*",

@@ -2,13 +2,21 @@
 
 import { useCallback, useRef, useState } from "react";
 import type { OriginalDownload } from "@/lib/downloads/contracts";
+/*
+ * Planning helpers come from the LIGHT module; the zip engine itself is
+ * imported inside the click handler below. Importing streamSelectionZip here
+ * would pull @zip.js/zip.js (~60 KB gzipped) into the first paint of every
+ * route that renders a download button -- /photos, /my-weekend, /favorites,
+ * and every person page -- for code that cannot run until a guest selects
+ * photos and clicks. `type ZipStreamEvent` is erased at compile time and
+ * costs nothing.
+ */
 import {
   needsFallbackSizeWarning,
   splitIntoBoundedBatches,
-  streamSelectionZip,
   supportsFileSystemAccessZip,
-  type ZipStreamEvent,
-} from "@/lib/downloads/stream-zip";
+} from "@/lib/downloads/zip-planning";
+import type { ZipStreamEvent } from "@/lib/downloads/stream-zip";
 import {
   fetchSelectionDownloads,
   SelectionPreparationError,
@@ -106,6 +114,13 @@ export function DownloadSelectionButton({
               : current,
           );
         };
+
+        // Loaded on demand, so the zip engine is fetched the first time a
+        // guest actually downloads rather than on every gallery page view.
+        // Subsequent batches hit the module cache, so this costs one network
+        // round trip at most, overlapped with a download the guest just asked
+        // for and already expects to take a moment.
+        const { streamSelectionZip } = await import("@/lib/downloads/stream-zip");
 
         const result = await streamSelectionZip({
           items: batch,

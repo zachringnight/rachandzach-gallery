@@ -51,8 +51,8 @@ const outputFile = join(reviewDir, "name-people.html");
 // out near 0.59 and genuine pairs sitting at 0.70 median, so 0.64 with an
 // average-link merge keeps groups conservative. A group that is wrong is worse
 // than no group at all, because it invites one name to cover several faces.
-const GROUP_EDGE = 0.64;
-const GROUP_MIN_PAIR = 0.55;
+const GROUP_EDGE = 0.6;
+const GROUP_MIN_PAIR = 0.5;
 const GROUP_MAX = 12;
 // How much room to leave around a detected face box, as a multiple of its
 // longest side. Tight is for recognition, wide is for "who is this standing
@@ -878,7 +878,7 @@ const css = String.raw`
   .options { display: grid; gap: 3px; max-height: 280px; overflow-y: auto; }
   .option {
     display: grid;
-    grid-template-columns: 34px 1fr auto;
+    grid-template-columns: 18px 34px minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
     width: 100%;
@@ -905,7 +905,17 @@ const css = String.raw`
     overflow: hidden;
   }
   .option .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .option .hint { color: var(--muted); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .option .hint {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .option .who { min-width: 0; overflow-wrap: anywhere; }
   .option .num {
     min-width: 16px;
     border-radius: 3px;
@@ -1052,11 +1062,13 @@ const css = String.raw`
 const clientJs = String.raw`
 (() => {
   "use strict";
+  const BACKTICK = String.fromCharCode(96);
   const model = JSON.parse(document.getElementById("model").textContent);
   const items = model.items;
   const roster = model.roster;
   const rosterBySlug = new Map(roster.map((p) => [p.slug, p]));
   const itemByKey = new Map(items.map((i) => [i.key, i]));
+  const order = new Map(items.map((i, index) => [i.key, index]));
   const groupKeys = new Map(model.groups.map((g) => [g.id, g.keys]));
   const storageKey = "rzNamingTool:" + model.buildFingerprint;
   const prefsKey = "rzNamingToolPrefs";
@@ -1327,7 +1339,6 @@ const clientJs = String.raw`
 
   function renderChips() {
     els.chips.innerHTML = "";
-    els.chips.hidden = pending.length === 0;
     for (const slug of pending) {
       const person = rosterBySlug.get(slug);
       const chip = document.createElement("span");
@@ -1379,6 +1390,7 @@ const clientJs = String.raw`
         thumb.textContent = initials(entry.person.name);
       }
       const name = document.createElement("span");
+      name.className = "who";
       name.textContent = entry.person.name;
       const hint = document.createElement("span");
       hint.className = "hint";
@@ -1547,16 +1559,17 @@ const clientJs = String.raw`
     toast("Undone");
   }
 
-  function advance() {
+  // Advance from the position the decided item held, not from its index in the
+  // filtered list: in Open mode that item has already dropped out of the list,
+  // so an index lookup would send the cursor back to the top of the queue.
+  function advance(fromItem) {
+    const position = order.get(fromItem.key);
     const list = visible();
-    const index = list.findIndex((i) => i.key === currentKey);
-    const next = list[index + 1] || list[index] || list[0];
-    if (mode === "open") {
-      const stillOpen = list.find((i) => i.key !== currentKey || !isResolved(i));
-      currentKey = (list.find((i) => !isResolved(i) && statusOf(i) !== "skipped") || next || {}).key || "";
-    } else {
-      currentKey = next ? next.key : "";
-    }
+    const next =
+      list.find((i) => order.get(i.key) > position) ||
+      list[list.length - 1] ||
+      null;
+    currentKey = next ? next.key : "";
     setQuery("");
     pending = [];
     highlight = 0;
@@ -1582,21 +1595,21 @@ const clientJs = String.raw`
     }
     const names = pending.map((s) => (rosterBySlug.get(s) || {}).name || s).join(", ");
     commit(keys, value, keys.length > 1 ? names + " on " + keys.length + " photos" : names);
-    advance();
+    advance(item);
   }
 
   function markNotGuest() {
     const item = current();
     if (!item) return;
     commit([item.key], { action: "not-a-guest", personSlugs: [], note: els.noteInput.value.trim() }, "Not a guest");
-    advance();
+    advance(item);
   }
 
   function markSkip() {
     const item = current();
     if (!item) return;
     commit([item.key], { action: "skip", personSlugs: [], note: els.noteInput.value.trim() }, "Skipped for later");
-    advance();
+    advance(item);
   }
 
   function markRemove() {
@@ -1614,39 +1627,37 @@ const clientJs = String.raw`
     if (reason === null) return;
     if (reason.trim().length < 20) return toast("A removal needs a written reason");
     commit([item.key], { action: "remove", personSlugs: slugs, note: reason.trim() }, "Removal recorded");
-    advance();
+    advance(item);
   }
 
   function reopen() {
     const item = current();
     if (!item) return;
-    commit([item.key], { action: "open", personSlugs: [], note: "" }, "Reopened");
+    const previous = state.get(item.key);
+    if (!previous) return toast("That item is already open");
+    undoStack.push({ before: [[item.key, Object.assign({}, previous)]], slugs: [] });
     state.delete(item.key);
     save();
+    els.undoButton.disabled = false;
+    pending = [];
+    setQuery("");
     render();
+    toast("Reopened");
   }
 
-  function choose(index) {
+  // add: put the name in the chip row and stay put, so a second person can be
+  // added to a whole-photo item. addAndSave is the one-key fast path.
+  function choose(index, addAndSave) {
     const item = current();
-    if (!item) return;
-    const list = suggestions(item);
-    const entry = list[index];
-    if (!entry) return;
+    if (!item) return false;
+    const entry = suggestions(item)[index];
+    if (!entry) return false;
     if (!pending.includes(entry.person.slug)) pending.push(entry.person.slug);
     setQuery("");
     highlight = 0;
-    render();
-  }
-
-  function acceptTyped() {
-    const item = current();
-    if (!item) return false;
-    const list = suggestions(item);
-    if (list.length) {
-      choose(highlight);
-      return true;
-    }
-    return false;
+    if (addAndSave) saveCurrent(false);
+    else render();
+    return true;
   }
 
   function goToKey(key) {
@@ -1670,9 +1681,9 @@ const clientJs = String.raw`
   }
 
   function cycleZoom(delta) {
-    const order = ["tight", "wide", "full"];
-    const index = order.indexOf(zoom);
-    zoom = order[(index + (delta > 0 ? 1 : order.length - 1)) % order.length];
+    const steps = ["tight", "wide", "full"];
+    const index = steps.indexOf(zoom);
+    zoom = steps[(index + (delta > 0 ? 1 : steps.length - 1)) % steps.length];
     save();
     const item = current();
     if (item) renderStage(item);
@@ -1776,14 +1787,18 @@ const clientJs = String.raw`
     // appear inside a person's name.
     if (key === "Enter") {
       event.preventDefault();
-      if (query.trim() && acceptTyped()) {
-        if (event.shiftKey) return;
+      if (query.trim()) {
+        // Enter takes the highlighted name and saves. Shift+Enter (and comma)
+        // only takes the name, so a second person can be added to the photo.
+        choose(highlight, !event.shiftKey);
+        return;
       }
-      saveCurrent(event.shiftKey);
+      saveCurrent(false);
       return;
     }
-    if (key === "ArrowDown") { event.preventDefault(); highlight += 1; renderOptions(current()); return; }
-    if (key === "ArrowUp") { event.preventDefault(); highlight = Math.max(0, highlight - 1); renderOptions(current()); return; }
+    if (key === "," ) { event.preventDefault(); choose(highlight, false); return; }
+    if (key === "ArrowDown") { event.preventDefault(); moveHighlight(1); return; }
+    if (key === "ArrowUp") { event.preventDefault(); moveHighlight(-1); return; }
     if (key === "Tab") { event.preventDefault(); step(event.shiftKey ? -1 : 1); return; }
     if (key === "Escape") {
       event.preventDefault();
@@ -1797,10 +1812,14 @@ const clientJs = String.raw`
     if (key === "-" || key === "_") { event.preventDefault(); cycleZoom(-1); return; }
     if (key === "=" || key === "+") { event.preventDefault(); cycleZoom(1); return; }
     if (key === "\\") { event.preventDefault(); saveCurrent(true); return; }
-    if (key === "`") { event.preventDefault(); markNotGuest(); return; }
+    if (key === BACKTICK) { event.preventDefault(); markNotGuest(); return; }
     if (key === ";") { event.preventDefault(); markSkip(); return; }
     if (key === "?") { event.preventDefault(); els.help.classList.add("open"); return; }
-    if (key >= "1" && key <= "9") { event.preventDefault(); choose(Number(key) - 1); return; }
+    if (key >= "1" && key <= "9") {
+      event.preventDefault();
+      choose(Number(key) - 1, !event.shiftKey);
+      return;
+    }
 
     if (typing()) return;
 
@@ -1820,15 +1839,26 @@ const clientJs = String.raw`
       els.combo.focus();
       setQuery(key);
       highlight = 0;
-      renderOptions(current());
+      const item = current();
+      if (item) renderOptions(item);
       event.preventDefault();
     }
   });
 
+  function moveHighlight(delta) {
+    const item = current();
+    if (!item) return;
+    const count = suggestions(item).length;
+    if (!count) return;
+    highlight = (highlight + delta + count) % count;
+    paintHighlight();
+  }
+
   els.combo.addEventListener("input", () => {
     query = els.combo.value;
     highlight = 0;
-    renderOptions(current());
+    const item = current();
+    if (item) renderOptions(item);
   });
 
   // ---------- roster drawer ----------
@@ -1933,7 +1963,7 @@ function renderHtml(model) {
     ["1 … 9", "pick that suggestion"],
     ["↑ ↓", "move the highlight"],
     ["Enter", "take the highlighted name, then save and go next"],
-    ["Shift+Enter", "save and apply to the whole look-alike group"],
+    ["Shift+Enter or ,", "take the name but stay, to add a second person"],
     ["\\", "apply to the whole look-alike group"],
     ["x  or  `", "not a guest / background face"],
     ["s  or  ;", "skip for later"],
