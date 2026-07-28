@@ -13,7 +13,7 @@
 
 import { createHash } from "node:crypto";
 import { existsSync, promises as fs } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join } from "node:path";
 
 import { parseCsv } from "./photo-metadata.mjs";
 
@@ -69,8 +69,8 @@ function jsonScript(value) {
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e")
     .replace(/&/g, "\\u0026")
-    .replace(/ /g, "\\u2028")
-    .replace(/ /g, "\\u2029");
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
 
 function encodePath(repoRelativePath) {
@@ -277,7 +277,7 @@ function fingerprint(parts) {
  * @param {string} options.assetBase prefix the page puts in front of every
  *   repo-relative asset path ("/" when served, "../../" for a static file).
  */
-export async function buildNamingModel({ repoRoot, assetBase = "/" }) {
+export async function buildNamingModel({ repoRoot, assetBase = "/", readOnly = false }) {
   const reviewDir = join(repoRoot, "metadata", "identity-review");
   const derivativesRoot = join(repoRoot, "metadata", "import", "derivatives", "previews");
   const committedFacesRoot = join(repoRoot, "public", "faces");
@@ -286,7 +286,6 @@ export async function buildNamingModel({ repoRoot, assetBase = "/" }) {
     queueRows,
     unresolvedRows,
     partialRows,
-    personRows,
     referenceCropRows,
     suggestionRows,
     catalog,
@@ -297,7 +296,6 @@ export async function buildNamingModel({ repoRoot, assetBase = "/" }) {
     readCsvFile(join(repoRoot, "metadata", "sorted", "unconfirmed-review-queue.csv")),
     readCsvFile(join(reviewDir, "unresolved-crops.csv")),
     readCsvFile(join(reviewDir, "partial-crops.csv")),
-    readCsvFile(join(reviewDir, "people-reference-index.csv")),
     readCsvFile(join(reviewDir, "reference-crops.csv")),
     readSuggestionRows(reviewDir),
     readJsonFile(join(repoRoot, "src", "generated", "gallery-v2.json")),
@@ -523,6 +521,7 @@ export async function buildNamingModel({ repoRoot, assetBase = "/" }) {
     schemaVersion: 1,
     tool: "naming-tool",
     assetBase,
+    readOnly,
     buildFingerprint,
     builtAt: new Date().toISOString(),
     counts: {
@@ -836,12 +835,8 @@ const clientJs = String.raw`
     return -1;
   }
 
-  let cachedFor = null;
-  let cachedList = [];
   function suggestions(item) {
     const q = query.trim().toLowerCase();
-    const signature = item.key + "|" + q + "|" + pending.join(",");
-    if (cachedFor === signature) return cachedList;
     const chosen = new Set(pending);
     let out;
     if (!q) {
@@ -872,8 +867,6 @@ const clientJs = String.raw`
       scored.sort((a, b) => a.r - b.r || b.person.photoCount - a.person.photoCount || a.person.name.localeCompare(b.person.name));
       out = scored.slice(0, 9).map((s) => ({ person: s.person, hint: s.person.photoCount + " photos" }));
     }
-    cachedFor = signature;
-    cachedList = out;
     return out;
   }
 
@@ -983,8 +976,14 @@ const clientJs = String.raw`
     }
   }
 
+  // Whatever is on screen is exactly what a number key or Enter can choose.
+  // Nothing re-derives the list at the moment of the keystroke, so a name can
+  // never be saved that was not the one being looked at.
+  let shown = [];
+
   function renderOptions(item) {
     const list = suggestions(item);
+    shown = list;
     if (highlight >= list.length) highlight = Math.max(0, list.length - 1);
     els.options.innerHTML = "";
     if (!list.length) {
@@ -1164,6 +1163,10 @@ const clientJs = String.raw`
   }
 
   async function decide(keys, action, personSlugs, note, label) {
+    if (model.readOnly) {
+      toast("This is a preview. Run npm run tag to answer.", true);
+      return;
+    }
     if (busy) return;
     busy = true;
     els.combo.disabled = true;
@@ -1226,7 +1229,7 @@ const clientJs = String.raw`
   function pick(index, save) {
     const item = current();
     if (!item) return;
-    const entry = suggestions(item)[index];
+    const entry = shown[index];
     if (!entry) return;
     if (!pending.includes(entry.person.slug)) pending.push(entry.person.slug);
     setQuery("");
@@ -1286,11 +1289,8 @@ const clientJs = String.raw`
   }
 
   function moveHighlight(delta) {
-    const item = current();
-    if (!item) return;
-    const count = suggestions(item).length;
-    if (!count) return;
-    highlight = (highlight + delta + count) % count;
+    if (!shown.length) return;
+    highlight = (highlight + delta + shown.length) % shown.length;
     paintHighlight();
   }
 
@@ -1299,6 +1299,7 @@ const clientJs = String.raw`
     zoom = steps[(steps.indexOf(zoom) + 1) % steps.length];
     const item = current();
     if (item) renderStage(item);
+    els.combo.focus();
   }
 
   function step(delta) {
@@ -1459,10 +1460,16 @@ const clientJs = String.raw`
       note: els.noteInput.value.trim()
     }).then(applyResult).catch((error) => toast(String(error.message || error), true));
   });
-  window.addEventListener("beforeunload", () => {
-    if (busy) return "A decision is still saving.";
+  window.addEventListener("beforeunload", (event) => {
+    if (!busy) return;
+    event.preventDefault();
+    event.returnValue = "";
   });
 
+  if (model.readOnly) {
+    els.headNote.textContent = "Preview only — run npm run tag to answer";
+    els.headNote.style.color = "var(--danger)";
+  }
   render();
   els.combo.focus();
 })();
@@ -1606,5 +1613,3 @@ export function renderNamingPage(model) {
 </html>
 `;
 }
-
-export { relative, sep };
