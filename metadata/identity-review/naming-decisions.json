@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-28T04:16:51.111Z",
+  "entries": {
+    "missing:Film/rachelzachfilm-58.jpg:01": {
+      "action": "not-a-guest",
+      "personSlugs": [],
+      "note": "",
+      "decidedAt": "2026-07-28T04:16:43.279Z"
+    },
+    "partial:Day 1/rachelzachday1-172.jpg:02": {
+      "action": "not-a-guest",
+      "personSlugs": [],
+      "note": "",
+      "decidedAt": "2026-07-28T04:16:46.168Z"
+    },
+    "partial:Film/rachelzachfilm-52.jpg:02": {
+      "action": "not-a-guest",
+      "personSlugs": [],
+      "note": "",
+      "decidedAt": "2026-07-28T04:16:47.980Z"
+    },
+    "partial:Film/rachelzachfilm-53.jpg:01": {
+      "action": "not-a-guest",
+      "personSlugs": [],
+      "note": "",
+      "decidedAt": "2026-07-28T04:16:49.045Z"
+    },
+    "partial:Film/rachelzachfilm-54.jpg:01": {
+      "action": "not-a-guest",
+      "personSlugs": [],
+      "note": "",
+      "decidedAt": "2026-07-28T04:16:49.787Z"
+    },
+    "partial:Film/rachelzachfilm-55.jpg:01": {
+      "action": "not-a-guest",
+      "personSlugs": [],
+      "note": "",
+      "decidedAt": "2026-07-28T04:16:51.111Z"
+    }
+  }
+}
