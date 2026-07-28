@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import Link from "next/link";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { groupByEvent } from "@/lib/personalization/my-weekend";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
@@ -68,7 +67,6 @@ export interface MyWeekendGalleryProps {
   personSlug: string;
   personName: string;
   onChangePerson: () => void;
-  personalPageHref?: string;
 }
 
 type LoadState = "loading" | "ready" | "empty" | "error";
@@ -116,7 +114,6 @@ export function MyWeekendGallery({
   personSlug,
   personName,
   onChangePerson,
-  personalPageHref,
 }: MyWeekendGalleryProps) {
   const [state, setState] = useState<LoadState>("loading");
   const [photos, setPhotos] = useState<ClientPhoto[]>([]);
@@ -182,11 +179,6 @@ export function MyWeekendGallery({
             ) : null}
           </div>
           <div className="atlas-weekend-collection-actions">
-            {personalPageHref ? (
-              <Link href={personalPageHref} className="atlas-secondary-action">
-                Open your private page
-              </Link>
-            ) : null}
             {photos.length > 0 ? (
               <button
                 type="button"

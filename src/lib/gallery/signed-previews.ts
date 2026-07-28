@@ -22,7 +22,26 @@ import type { Database } from "@/lib/supabase/database.types";
 
 /** Never mint a URL shorter than this; guards against a fat-fingered "0". */
 const PREVIEW_TTL_FLOOR_SECONDS = 60;
-const PREVIEW_TTL_DEFAULT_SECONDS = 60 * 60;
+/**
+ * Eight hours, raised from the original sixty minutes.
+ *
+ * The TTL is not just an expiry, it is a CACHE KEY: the browser caches on the
+ * full URL including `?token=`, and GalleryShell renews the whole set shortly
+ * before expiry, replacing every `<img src>`. So the old one-hour default made
+ * a guest who had been browsing for an hour re-download every image they had
+ * already loaded, at full size, in one burst. The preview objects themselves
+ * are already stored `public,max-age=31536000,immutable`; the rotating token
+ * was the only thing defeating that.
+ *
+ * Eight hours comfortably outlives any real sitting, so a normal visit never
+ * pays the re-download. The privacy cost is small and bounded: the gallery is
+ * gated behind a shared password that never rotates, so a leaked preview URL
+ * was never the tight part of this system, and it still expires the same day.
+ *
+ * Still overridable per environment, no code change:
+ *   GALLERY_PREVIEW_URL_TTL_SECONDS=10800   # 3 hours
+ */
+const PREVIEW_TTL_DEFAULT_SECONDS = 8 * 60 * 60;
 
 /** Well under the server's 1000-path ceiling; keeps request/response small. */
 export const MAX_PATHS_PER_SIGN_REQUEST = 200;
@@ -116,26 +135,57 @@ export async function signPreviewUrls(
     byBucket.set(preview.bucket, list);
   }
 
+  /*
+   * Sign every chunk concurrently rather than one after another.
+   *
+   * These calls are independent -- each mints URLs for a disjoint set of
+   * paths -- so awaiting them in sequence bought nothing but latency. A
+   * gallery page signs ~420 paths, which is 3 chunks and was 3 serial
+   * round trips to us-west-2; now it is 1 round trip's worth of wall clock.
+   * Chunking is still bounded well under the API's 1000-path ceiling, and
+   * the number of concurrent calls scales with the request's own path count,
+   * so this cannot fan out unboundedly.
+   *
+   * Failure handling is unchanged and stays per-chunk: a rejected or errored
+   * chunk marks only its own paths unsigned, and the page still renders with
+   * a per-tile retry. Errors are caught per chunk so one bad bucket cannot
+   * reject the whole batch.
+   */
+  const jobs: { bucket: string; group: string[] }[] = [];
   for (const [bucket, paths] of byBucket) {
     for (const group of chunk(paths, MAX_PATHS_PER_SIGN_REQUEST)) {
-      const { data, error } = await client.storage
-        .from(bucket)
-        .createSignedUrls(group, ttlSeconds);
-      if (error || !data) {
-        // Whole-chunk failure: mark every path in it as unsigned. The page
-        // still renders; the client shows a retry affordance per tile.
-        for (const path of group) failures.push(path);
-        continue;
-      }
-      data.forEach((item, index) => {
-        const path = item.path ?? group[index];
-        if (item.error || !item.signedUrl || !path) {
-          if (path) failures.push(path);
-          return;
-        }
-        urls.set(path, item.signedUrl);
-      });
+      jobs.push({ bucket, group });
     }
+  }
+
+  const settled = await Promise.all(
+    jobs.map(async ({ bucket, group }) => {
+      try {
+        const { data, error } = await client.storage
+          .from(bucket)
+          .createSignedUrls(group, ttlSeconds);
+        return { group, data: error ? null : data };
+      } catch {
+        return { group, data: null };
+      }
+    }),
+  );
+
+  for (const { group, data } of settled) {
+    if (!data) {
+      // Whole-chunk failure: mark every path in it as unsigned. The page
+      // still renders; the client shows a retry affordance per tile.
+      for (const path of group) failures.push(path);
+      continue;
+    }
+    data.forEach((item, index) => {
+      const path = item.path ?? group[index];
+      if (item.error || !item.signedUrl || !path) {
+        if (path) failures.push(path);
+        return;
+      }
+      urls.set(path, item.signedUrl);
+    });
   }
 
   return { urls, expiresAt: previewExpiresAt(ttlSeconds, now), failures };

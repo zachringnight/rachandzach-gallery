@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { MyWeekendGallery } from "@/components/personalization/MyWeekendGallery";
 import { ShareGuestPageButton } from "@/components/personalization/ShareGuestPageButton";
+import { clearMyWeekendPreference } from "@/lib/personalization/my-weekend";
 
 export function PersonGalleryClient({
   personSlug,
@@ -25,7 +26,13 @@ export function PersonGalleryClient({
       <MyWeekendGallery
         personSlug={personSlug}
         personName={personName}
-        onChangePerson={() => router.push("/my-weekend")}
+        // Clear before navigating: Find me now forwards a saved preference
+        // straight back to this page, so leaving it set would bounce "Not
+        // you?" right back here instead of showing the picker.
+        onChangePerson={() => {
+          clearMyWeekendPreference();
+          router.push("/my-weekend");
+        }}
       />
     </div>
   );

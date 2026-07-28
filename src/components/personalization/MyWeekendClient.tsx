@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
 import type { ClientFaceDirectory } from "@/lib/people/face-types";
 import {
@@ -9,8 +10,8 @@ import {
   setMyWeekendPreference,
 } from "@/lib/personalization/my-weekend";
 import { migrateFavoritesToPerson } from "@/lib/favorites/sync";
+import { personHref } from "@/lib/people/person-href";
 import { MyWeekendSetup } from "@/components/personalization/MyWeekendSetup";
-import { MyWeekendGallery } from "@/components/personalization/MyWeekendGallery";
 
 export interface MyWeekendClientProps {
   /** The picker roster: hidden people out, renames applied. */
@@ -26,15 +27,20 @@ export interface MyWeekendClientProps {
 }
 
 /**
- * Small client orchestrator between the two components the packet names
- * (MyWeekendSetup, MyWeekendGallery): reads the localStorage preference on
- * mount and switches between "pick a name" and "here is your weekend". Not
- * in the packet's Files list verbatim, but stays inside a directory this
- * packet owns (src/components/personalization/) -- src/app/(guest)/
- * my-weekend/page.tsx is a Server Component and cannot itself read
- * localStorage or hold this state, and My Weekend's preference is
- * deliberately client-only (no cookie, no server round trip to learn who is
- * asking), so this switch has to live in a client component somewhere.
+ * Find me's client half: read the localStorage preference on mount, then
+ * either offer the face picker or hand the guest straight to their own page.
+ *
+ * There is exactly ONE person view now (/{slug}, rendering PersonGalleryClient).
+ * This screen used to render a second, near-identical inline copy of the
+ * gallery for anyone with a saved preference, so the same guest saw two
+ * different-looking versions of "your photos" depending on how they arrived.
+ * Now every path lands on the same URL, which is also the one that is safe to
+ * bookmark and forward.
+ *
+ * src/app/(guest)/my-weekend/page.tsx is a Server Component and cannot read
+ * localStorage, and the preference is deliberately client-only (no cookie, no
+ * server round trip to learn who is asking), so this has to live in a client
+ * component.
  */
 export function MyWeekendClient({
   people,
@@ -50,6 +56,7 @@ export function MyWeekendClient({
   // "Loading your weekend…" placeholder), and the real value only replaces
   // it after hydration completes.
   const [personSlug, setPersonSlug] = useState<string | null | undefined>(undefined);
+  const router = useRouter();
 
   useEffect(() => {
     // Wrapped so the setState call is not a direct synchronous statement in
@@ -60,61 +67,49 @@ export function MyWeekendClient({
     })();
   }, []);
 
-  const handleSelect = useCallback((slug: string) => {
-    setMyWeekendPreference(slug);
-    // Favorites v2: hearts collected under the anonymous session now belong
-    // to this person. Fire-and-forget; failures leave the local store intact
-    // and the merge retries on the next selection or sync load.
-    migrateFavoritesToPerson(slug);
-    setPersonSlug(slug);
-  }, []);
+  // Resolve from identities, not the picker roster: a hidden person's saved
+  // selection must still land on their own name. No identity at all means the
+  // saved slug is stale, not hidden -- hidden people are in `identities`
+  // precisely so they still resolve. The realistic case is a guest who picked
+  // an admin-added person before that person was removed; the preference lives
+  // only in this browser, so nothing cleaned it up. Sending them on would have
+  // pushed them to a route that 404s, so the stale preference is dropped and
+  // they get the picker back.
+  const saved = personSlug
+    ? (identities.find((candidate) => candidate.slug === personSlug) ?? null)
+    : null;
+  const staleSelection = Boolean(personSlug) && saved === null;
 
-  const handleChangePerson = useCallback(() => {
-    clearMyWeekendPreference();
-    setPersonSlug(null);
-  }, []);
+  useEffect(() => {
+    if (staleSelection) clearMyWeekendPreference();
+  }, [staleSelection]);
+
+  // A returning guest goes straight to their own page rather than to a second
+  // rendering of it here. replace(), not push(), so Back leaves the site as
+  // the guest expects instead of bouncing off this redirect forever.
+  useEffect(() => {
+    if (saved) router.replace(personHref(saved.slug));
+  }, [saved, router]);
+
+  const handleSelect = useCallback(
+    (slug: string) => {
+      setMyWeekendPreference(slug);
+      // Favorites v2: hearts collected under the anonymous session now belong
+      // to this person. Fire-and-forget; failures leave the local store intact
+      // and the merge retries on the next selection or sync load.
+      migrateFavoritesToPerson(slug);
+      router.push(personHref(slug));
+    },
+    [router],
+  );
 
   if (personSlug === undefined) {
     return <p className="atlas-personal-state">Loading your photos…</p>;
   }
 
-  if (personSlug === null) {
-    return (
-      <MyWeekendSetup
-        people={people}
-        faces={faces}
-        onSelect={handleSelect}
-      />
-    );
+  if (saved) {
+    return <p className="atlas-personal-state">Opening your photos…</p>;
   }
 
-  // Resolve from identities, not the picker roster: a hidden person's saved
-  // selection must still land on their own name.
-  const person = identities.find((candidate) => candidate.slug === personSlug);
-
-  // No identity at all means the saved slug is stale, not hidden -- hidden
-  // people are in `identities` precisely so they still resolve. The realistic
-  // case is a guest who picked an admin-added person before that person was
-  // removed: the preference lives only in this browser, so nothing cleaned it
-  // up. Rendering on would have given them a page titled "Guest's photos" with
-  // a link to a route that 404s. Drop the stale preference and hand them back
-  // the picker instead.
-  if (!person) {
-    clearMyWeekendPreference();
-    return (
-      <MyWeekendSetup people={people} faces={faces} onSelect={handleSelect} />
-    );
-  }
-
-  return (
-    <MyWeekendGallery
-      personSlug={personSlug}
-      personName={person.displayName}
-      onChangePerson={handleChangePerson}
-      // Every surfaced person is a catalog identity (admin additions get a
-      // rachandzach_people row at creation), so the personalized route
-      // resolves for all of them.
-      personalPageHref={`/${personSlug}`}
-    />
-  );
+  return <MyWeekendSetup people={people} faces={faces} onSelect={handleSelect} />;
 }

@@ -13,7 +13,7 @@
  * size, the per-file `x-signature` token header, `removeFingerprintOnSuccess`,
  * and `uploadDataDuringCreation`.
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as tus from "tus-js-client";
 import {
   GUEST_PENDING_BUCKET,
@@ -265,6 +265,24 @@ export function UploadClient() {
     setPhase("ready");
   }
 
+  /*
+   * Hand the batch in as soon as the bytes are up, instead of waiting for a
+   * second click.
+   *
+   * Uploading only moves files into quarantine; nothing reaches /admin/review
+   * until the submit call lands. So a guest who watched every progress bar
+   * fill and then closed the tab used to lose the whole batch silently -- no
+   * error, no receipt, and no trace anywhere an admin would look. That is the
+   * worst failure this app can have: the guest believes they contributed.
+   *
+   * `submit` early-returns without a batch ref and flips back to "ready" on
+   * failure, so the button below survives as the retry path.
+   */
+  const autoSubmit = allDone && phase === "ready" && !error;
+  useEffect(() => {
+    if (autoSubmit) void submit();
+  }, [autoSubmit, submit]);
+
   const controls = useMemo(
     () => ({
       onPause: (id: string) => {
@@ -350,18 +368,20 @@ export function UploadClient() {
             Upload {items.length > 0 ? `${items.length} ` : ""}photos
           </button>
         ) : null}
+        {/* Only reachable when auto-submit failed: the effect above hands the
+            batch in on its own, and only an error keeps the guest here. */}
         {phase === "ready" ? (
           <button
             type="button"
             onClick={() => void submit()}
             className="atlas-inline-action"
           >
-            Submit for review
+            Try sending again
           </button>
         ) : null}
         {phase === "submitting" ? (
           <span className="atlas-upload-note">
-            Submitting...
+            Sending your photos to Rach and Zach...
           </span>
         ) : null}
       </div>
