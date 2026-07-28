@@ -66,6 +66,9 @@ Verification (packet 12):
 The reproducible live Supabase and deployed-domain checks are documented in
 `docs/ONLINE_HANDOFF.md`; the two media commands above are deliberately local.
 
+Face tagging (local only, never deployed):
+- `npm run tag` -- opens the face naming tool at **http://127.0.0.1:4310/**, bound to loopback so only this machine can reach it. Keyboard-driven, decisions save as you go. Full guide, shortcuts, and the post-session steps: `docs/FACE_TAGGING_TOOL.md`
+
 Import and sync (read-only against the source; writes are opt-in and explicit):
 - `npm run gallery:import` -- builds the catalog from the read-only wedding master (`scripts/build-gallery-v2.mjs`)
 - `npm run embeddings:import` -- generates local CLIP embeddings for Moment Search (`uv run --python 3.12`)
@@ -108,6 +111,7 @@ docs/plans/2026-07-22-0719-digital-wedding-home/   The build plan: manifest, per
 - `docs/HANDOFF_CURRENT.md` -- historical pre-launch build, media, and reconciliation record
 - `docs/0719_Architecture_v1.md` -- system design: stack, data flow, storage buckets, table model, auth, import/sync pipeline, moderation state machine, feature flags, and current known issues
 - `docs/0719_Privacy_Operations_v1.md` -- every privacy commitment and exactly how it's enforced
+- `docs/FACE_TAGGING_TOOL.md` -- the local face naming tool: `npm run tag`, served at **http://127.0.0.1:4310/**, plus keyboard shortcuts, where answers are written, and the commands to run afterwards
 - `docs/0719_Content_Needed_v1.md` -- everything still waiting on Zach (content, approvals, decisions) plus engineering findings discovered during integration
 - `docs/0719_Launch_Checklist_v1.md` -- historical pre-launch checklist; superseded operationally by `docs/ONLINE_HANDOFF.md`
 - `docs/0719_Round_Two_Features_v1.md` -- every round-two feature shipped on top of the original plan, plus what's still a fast-follow
