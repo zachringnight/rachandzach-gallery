@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
 import type { ClientFaceDirectory } from "@/lib/people/face-types";
 import { PersonPicker } from "@/components/gallery/PersonPicker";
@@ -12,15 +11,17 @@ export interface MyWeekendSetupProps {
 }
 
 /**
- * First-visit picker: choose a confirmed name, then confirm. Reuses task
- * 06's PersonPicker for the searchable list so the interaction and visual
+ * First-visit picker: tap a face, land on that person's photos. There is no
+ * confirm step -- picking your own name out of a wall of faces is already the
+ * decision, and making guests then find a button was the single most-reported
+ * friction on this screen.
+ *
+ * Reuses PersonPicker for the searchable list so the interaction and visual
  * language match the Photos filter exactly. PersonPicker always offers an
- * "Everyone" chip (selected -> null); that state simply leaves the confirm
- * button disabled here, since "everyone" is not a valid My Weekend person.
+ * "Everyone" tile (selected -> null), which is not a valid person here and is
+ * simply ignored.
  */
 export function MyWeekendSetup({ people, faces, onSelect }: MyWeekendSetupProps) {
-  const [pending, setPending] = useState<string | null>(null);
-
   if (people.length === 0) {
     return (
       <p className="atlas-personal-state">
@@ -41,27 +42,19 @@ export function MyWeekendSetup({ people, faces, onSelect }: MyWeekendSetupProps)
          * stranded in a third column beside a tall empty quadrant.
          */}
         <p className="atlas-person-setup-intro">
-          Your photos arrive grouped by event.
+          Tap your face to open your photos, grouped by event.
         </p>
       </div>
       <div className="atlas-person-setup-picker">
         <PersonPicker
           people={people}
-          selected={pending}
-          onSelect={setPending}
+          selected={null}
+          onSelect={(slug) => {
+            if (slug) onSelect(slug);
+          }}
           variant="faces"
           faces={faces}
         />
-        <button
-          type="button"
-          disabled={!pending}
-          onClick={() => {
-            if (pending) onSelect(pending);
-          }}
-          className="atlas-inline-action disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Show my photos
-        </button>
       </div>
     </section>
   );

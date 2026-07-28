@@ -19,7 +19,7 @@ import {
 
 import { DownloadOriginalButton } from "@/components/downloads/DownloadOriginalButton";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
-import { PhotoImage } from "@/components/gallery/PhotoImage";
+import { PhotoImage, pickTarget } from "@/components/gallery/PhotoImage";
 import { SharePhotoButton } from "@/components/gallery/SharePhotoButton";
 import { PhotoMemories } from "@/components/memories/PhotoMemories";
 import { featureFlags } from "@/content/features";
@@ -182,6 +182,19 @@ export function Lightbox({
     // while the notes panel is open: its close control and form live in the
     // chrome layer.
     if (reducedMotion || notesOpen) return;
+    // Nor on touch, where there is no way to bring it back. The fade is
+    // driven by pointer idleness, and a finger emits no pointermove, so two
+    // seconds after opening a photo every control was gone -- Close,
+    // Download, Favorite, the arrows -- and tapping where Close used to be
+    // lands outside the painted photo, which closes the lightbox instead of
+    // restoring it. Exactly the moment a guest is trying to save a photo of
+    // themselves.
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(hover: none)").matches
+    ) {
+      return;
+    }
     hideChromeTimer.current = setTimeout(() => {
       // Never fade the chrome out from under the keyboard. A keyboard guest
       // lands on Close when the lightbox opens; hiding it after two idle
@@ -312,15 +325,15 @@ export function Lightbox({
   useEffect(() => {
     const preloaders = [previousPhoto, nextPhoto]
       .flatMap((candidate) => {
-        const preview = candidate?.previews.reduce<
-          ClientPhoto["previews"][number] | null
-        >(
-          (largest, preview) =>
-            largest === null || preview.width > largest.width
-              ? preview
-              : largest,
-          null,
-        );
+        // Must resolve through the SAME selector the lightbox renders with.
+        // This used to reduce on width alone, which ties for the widest tier
+        // whenever more than one format exists at that width -- so the moment
+        // a 2400 AVIF lands beside the 2400 JPEG, this would have warmed the
+        // cache with whichever row came back first while the <img> requested
+        // the other one, downloading both and preloading neither.
+        const preview = candidate
+          ? pickTarget(candidate.previews, "lightbox", 0)
+          : null;
         return preview ? [preview] : [];
       })
       .map((preview) => {

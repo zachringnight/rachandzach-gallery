@@ -5,10 +5,10 @@
       "confidence": 0.402
     },
     "adam-brown": {
-      "confidence": 0.58
+      "confidence": 0.592
     },
     "adam-lynn": {
-      "confidence": 0.651
+      "confidence": 0.649
     },
     "adam-stillman": {
       "confidence": 0.627
@@ -17,37 +17,52 @@
       "confidence": 0.6
     },
     "alex-dubov": {
-      "confidence": 0.647
+      "confidence": 0.65
+    },
+    "alex-kamins": {
+      "confidence": 0.256
     },
     "alex-muecke": {
       "confidence": 0.637
     },
+    "alicia-garrity": {
+      "confidence": 0.476
+    },
     "allan-caplan": {
-      "confidence": 0.538
+      "confidence": 0.54
     },
     "aly-gilboa": {
-      "confidence": 0.6
+      "confidence": 0.596
     },
     "alyssa-scott": {
-      "confidence": 0.656
+      "confidence": 0.672
     },
     "ann-marie-hoppler": {
       "confidence": 0.439
     },
     "ashley-dubov": {
-      "confidence": 0.515
+      "confidence": 0.513
     },
     "becky-pohlad": {
-      "confidence": 0.585
+      "confidence": 0.584
+    },
+    "beth-caputo": {
+      "confidence": 0.385
+    },
+    "beth-leonard": {
+      "confidence": 0.376
     },
     "bob-pohlad": {
-      "confidence": 0.683
+      "confidence": 0.682
+    },
+    "brend-wasserman": {
+      "confidence": 0.522
     },
     "brendan-greene": {
-      "confidence": 0.564
+      "confidence": 0.584
     },
     "bryant-kohler": {
-      "confidence": 0.789
+      "confidence": 0.788
     },
     "carter-cheskey": {
       "confidence": 0.526
@@ -59,52 +74,61 @@
       "confidence": 0.679
     },
     "chris-gutierrez": {
-      "confidence": 0.598
+      "confidence": 0.625
     },
     "chris-nuelle": {
-      "confidence": 0.552
+      "confidence": 0.692
     },
     "dan-casciano": {
-      "confidence": 0.786
+      "confidence": 0.79
     },
     "daniel-cogan": {
-      "confidence": 0.654
+      "confidence": 0.653
     },
     "daniel-shin": {
-      "confidence": 0.559
+      "confidence": 0.56
+    },
+    "danny-listrani": {
+      "confidence": 0.618
     },
     "dave-gilboa": {
-      "confidence": 0.613
+      "confidence": 0.612
     },
     "david-benrud": {
-      "confidence": 0.57
+      "confidence": 0.56
     },
     "david-post": {
-      "confidence": 0.652
+      "confidence": 0.653
     },
     "debi-becker": {
-      "confidence": 0.613
+      "confidence": 0.61
     },
     "dee-burton": {
-      "confidence": 0.469
+      "confidence": 0.472
+    },
+    "din-rush": {
+      "confidence": 0.432
     },
     "ellie-soskin": {
-      "confidence": 0.539
+      "confidence": 0.537
+    },
+    "emily-myers": {
+      "confidence": 0.443
     },
     "emily-stillman": {
-      "confidence": 0.409
+      "confidence": 0.406
     },
     "erik-gunkel": {
-      "confidence": 0.675
+      "confidence": 0.674
     },
     "erin-ankin": {
-      "confidence": 0.737
+      "confidence": 0.739
     },
     "frankie-bennett": {
-      "confidence": 0.664
+      "confidence": 0.663
     },
     "gisel-attila": {
-      "confidence": 0.652
+      "confidence": 0.615
     },
     "greg-foster": {
       "confidence": 0.535
@@ -116,85 +140,100 @@
       "confidence": 0.452
     },
     "jacquie-michaelsen": {
-      "confidence": 0.556
+      "confidence": 0.553
     },
     "jake-lurie": {
-      "confidence": 0.709
+      "confidence": 0.716
     },
     "jamie-levine": {
-      "confidence": 0.542
+      "confidence": 0.561
     },
     "janice-harstad": {
       "confidence": 0.502
     },
     "jason-howarth": {
-      "confidence": 0.42
+      "confidence": 0.467
     },
     "jeff-attila": {
-      "confidence": 0.786
+      "confidence": 0.782
     },
     "jeffry-lurie": {
-      "confidence": 0.692
+      "confidence": 0.686
     },
     "jeremy-burton": {
-      "confidence": 0.393
+      "confidence": 0.386
+    },
+    "jill-myers": {
+      "confidence": 0.475
     },
     "jo-cohn": {
-      "confidence": 0.35
+      "confidence": 0.367
     },
     "joan-soskin": {
       "confidence": 0.433
     },
     "jody-post": {
-      "confidence": 0.473
+      "confidence": 0.474
     },
     "jon-mohr": {
-      "confidence": 0.507
+      "confidence": 0.508
     },
     "jorie-soskin": {
-      "confidence": 0.699
+      "confidence": 0.696
     },
     "jules-gesink": {
       "confidence": 0.589
     },
+    "julie-burton": {
+      "confidence": 0.267
+    },
     "kaitlin-burton": {
-      "confidence": 0.626
+      "confidence": 0.622
     },
     "kayla-kohler": {
-      "confidence": 0.678
+      "confidence": 0.676
     },
     "keagen-edwards": {
-      "confidence": 0.761
+      "confidence": 0.758
     },
     "kelsey-myers": {
-      "confidence": 0.773
+      "confidence": 0.767
     },
     "kelsey-nuelle": {
-      "confidence": 0.556
+      "confidence": 0.561
     },
     "lars-lattimer": {
-      "confidence": 0.639
+      "confidence": 0.633
+    },
+    "laura-weisman": {
+      "confidence": 0.623
     },
     "lauren-bond": {
-      "confidence": 0.716
+      "confidence": 0.719
     },
     "lauren-lurie": {
-      "confidence": 0.61
+      "confidence": 0.638
     },
     "leah-mccall": {
-      "confidence": 0.696
-    },
-    "leeann-howarth": {
-      "confidence": 0.604
-    },
-    "libby-rush": {
       "confidence": 0.607
     },
+    "leeann-howarth": {
+      "confidence": 0.572
+    },
+    "libby-rush": {
+      "confidence": 0.638
+    },
+    "linda-willey": {
+      "confidence": 0.572
+    },
     "lindsey-miller": {
-      "confidence": 0.585
+      "confidence": 0.584
+    },
+    "lisa-gilbert": {
+      "confidence": 0.488
     },
     "maddie-chaness": {
-      "confidence": 0.666
+      "confidence": 0.671
     },
     "maddie-slomovitz": {
       "confidence": 0.656
@@ -203,100 +242,106 @@
       "confidence": 0.512
     },
     "matt-muller": {
-      "confidence": 0.679
+      "confidence": 0.571
     },
     "maura-keith-gutierrez": {
-      "confidence": 0.532
+      "confidence": 0.525
     },
     "meg-mccullough": {
-      "confidence": 0.669
+      "confidence": 0.687
     },
     "melanie-casciano": {
-      "confidence": 0.636
+      "confidence": 0.634
+    },
+    "mika-sears": {
+      "confidence": 0.25
+    },
+    "mike-caron": {
+      "confidence": 0.325
     },
     "morgan-becker": {
-      "confidence": 0.392
+      "confidence": 0.391
     },
     "nancy-lurie": {
-      "confidence": 0.549
+      "confidence": 0.564
     },
     "natalie-lane": {
       "confidence": 0.553
     },
     "nate-oveson": {
-      "confidence": 0.722
+      "confidence": 0.721
     },
     "nate-waldron": {
       "confidence": 0.674
     },
     "nick-pugliese": {
-      "confidence": 0.733
+      "confidence": 0.73
     },
     "norris-shanholtz": {
       "confidence": 0.462
     },
     "parker-soskin": {
-      "confidence": 0.77
+      "confidence": 0.778
     },
     "pasha-hashemi": {
       "confidence": 0.6
     },
     "patrick-burton": {
-      "confidence": 0.756
+      "confidence": 0.754
     },
     "patti-soskin": {
-      "confidence": 0.648
+      "confidence": 0.657
     },
     "paul-cohn": {
-      "confidence": 0.375
+      "confidence": 0.381
     },
     "phil-becker": {
-      "confidence": 0.411
+      "confidence": 0.408
     },
     "phil-campbell": {
       "confidence": 0.926
     },
     "phil-quist": {
-      "confidence": 0.724
+      "confidence": 0.725
     },
     "rachel-casciano": {
-      "confidence": 0.688
+      "confidence": 0.687
     },
     "richie-caputo": {
-      "confidence": 0.34
+      "confidence": 0.399
     },
     "rick-soskin": {
       "confidence": 0.399
     },
     "riley-soskin": {
-      "confidence": 0.742
+      "confidence": 0.741
     },
     "robbie-soskin": {
-      "confidence": 0.643
+      "confidence": 0.642
     },
     "robert-abisi": {
       "confidence": 0.615
     },
     "rodd-gilbert": {
-      "confidence": 0.491
+      "confidence": 0.381
     },
     "ronald-harris": {
-      "confidence": 0.694
+      "confidence": 0.698
     },
     "sally-stringham": {
-      "confidence": 0.737
+      "confidence": 0.735
     },
     "sam-ankin": {
-      "confidence": 0.546
+      "confidence": 0.55
     },
     "sam-soskin": {
       "confidence": 0.34
     },
     "sandra-hecklin": {
-      "confidence": 0.44
+      "confidence": 0.438
     },
     "scott-lattimer": {
-      "confidence": 0.667
+      "confidence": 0.66
     },
     "scott-prusha": {
       "confidence": 0.311
@@ -305,52 +350,67 @@
       "confidence": 0.712
     },
     "siri-ramos": {
-      "confidence": 0.783
+      "confidence": 0.782
     },
     "spencer-soltman": {
       "confidence": 0.817
     },
+    "steph-mohr": {
+      "confidence": 0.4
+    },
     "steph-soskin": {
-      "confidence": 0.518
+      "confidence": 0.569
     },
     "stephanie-soskin": {
-      "confidence": 0.695
+      "confidence": 0.7
     },
     "steve-hecklin": {
-      "confidence": 0.481
+      "confidence": 0.516
     },
     "steve-michaelsen": {
-      "confidence": 0.729
+      "confidence": 0.727
     },
     "tara-brown": {
-      "confidence": 0.657
+      "confidence": 0.656
     },
     "tav-scott": {
-      "confidence": 0.393
+      "confidence": 0.39
     },
     "taylor-bennett": {
-      "confidence": 0.558
+      "confidence": 0.556
     },
     "taylor-noyer": {
-      "confidence": 0.587
+      "confidence": 0.62
     },
     "tim-jackowski": {
-      "confidence": 0.658
+      "confidence": 0.66
     },
     "tim-myers": {
-      "confidence": 0.367
+      "confidence": 0.456
+    },
+    "toby-auwerter": {
+      "confidence": 0.517
+    },
+    "todd-leonard": {
+      "confidence": 0.312
     },
     "todd-lurie": {
-      "confidence": 0.605
+      "confidence": 0.626
+    },
+    "tom-myers": {
+      "confidence": 0.447
+    },
+    "tom-sonntag": {
+      "confidence": 0.504
     },
     "trelawny-vermont-davis": {
-      "confidence": 0.81
+      "confidence": 0.811
     },
     "ty-damon": {
-      "confidence": 0.551
+      "confidence": 0.538
     },
     "tyler-speier": {
-      "confidence": 0.5
+      "confidence": 0.393
     },
     "zach-soskin": {
       "confidence": 0.676
@@ -361,13 +421,7 @@
     "amy-prusha": {
       "confidence": null
     },
-    "beth-leonard": {
-      "confidence": null
-    },
     "christian-laursen": {
-      "confidence": null
-    },
-    "danny-listrani": {
       "confidence": null
     },
     "david-burton": {
@@ -377,9 +431,6 @@
       "confidence": null
     },
     "kaitlin-koosman": {
-      "confidence": null
-    },
-    "laura-weisman": {
       "confidence": null
     },
     "lisa-caplan": {
@@ -394,7 +445,16 @@
     "sierra-muecke": {
       "confidence": null
     },
-    "todd-leonard": {
+    "donna-listrani": {
+      "confidence": null
+    },
+    "jeff-wasmuth": {
+      "confidence": null
+    },
+    "jeff-rush": {
+      "confidence": null
+    },
+    "lauren-wasmuth": {
       "confidence": null
     }
   }

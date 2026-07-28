@@ -67,7 +67,14 @@ function pageUrl(filters: GalleryFilterState, photoId: string | null): string {
   if (filters.sort !== "weekend") params.set("sort", filters.sort);
   if (photoId) params.set("photo", photoId);
   const qs = params.toString();
-  return qs ? `/photos?${qs}` : "/photos";
+  /*
+   * With no params at all, /photos is the browse landing, not this grid. So
+   * an empty filter set has to keep saying "all", or clearing the last filter
+   * would rewrite the address to a URL that does not reopen what the guest is
+   * looking at: they stay in the grid, but copying or refreshing that link
+   * lands them (or whoever they sent it to) on the landing page instead.
+   */
+  return qs ? `/photos?${qs}` : "/photos?all=1";
 }
 
 function apiUrl(

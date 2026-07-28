@@ -170,8 +170,30 @@ export function createSupabaseGalleryDataSource(
     return renamesPromise;
   };
 
-  return {
-    async listPhotos(): Promise<GalleryPhotoSource[]> {
+  /**
+   * The full visible catalog, read at most ONCE per data-source instance.
+   *
+   * This read is expensive and was being repeated: the row set is the whole
+   * published catalog (~1,721 photos) with the preview join attached
+   * (~11,811 rows), which reconstructs to roughly 2.6 MB per call over two
+   * REST round trips. Both getGalleryPage() and getGalleryFacets() call it,
+   * and /photos runs both, so a single page render fetched the same 2.6 MB
+   * four times. /tv was far worse: it loops getGalleryPage() until the cursor
+   * drains, so ~18 iterations each re-read the entire catalog.
+   *
+   * Memoizing the PROMISE (not the resolved value) also collapses concurrent
+   * callers -- the Promise.all in /photos now shares one in-flight query
+   * instead of racing two identical ones.
+   *
+   * Scope is deliberately per-instance, matching loadRenames above: each
+   * request builds a fresh source (see createSupabaseGalleryDataSource's
+   * callers), so this is a within-request cache and never serves one guest
+   * stale data because of another's. A cross-request cache would need
+   * invalidation on approve/tag writes; that is a separate change.
+   */
+  let photosPromise: Promise<GalleryPhotoSource[]> | null = null;
+  const loadPhotos = (): Promise<GalleryPhotoSource[]> => {
+    photosPromise ??= (async () => {
       const [renames, rows] = await Promise.all([
         loadRenames(),
         (async () => {
@@ -208,6 +230,18 @@ export function createSupabaseGalleryDataSource(
             : person;
         }),
       }));
+    })().catch((error: unknown) => {
+      // Do not cache a rejection: a transient network blip would otherwise
+      // poison every later call on this instance with the same error.
+      photosPromise = null;
+      throw error;
+    });
+    return photosPromise;
+  };
+
+  return {
+    listPhotos(): Promise<GalleryPhotoSource[]> {
+      return loadPhotos();
     },
 
     async listEvents(): Promise<GalleryEventMeta[]> {
