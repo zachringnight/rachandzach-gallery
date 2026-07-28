@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -76,7 +77,22 @@ def read_current(paths: list[Path]) -> dict[Path, dict]:
     return records
 
 
-def write_one(path: Path, people: list[str], keywords: list[str]) -> tuple[bool, str]:
+def write_one(
+    path: Path, people: list[str], keywords: list[str], dry_run: bool = False
+) -> tuple[bool, str]:
+    """Union `people`/`keywords` onto one master JPEG's embedded metadata.
+
+    Only tag fields are touched: exiftool rewrites the container, never the
+    encoded image data, so this does not recompress or otherwise degrade the
+    photograph (see the metadata clause in AGENTS.md).
+
+    `-overwrite_original_in_place` skips exiftool's usual `*_original`
+    sidecar. That is deliberate here -- the master is 13 GB across 2,625
+    files and Zach keeps multiple independent backups of the originals -- but
+    it does mean this script is the last line of defence, hence --dry-run.
+    """
+    if dry_run:
+        return True, ""
     command = [
         "exiftool", "-overwrite_original_in_place", "-P",
         "-api", "NoDups",
@@ -94,6 +110,12 @@ def write_one(path: Path, people: list[str], keywords: list[str]) -> tuple[bool,
 
 
 def main() -> int:
+    # Default is a preview. Writing to the master should be something you
+    # asked for on purpose, not what happens when you run the file to see
+    # what it does.
+    dry_run = "--write" not in sys.argv
+    if dry_run:
+        print("DRY RUN -- nothing will be written. Re-run with --write to apply.\n")
     additions = json.loads(ADDITIONS.read_text())["additions"]
     catalog = json.loads(CATALOG.read_text())
     path_by_photo_id = {p["id"]: p["originalRelativePath"] for p in catalog["photos"]}
@@ -130,15 +152,18 @@ def main() -> int:
         if set(people) == set(existing_people) and set(keywords) == set(existing_keywords):
             skipped += 1
             continue
-        ok, output = write_one(path, people, keywords)
+        ok, output = write_one(path, people, keywords, dry_run=dry_run)
         if ok:
             changed += 1
         else:
             failed += 1
             print(f"  FAILED {path}: {output}")
 
-    print(f"\nwrote {changed}, already current {skipped}, failed {failed} "
+    verb = "would write" if dry_run else "wrote"
+    print(f"\n{verb} {changed}, already current {skipped}, failed {failed} "
           f"(of {len(targets)} photos)")
+    if dry_run and changed:
+        print("Re-run with --write to apply.")
     return 1 if failed else 0
 
 
