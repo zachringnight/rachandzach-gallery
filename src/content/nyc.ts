@@ -149,14 +149,14 @@ export const nycRaceDay: KeyDate = {
 };
 
 /**
- * Fundraising deadline. DERIVED, NOT CONFIRMED.
+ * Fundraising deadline. CONFIRMED by the owner 2026-07-27.
  *
- * Back-calculated from the "72 days remaining" figure shown on the NYRR
- * fundraiser page on 2026-07-27, which lands on Wednesday 2026-10-07. That
- * source figure is rounded to whole days and its exact cutoff time is not
- * visible, so this could be off by a day.
+ * Originally back-calculated from the "72 days remaining" figure on the NYRR
+ * page and carried as provisional; the date has since been confirmed, so it
+ * is authoritative. Note it closes 25 days BEFORE race day, which is normal
+ * for a charity entry and is why the two dates are labelled separately in the
+ * UI -- a reader will otherwise assume the deadline is race day.
  *
- * ⚠️ RACH SHOULD CONFIRM THE REAL DEADLINE and correct the ISO date here.
  * Everything downstream (the countdown, the closing message) follows from
  * this one value.
  */
@@ -271,18 +271,19 @@ export const instagramPost: InstagramPostContent = {
  * these messages should ever be refreshed, someone re-reads the page and
  * edits this list deliberately.
  *
- * WHY `approved` IS FALSE
+ * WHY `approved` IS NOW TRUE
  * These are 46 real people's names and the personal notes they wrote to
  * Rachel. NYRR showing them on NYRR's own page is not the same act as
  * republishing them on rachandzach.com, which is a public, unauthenticated
- * site. So the wall is gated: while `approved` is false the entire section
- * renders nothing, exactly as if the list were empty.
+ * site, so this shipped gated: while `approved` was false the entire section
+ * rendered nothing, exactly as if the list were empty.
  *
- *   RACH MUST READ THIS LIST AND SET approved: true HERSELF.
+ * The owner reviewed the list and approved publication on 2026-07-27.
  *
- * She should remove anyone she is unsure about, fix any name she knows is
- * wrong, and shorten anything that reads as too personal for a public page.
- * Nobody else should flip that flag on her behalf.
+ * The gate stays in the code rather than being deleted. Anyone who needs to
+ * pull the wall down -- a donor asks to be removed, a name turns out to be
+ * wrong -- flips this one flag and the section disappears, without touching
+ * the list or the component.
  *
  * WHAT IS DELIBERATELY ABSENT
  * - Donation AMOUNTS. Never stored, never shown. Per-person amounts invite
@@ -320,7 +321,7 @@ export interface SupportersContent {
 }
 
 export const nycSupporters: SupportersContent = {
-  approved: false,
+  approved: true,
   seededOn: "July 27, 2026",
   note: null,
   people: [

@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 
-import { hasSupporters } from "@/content/nyc";
 import { SITE_ORIGIN } from "@/lib/redirects";
 
 /**
@@ -18,24 +17,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   /*
-   * /nyc drops out of the sitemap exactly when it goes noindex.
+   * /nyc is listed unconditionally, matching its `robots: index` metadata.
    *
-   * Turning the supporters wall on publishes ~46 named donors and their
-   * personal messages on a public route, so the page switches to noindex at
-   * the same moment. Listing a noindex page in the sitemap sends crawlers two
-   * contradicting signals, which is the kind of thing that resolves in
-   * whichever direction you did not want. Both decisions read hasSupporters()
-   * -- the same function the page's robots metadata and the section itself
-   * read -- so they cannot drift apart.
+   * This was briefly conditional on the supporters wall, back when approving
+   * the wall also flipped the page to noindex. That coupling was dropped
+   * (2026-07-27): it is a fundraiser with a deadline, and a page search
+   * engines are told to ignore raises nothing. The donor names are handled
+   * with data-nosnippet at the section instead. If the page is ever set back
+   * to noindex, drop it from here in the same change -- a noindex URL in a
+   * sitemap is two contradicting signals.
    */
-  if (!hasSupporters()) {
-    entries.push({
-      url: `${SITE_ORIGIN}/nyc`,
-      lastModified: new Date("2026-07-27"),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    });
-  }
+  entries.push({
+    url: `${SITE_ORIGIN}/nyc`,
+    lastModified: new Date("2026-07-27"),
+    changeFrequency: "weekly",
+    priority: 0.9,
+  });
 
   return entries;
 }

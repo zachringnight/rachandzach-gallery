@@ -125,11 +125,18 @@ describe("Instagram post", () => {
 });
 
 describe("supporters wall", () => {
-  it("is seeded but not approved, so it renders nothing yet", () => {
-    // Rachel must read the list and flip this herself. Nobody else.
-    expect(nycSupporters.approved).toBe(false);
-    expect(hasSupporters()).toBe(false);
-    expect(visibleSupporters()).toHaveLength(0);
+  it("is approved, so the wall is live", () => {
+    // Approved by the owner 2026-07-27. The gate stays in the code as the
+    // one lever that takes the wall back down.
+    expect(nycSupporters.approved).toBe(true);
+    expect(hasSupporters()).toBe(true);
+    expect(visibleSupporters().length).toBeGreaterThan(0);
+  });
+
+  it("still hides everything the moment approval is withdrawn", () => {
+    const withdrawn = { ...nycSupporters, approved: false };
+    expect(hasSupporters(withdrawn)).toBe(false);
+    expect(visibleSupporters(withdrawn)).toHaveLength(0);
   });
 
   it("carries the seeded draft ready for her review", () => {

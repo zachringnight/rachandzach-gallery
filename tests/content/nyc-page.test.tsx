@@ -119,27 +119,35 @@ describe("/nyc Instagram post", () => {
 });
 
 describe("/nyc supporters privacy", () => {
-  it("is seeded but unapproved, so no donor name reaches the page", () => {
-    expect(nycSupporters.approved).toBe(false);
-    expect(nycSupporters.people.length).toBeGreaterThan(0);
+  it("renders the approved supporters, and never an amount", () => {
+    expect(nycSupporters.approved).toBe(true);
 
     const { container } = render(<NycPage />);
-    const html = container.innerHTML;
-    for (const person of nycSupporters.people) {
-      expect(html, `${person.name} must not appear while unapproved`).not.toContain(
+    const wall = container.querySelector(".atlas-nyc-supporters");
+    expect(wall).not.toBeNull();
+
+    const text = wall?.textContent ?? "";
+    for (const person of visibleSupporters()) {
+      expect(text, `${person.name} should appear on the wall`).toContain(
         person.name,
       );
-      if (person.message) {
-        expect(html).not.toContain(person.message);
-      }
     }
-    expect(container.querySelector(".atlas-nyc-supporters")).toBeNull();
+    // The Supporter type has no amount field; this guards the rendered
+    // output too, since a donation figure is the one thing that would turn
+    // a wall of thanks into a ranking.
+    expect(text).not.toMatch(/\$\s?\d/);
+  });
+
+  it("keeps anonymous donors off the wall entirely", () => {
+    const { container } = render(<NycPage />);
+    const text = container.querySelector(".atlas-nyc-supporters")?.textContent ?? "";
+    expect(text.toLowerCase()).not.toContain("anonymous");
   });
 
   /*
-   * The test above proves the CURRENT file stays hidden. This one proves the
-   * GATE itself holds for any list, using invented names so the fixture never
-   * depends on who happens to be in the real seed.
+   * The gate is now the only lever that takes the wall back down, so prove it
+   * still holds for any list. Invented names, so this never depends on who
+   * happens to be in the real seed.
    */
   it("withholds a populated list until it is explicitly approved", () => {
     const pending = {
@@ -173,10 +181,22 @@ describe("/nyc supporters privacy", () => {
     );
   });
 
-  it("stays indexable while the wall is off", () => {
-    // The two are coupled deliberately: approving the wall flips this to
-    // noindex so donor names never become searchable under this domain.
+  /*
+   * Indexable unconditionally. The noindex-when-approved coupling was dropped
+   * on 2026-07-27: this is a fundraiser with a deadline, and a page search
+   * engines are told to skip raises nothing. Donor names are marked
+   * data-nosnippet at the section instead (a snippet hint, not a privacy
+   * control -- see the page's comment).
+   */
+  it("stays indexable so the fundraiser can be found", () => {
     expect(nycMetadata.robots).toEqual({ index: true, follow: true });
+  });
+
+  it("marks the supporters section data-nosnippet", () => {
+    const { container } = render(<NycPage />);
+    const wall = container.querySelector(".atlas-nyc-supporters");
+    expect(wall).not.toBeNull();
+    expect(wall?.hasAttribute("data-nosnippet")).toBe(true);
   });
 
   it("declares a share card so the link preview carries the ask", () => {

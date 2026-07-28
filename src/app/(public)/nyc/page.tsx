@@ -9,31 +9,29 @@ import { FollowTheRun } from "@/components/nyc/FollowTheRun";
 import { FundraiserProgress } from "@/components/nyc/FundraiserProgress";
 import { Supporters } from "@/components/nyc/Supporters";
 import { PublicShell } from "@/components/site/PublicShell";
-import {
-  hasSupporters,
-  nycFundraiser,
-  nycRaceDay,
-} from "@/content/nyc";
+import { nycFundraiser, nycRaceDay } from "@/content/nyc";
 import { SITE_ORIGIN } from "@/lib/redirects";
 
 const { photo, shareImage } = nycFundraiser;
 
 /**
- * Crawler policy for this page is coupled to the supporters wall.
+ * Crawler policy: this page stays indexable, wall or no wall.
  *
- * While the wall is off, /nyc is an ordinary public fundraiser page and should
- * be findable. The moment Rachel approves the wall, this page starts carrying
- * 46 named people and the personal notes they wrote her, and that should not
- * be indexable under this domain. Deriving both from hasSupporters() means the
- * two can never drift apart: you cannot turn the names on and leave the page
- * indexed.
+ * It was originally coupled to the supporters wall -- approving the names
+ * flipped /nyc to noindex. The owner decided against that trade on
+ * 2026-07-27, and the reasoning is sound: this is a FUNDRAISER with a
+ * deadline, and a page nobody can find raises nothing. Search visibility is
+ * the point.
  *
- * src/app/sitemap.ts reads the same hasSupporters() and drops /nyc from the
- * sitemap whenever this page goes noindex, so the sitemap and the robots tag
- * cannot contradict each other. Change one and change the other.
+ * The names are instead marked `data-nosnippet` at the section (see
+ * src/components/nyc/Supporters.tsx). BE CLEAR ABOUT WHAT THAT DOES: it asks
+ * search engines not to show that text in result snippets. It does NOT stop
+ * crawlers reading or storing it, it is honoured only by engines that choose
+ * to, and it is not a privacy control. The real control is `approved` in
+ * src/content/nyc.ts -- flip that to false and the section is gone.
+ *
+ * src/app/sitemap.ts lists /nyc unconditionally to match.
  */
-const supportersVisible = hasSupporters();
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
   title: "Rach Runs NYC | Rach & Zach",
@@ -42,9 +40,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/nyc",
   },
-  robots: supportersVisible
-    ? { index: false, follow: true }
-    : { index: true, follow: true },
+  robots: { index: true, follow: true },
   // This page's whole job is to be sent to people. A bare link preview was
   // costing it the photograph and the ask, so both are declared here.
   openGraph: {

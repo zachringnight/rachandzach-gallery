@@ -25,7 +25,21 @@ export function Supporters() {
   if (people.length === 0) return null;
 
   return (
-    <section className="atlas-nyc-supporters" aria-labelledby="nyc-supporters-title">
+    <section
+      className="atlas-nyc-supporters"
+      aria-labelledby="nyc-supporters-title"
+      /*
+       * Asks search engines not to lift these names and messages into result
+       * snippets, while the page itself stays indexable so the fundraiser can
+       * be found.
+       *
+       * This is a courtesy, not a control. Crawlers still fetch and read this
+       * text; only participating engines honour the hint, and only for
+       * snippet display. If these names genuinely must not be public, the
+       * lever is `approved: false` in src/content/nyc.ts, which removes the
+       * section entirely.
+       */
+      data-nosnippet>
       <Reveal className="atlas-nyc-section-label">
         <p className="atlas-kicker">The people behind her</p>
         <span aria-hidden="true">04</span>
