@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-07-27 (PDT).
+Updated 2026-07-28 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -19,6 +19,9 @@ the pre-launch history and are not operational instructions.
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to target `production`; current status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
+| Latest release | `f5731e9` -- guest experience, clean person URLs, -73% photo bytes ([#11](https://github.com/zachringnight/rachandzach-gallery/pull/11), merged 2026-07-28) |
+| Known unshipped work | `docs/BACKLOG.md` |
+| Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 
 Production aliases are active for:
 
@@ -292,6 +295,11 @@ That is enforced in code, not by convention.
 
 | Priority | Owner | Target | Action and definition of done |
 |---|---|---|---|
+| P0 | Rachel | Next session | Name the remaining 329 faces: `npm run tag`, then the post-session commands in `docs/FACE_TAGGING_TOOL.md` (apply overlays, rebuild thumbnails, embed names into the masters). Decisions save as you go and the session resumes if interrupted. |
+| P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 46 real names and their messages. Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
+| P1 | Engineer | Next UI pass | Work `docs/BACKLOG.md` "Mobile and touch". The filter panel not closing after a selection is the one that reads as broken on a phone. |
+| P2 | Rachel | Any time | Replace two correct-but-unflattering face crops in `/admin/faces`: `charlie-weisman`, `dee-burton`. Admin picks outrank the script. |
+| P2 | Engineer | Before wide sharing | No AVIF fallback: the client is AVIF-only by design, so a browser without support gets broken images. See `docs/BACKLOG.md` "Technical debt"; needs a `<picture>` element and a matching serialization change, together. |
 | DONE | Zach | 2026-07-26 | Created the Google Web OAuth client ID and Dropbox Saver app key; only the public identifiers were supplied to deployment configuration. |
 | DONE | Codex | 2026-07-26 | Confirmed `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` and `NEXT_PUBLIC_DROPBOX_APP_KEY` in Vercel Production and Preview, deployed `main`, and verified the production deployment is `READY`. |
 | P0 | Zach/admin | Before announcing cloud save | Complete the two consent-dependent file-transfer rows in the authenticated acceptance pass below using a personal Google Drive and Dropbox account. |

@@ -111,6 +111,7 @@ docs/plans/2026-07-22-0719-digital-wedding-home/   The build plan: manifest, per
 - `docs/HANDOFF_CURRENT.md` -- historical pre-launch build, media, and reconciliation record
 - `docs/0719_Architecture_v1.md` -- system design: stack, data flow, storage buckets, table model, auth, import/sync pipeline, moderation state machine, feature flags, and current known issues
 - `docs/0719_Privacy_Operations_v1.md` -- every privacy commitment and exactly how it's enforced
+- `docs/BACKLOG.md` -- known unshipped work: audited mobile/touch issues, guest-journey gaps, and technical debt, each with the file to look at and why it matters
 - `docs/FACE_TAGGING_TOOL.md` -- the local face naming tool: `npm run tag`, served at **http://127.0.0.1:4310/**, plus keyboard shortcuts, where answers are written, and the commands to run afterwards
 - `docs/0719_Content_Needed_v1.md` -- everything still waiting on Zach (content, approvals, decisions) plus engineering findings discovered during integration
 - `docs/0719_Launch_Checklist_v1.md` -- historical pre-launch checklist; superseded operationally by `docs/ONLINE_HANDOFF.md`
