@@ -128,24 +128,69 @@ describe("protected content stays out of public HTML", () => {
 });
 
 describe("robots and sitemap", () => {
-  it("disallows every protected route", () => {
+  /**
+   * Resolves a path against the robots rules the way a crawler does: the
+   * longest matching pattern wins, and Allow beats Disallow on a tie. Checked
+   * semantically rather than by asserting the literal arrays, because since
+   * the whole-site gate the rule is a blanket Disallow "/" plus two Allow
+   * lines, and an enumeration test would have to be rewritten every time a
+   * route is added -- exactly the staleness the blanket rule exists to avoid.
+   */
+  function isCrawlable(path: string): boolean {
     const result = robots();
     const rules = Array.isArray(result.rules) ? result.rules : [result.rules];
-    const disallow = rules.flatMap((rule) =>
-      Array.isArray(rule?.disallow) ? rule.disallow : [rule?.disallow],
-    );
+    const collect = (value: string | string[] | undefined): string[] =>
+      value === undefined ? [] : Array.isArray(value) ? value : [value];
+
+    let verdict = true;
+    let bestLength = -1;
+    for (const rule of rules) {
+      for (const [patterns, allowed] of [
+        [collect(rule?.allow), true],
+        [collect(rule?.disallow), false],
+      ] as const) {
+        for (const pattern of patterns) {
+          if (!path.startsWith(pattern)) continue;
+          // Longest match wins; Allow wins a tie.
+          if (pattern.length > bestLength || (pattern.length === bestLength && allowed)) {
+            bestLength = pattern.length;
+            verdict = allowed;
+          }
+        }
+      }
+    }
+    return verdict;
+  }
+
+  it("keeps every protected route out of the index", () => {
     for (const route of PROTECTED_ROUTES) {
-      expect(disallow, `robots must disallow ${route}`).toContain(route);
+      expect(isCrawlable(route), `robots must disallow ${route}`).toBe(false);
+    }
+  });
+
+  it("closes the archive home and the retired public pages too", () => {
+    // These were crawlable until the site went fully private on 2026-07-30.
+    for (const route of ["/", "/weekend", "/playlists", "/api", "/enter"]) {
+      expect(isCrawlable(route), `robots must disallow ${route}`).toBe(false);
+    }
+  });
+
+  it("still lets crawlers reach the fundraiser and its assets", () => {
+    for (const route of ["/nyc", "/marathon", "/nyc/nyc-share.jpg"]) {
+      expect(isCrawlable(route), `robots must allow ${route}`).toBe(true);
     }
   });
 
   it("lists only public routes in the sitemap", () => {
     const entries = sitemap();
     const paths = entries.map((entry) => new URL(entry.url).pathname);
-    expect(paths).toContain("/");
+    // The archive home was dropped when it went behind the password gate: a
+    // sitemap entry a crawler is redirected away from is a broken promise.
+    expect(paths).not.toContain("/");
     expect(paths).toContain("/nyc");
     expect(paths).not.toContain("/weekend");
     for (const path of paths) {
+      expect(isCrawlable(path), `sitemap lists uncrawlable ${path}`).toBe(true);
       for (const route of PROTECTED_ROUTES) {
         expect(path === route || path.startsWith(`${route}/`)).toBe(false);
       }

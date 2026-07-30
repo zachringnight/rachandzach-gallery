@@ -14,7 +14,9 @@ import nextConfig from "../../next.config";
 import {
   GUEST_SESSION_COOKIE,
   createGuestSession,
+  isPublicRoute,
 } from "@/lib/auth/guest-session";
+import { storyPhotos } from "@/content/story-photos";
 import {
   ADMIN_EMAIL_ALLOWLIST,
   AdminAccessError,
@@ -86,18 +88,21 @@ afterEach(() => {
 });
 
 describe("proxy: public routes stay open", () => {
+  // After the whole-site password gate (2026-07-30) this list IS the public
+  // surface of the site, in full. Adding a path here makes it readable by
+  // anyone on the internet, so treat a diff to this array as a security
+  // change and not a test fixup.
   const publicPaths = [
-    "/",
-    "/weekend",
+    // The one deliberate exception: a fundraiser that has to stay shareable.
     "/nyc",
+    "/marathon",
     // Public collateral for /nyc. The share card is fetched anonymously by
     // social apps building link previews, so it must never sit behind the
     // password gate.
     "/nyc/rachel-running.jpg",
     "/nyc/nyc-share.jpg",
     "/nyc/instagram-post.jpg",
-    "/playlists",
-    "/marathon",
+    // The door and the files needed to render or reach it.
     "/enter",
     "/robots.txt",
     "/sitemap.xml",
@@ -105,6 +110,8 @@ describe("proxy: public routes stay open", () => {
     "/api/access/logout",
     "/auth/callback",
     "/brand/0719-co-outline.svg",
+    "/story/hero-sunset-a6fa78bb.jpg",
+    "/story/hero-sunset-mobile-adobe.png",
   ];
 
   for (const path of publicPaths) {
@@ -117,8 +124,25 @@ describe("proxy: public routes stay open", () => {
 
   it("works even when no secret is configured (public pages never verify)", async () => {
     vi.stubEnv("GALLERY_SESSION_SECRET", "");
-    const response = await proxy(makeRequest("/weekend"));
-    expectPassThrough(response, "/weekend");
+    const response = await proxy(makeRequest("/nyc"));
+    expectPassThrough(response, "/nyc");
+  });
+
+  it("keeps /enter's hero derivative public under its real, hashed filename", () => {
+    // story-photos.ts names each derivative with the first 8 chars of its
+    // image hash, so re-exporting the hero silently changes this path. The
+    // allowlist cannot follow it automatically without pulling content into
+    // the proxy's module graph, so it is pinned here instead: a swapped hero
+    // fails this assertion rather than 404ing inside the password form.
+    expect(isPublicRoute(storyPhotos.hero.src)).toBe(true);
+  });
+
+  it("leaves the rest of public/story/ behind the gate", () => {
+    for (const photo of Object.values(storyPhotos.chapters)) {
+      expect(isPublicRoute(photo.src), `${photo.id} must not be public`).toBe(
+        false,
+      );
+    }
   });
 });
 
@@ -129,6 +153,20 @@ describe("proxy: guest routes require a session", () => {
     "/add-yours",
     "/favorites",
     "/submissions",
+    // Moved behind the gate on 2026-07-30 when the site went fully private.
+    // The archive home is the important one: it is the URL people have, and
+    // an unauthenticated visitor must now meet the password form there.
+    "/",
+    "/playlists",
+    // Only reachable if the legacy 308 in next.config.ts is ever dropped;
+    // asserted so removing that redirect cannot quietly re-open the route.
+    "/weekend",
+    // The four story derivatives that only the home page rendered.
+    "/story/coast-1dc07dd8.jpg",
+    "/story/ceremony-b31285ca.jpg",
+    "/story/dinner-32b4c391.jpg",
+    "/story/dancing-57fd10e8.jpg",
+    "/story/after-party-e8e24926.jpg",
   ];
 
   for (const path of guestPages) {

@@ -5,7 +5,6 @@
  * without inventing new site chrome.
  */
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { BrandMark } from "@/components/brand/BrandMark";
 import { siteConfig } from "@/content/site";
@@ -75,9 +74,12 @@ export default async function EnterPage({ searchParams }: EnterPageProps) {
           <AccessForm nextPath={nextPath} errorMessage={errorMessage} />
         </div>
 
-        <Link href="/" className="atlas-access-home">
-          Back to the archive home
-        </Link>
+        {/* There was a "Back to the archive home" link here. The whole-site
+            password gate (2026-07-30) put / behind this very page, so for a
+            logged-out visitor -- which is everyone who sees this page -- it
+            redirected straight back to /enter. A link to the page you are
+            already on is worse than no link, so it is gone, along with its
+            .atlas-access-home rule in globals.css. */}
       </section>
     </main>
   );

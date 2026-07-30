@@ -54,13 +54,25 @@ export class GalleryAccessError extends Error {
  * route NOT matched here requires a valid guest session (admin routes are
  * carved out separately and require Supabase admin auth instead). Add a route
  * here only when it is deliberately public.
+ *
+ * WHOLE-SITE GATE (2026-07-30). This list used to carry the marketing pages
+ * too: "/", "/weekend" and "/playlists" were all readable by anyone. Zach
+ * asked for the whole site behind the password, with the fundraiser as the
+ * single deliberate exception, so those three moved behind the gate along
+ * with the four story derivatives only they rendered. What remains here is
+ * exactly three things: the fundraiser, the door, and the files a browser or
+ * crawler must fetch anonymously before it can reach the door.
  */
 export const PUBLIC_ROUTES = {
   /** Exact-match public paths. */
   exact: [
-    "/",
-    "/weekend",
+    // THE EXCEPTION. /nyc is a fundraiser with a deadline and its whole job
+    // is to be findable and shareable; a password on it raises nothing.
+    // Kept public knowingly, on the owner's call. /marathon is its 308 alias
+    // (see legacyRedirects) and is listed so the redirect resolves without a
+    // detour through /enter.
     "/nyc",
+    "/marathon",
     // Public collateral for /nyc (see src/content/nyc.ts). These are the only
     // files in public/nyc/, and every one of them is deliberately servable
     // without a guest session: the hero photo, the 1200x630 link-preview card
@@ -70,23 +82,31 @@ export const PUBLIC_ROUTES = {
     "/nyc/rachel-running.jpg",
     "/nyc/nyc-share.jpg",
     "/nyc/instagram-post.jpg",
-    "/playlists",
-    "/marathon",
+    // The door, and the two crawler files that are worthless if they answer
+    // an anonymous request with a redirect to the door.
     "/enter",
     "/robots.txt",
     "/sitemap.xml",
     "/favicon.ico",
+    // The hero derivative /enter renders beside its password form, in both
+    // its desktop and mobile sources (src/app/(access)/enter/page.tsx). Named
+    // files, not the old "/story" prefix: the other four picks are only used
+    // by the now-gated home page, and naming them one by one means a new
+    // derivative dropped into public/story/ is private by default instead of
+    // public by accident. story-photos.ts stamps each filename with the first
+    // 8 chars of its image hash, so re-exporting the hero changes this path --
+    // tests/auth/route-protection.test.ts asserts these against the live
+    // storyPhotos value so that drift fails CI instead of 404ing on /enter.
+    "/story/hero-sunset-a6fa78bb.jpg",
+    "/story/hero-sunset-mobile-adobe.png",
   ],
   /** Prefix-match public paths (the prefix itself or prefix + "/..."). */
   prefixes: [
     "/api/access",
     "/auth/callback",
+    // The 0719 + co. mark, rendered by /enter's own header and by /nyc.
+    // public/brand/ holds one outline SVG and no photography.
     "/brand",
-    // The six curated story derivatives in public/story/ (see
-    // src/content/story-photos.ts). Rendered on the public / and /weekend
-    // pages, so they must be served without a guest session; the full
-    // gallery media never lives under this path.
-    "/story",
     "/_next/static",
     "/_next/image",
   ],
