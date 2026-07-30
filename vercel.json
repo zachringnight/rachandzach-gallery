@@ -2,9 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "ignoreCommand": "node scripts/vercel-ignore-build.mjs",
-  "//regions": "Run functions next to the database. Supabase is in us-west-2; with no region set, functions default to iad1 on the US east coast, so every catalog read and every preview-signing call crossed the continent (~60ms each way). Nearly every route here is dynamic and blocks on several such round trips, so being near Postgres beats being near the visitor. sfo1 is the closest Vercel region to us-west-2. East-coast guests trade a little HTML TTFB for a much shorter server-side chain.",
   "regions": ["sfo1"],
-  "//story-cache": "This used to be /story/:path*, back when every story derivative was public. The whole-site password gate (2026-07-30) moved four of the six behind the guest session, and 'public' on a gated path is a real leak: the shared CDN would cache a signed-in visitor's copy and hand it to anonymous ones. Only the two hero files /enter renders are still public, so only those two are named. Both are content-hashed or hand-versioned, so immutable is still honest. The gated four fall through to Next's defaults and are re-fetched per session, which is the correct trade for four small derivatives.",
   "headers": [
     {
       "source": "/story/hero-sunset-a6fa78bb.jpg",
