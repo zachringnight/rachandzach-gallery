@@ -2724,17 +2724,6 @@ button {
   color: var(--rz-ink);
 }
 
-.atlas-access-home {
-  align-self: flex-start;
-  border-bottom: 1px solid currentColor;
-  color: var(--rz-muted);
-  font-size: 0.65rem;
-  font-weight: 620;
-  letter-spacing: 0.09em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
 @media (max-width: 1040px) {
   .atlas-weekend-timeline article {
     grid-template-columns: minmax(8rem, 0.55fr) minmax(11rem, 0.75fr) minmax(13rem, 1fr);

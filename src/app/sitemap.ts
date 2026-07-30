@@ -3,18 +3,20 @@ import type { MetadataRoute } from "next";
 import { SITE_ORIGIN } from "@/lib/redirects";
 
 /**
- * Only public pages. Protected routes (photos, my-weekend,
- * add-yours, admin) and disabled feature modules must never appear here.
+ * Only public pages. Protected routes and disabled feature modules must never
+ * appear here.
+ *
+ * Since the whole-site password gate (2026-07-30) that leaves exactly one
+ * entry. The archive home used to lead this list; it now redirects anonymous
+ * visitors to /enter, and a sitemap entry for a page a crawler cannot read is
+ * a broken promise, so it was dropped in the same change. /marathon is public
+ * too but is a 308 alias for /nyc, and redirects do not belong in a sitemap.
+ *
+ * If this file is ever empty, delete the sitemap and the robots.txt reference
+ * to it rather than shipping an empty one.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const entries: MetadataRoute.Sitemap = [
-    {
-      url: `${SITE_ORIGIN}/`,
-      lastModified: new Date("2025-07-19"),
-      changeFrequency: "monthly",
-      priority: 1,
-    },
-  ];
+  const entries: MetadataRoute.Sitemap = [];
 
   /*
    * /nyc is listed unconditionally, matching its `robots: index` metadata.

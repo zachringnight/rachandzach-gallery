@@ -43,10 +43,15 @@ function appAlert(page: import("@playwright/test").Page) {
  * admin). Those are test.fixme'd below with the exact unblock steps.
  */
 
-const GUEST_ROUTES = ["/photos", "/my-weekend", "/add-yours", "/favorites"];
+// "/" joined this list on 2026-07-30 when the site went fully private. It is
+// the URL guests actually have, so it is the single most important redirect
+// to keep proven.
+const GUEST_ROUTES = ["/", "/photos", "/my-weekend", "/add-yours", "/favorites"];
 
 test.describe("public routes stay open with no session", () => {
-  for (const path of ["/", "/enter", "/robots.txt", "/sitemap.xml"]) {
+  // The fundraiser, the door, and the two crawler files. That is the whole
+  // public surface of the site.
+  for (const path of ["/nyc", "/enter", "/robots.txt", "/sitemap.xml"]) {
     test(`GET ${path} does not redirect anywhere`, async ({ page }) => {
       const response = await page.goto(path);
       expect(response?.status(), path).toBeLessThan(400);
@@ -251,7 +256,7 @@ test.describe("tampered or invalid sessions are rejected", () => {
 });
 
 test.describe("security headers", () => {
-  for (const path of ["/", "/enter"]) {
+  for (const path of ["/nyc", "/enter"]) {
     test(`${path} carries the pinned security header set`, async ({ request }) => {
       const response = await request.get(path);
       const headers = response.headers();

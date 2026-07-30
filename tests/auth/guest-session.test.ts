@@ -287,13 +287,10 @@ describe("sanitizeNextPath", () => {
 });
 
 describe("PUBLIC_ROUTES / isPublicRoute", () => {
-  it("keeps the packet's public list open", () => {
+  it("keeps the public list open", () => {
     for (const path of [
-      "/",
-      "/weekend",
       "/nyc",
       "/nyc/rachel-running.jpg",
-      "/playlists",
       "/marathon",
       "/enter",
       "/robots.txt",
@@ -302,6 +299,8 @@ describe("PUBLIC_ROUTES / isPublicRoute", () => {
       "/api/access/logout",
       "/auth/callback",
       "/brand/0719-co-outline.svg",
+      "/story/hero-sunset-a6fa78bb.jpg",
+      "/story/hero-sunset-mobile-adobe.png",
     ]) {
       expect(isPublicRoute(path), path).toBe(true);
     }
@@ -327,6 +326,24 @@ describe("PUBLIC_ROUTES / isPublicRoute", () => {
     }
   });
 
+  it("closes the pages that were public before the whole-site gate", () => {
+    // 2026-07-30: the marketing pages and the four story derivatives only
+    // they rendered moved behind the guest password. The archive home is the
+    // one that matters most -- it is the URL guests were given.
+    for (const path of [
+      "/",
+      "/weekend",
+      "/playlists",
+      "/story/coast-1dc07dd8.jpg",
+      "/story/ceremony-b31285ca.jpg",
+      "/story/dinner-32b4c391.jpg",
+      "/story/dancing-57fd10e8.jpg",
+      "/story/after-party-e8e24926.jpg",
+    ]) {
+      expect(isPublicRoute(path), path).toBe(false);
+    }
+  });
+
   it("does not leak protection through prefix-shaped names", () => {
     // Exact entries must not act as prefixes and prefixes must respect
     // segment boundaries.
@@ -337,8 +354,10 @@ describe("PUBLIC_ROUTES / isPublicRoute", () => {
   });
 
   it("exports the allowlist for the proxy and route tests", () => {
-    expect(PUBLIC_ROUTES.exact).toContain("/");
+    expect(PUBLIC_ROUTES.exact).toContain("/nyc");
     expect(PUBLIC_ROUTES.exact).toContain("/enter");
+    // The root must never come back without a deliberate decision.
+    expect(PUBLIC_ROUTES.exact).not.toContain("/");
     expect(PUBLIC_ROUTES.prefixes).toContain("/api/access");
     // The cookie name is pinned by the packet.
     expect(GUEST_SESSION_COOKIE).toBe("rz_gallery_session");
