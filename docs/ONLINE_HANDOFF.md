@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-07-28 (PDT).
+Updated 2026-08-05 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -19,7 +19,7 @@ the pre-launch history and are not operational instructions.
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to target `production`; current status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `f5731e9` -- guest experience, clean person URLs, -73% photo bytes ([#11](https://github.com/zachringnight/rachandzach-gallery/pull/11), merged 2026-07-28) |
+| Latest release | `b7d5b6f` -- face waves 12+13, Brenda Wasserman name chain, green visual gate ([#13](https://github.com/zachringnight/rachandzach-gallery/pull/13), merged 2026-08-05) |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 
