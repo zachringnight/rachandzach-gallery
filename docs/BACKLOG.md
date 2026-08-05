@@ -4,8 +4,9 @@ Known, deliberately unshipped work. Everything here was found by a real audit
 or review and verified against the code, not speculation. Each item says what
 is wrong, why it matters, and where to look.
 
-Last updated 2026-07-28, after the guest-experience and performance release
-(`f5731e9`).
+Last updated 2026-08-05, after the face-pipeline rebuild pass. The release
+context is still the guest-experience and performance release (`f5731e9`) plus
+the site-wide password gate (`4f3bd22`).
 
 ## Mobile and touch
 
@@ -38,8 +39,38 @@ open this from a text message on a phone, and many are older relatives.
 | `force-dynamic` on 28 routes | Everywhere | Audited and mostly **correct**: the cost is inside the render, not the mode, and most routes embed per-guest signed URLs so they genuinely cannot be cached. `src/app/(guest)/[personSlug]/page.tsx` is the one clear candidate, and its three sequential Supabase queries could be parallelised. Low value; listed so nobody re-audits it. |
 | No field instrumentation | `package.json` | Neither `@vercel/speed-insights` nor `@vercel/analytics` is installed. ~2 KB, and it turns the performance work from measured-locally into measured-in-the-field. |
 
+## Found 2026-08-05, in the face pipeline pass
+
+| Item | Where | Why it matters |
+|---|---|---|
+| ~~`main` fails its own visual gate~~ **RESOLVED 2026-08-05** | `tests/e2e/visual.spec.ts-snapshots/` | All 24 stale baselines (six pages by four projects) were regenerated after inspecting the rendered pages at desktop and 390px mobile. The old `home` baseline still showed the retired public marketing homepage. `npm run verify` is fully green again. Note for later: with the whole site gated, `home`, `enter`, `enter-error` and `404` all render essentially the same screen, so four of six visual baselines now cover one page. |
+| ~~"Brend Wasserman" is truncated in 10 originals~~ **RESOLVED 2026-08-05** | see `docs/ONLINE_HANDOFF.md` | All four layers now read "Brenda Wasserman" and the live sync guard passes. Fixed with the new `scripts/rename-person-in-master.py`, not the existing alias reconciler, which could not see her name and would have destroyed later face tags if pointed at those photos. |
+| **`jorie-soskin`'s signature may be two people** | `metadata/faces/signatures.json`, clusters `c0070` and `c0090` | `c0070` is 81 faces at confidence 0.696 and is plainly one man across the archive. `c0090` is 18 faces at 0.453 and its sample faces do not obviously look like him. 113 catalog tags ride on this slug, so if the second cluster is somebody else it is the highest-leverage remaining profile defect. Not acted on: the `c0090` samples are too blurred for a confident call, and no tag has been applied from it. Render the two clusters side by side and have a human look. |
+
 ## Waiting on a person, not an engineer
 
-- **Rachel**: name the remaining 329 faces (`npm run tag`, see `docs/FACE_TAGGING_TOOL.md`), then run the post-session commands in that doc.
+**Automatic matching is finished.** As of 2026-08-05 both audits return zero
+untagged candidates, so nothing below is waiting on the model. Every remaining
+name needs somebody who recognizes the face.
+
+- **Rachel or Zach, highest leverage**: name the 91 same-face clusters.
+  `npm run faces:recurring -- --report metadata/faces/unresolved-cluster-review.json`.
+  One name applies to the whole cluster: 91 decisions reach 381 faces across
+  244 photographs, and the largest single cluster is 20 faces. Export the
+  decisions, then `npm run faces:recurring:apply -- <file>` (read-only first,
+  `--write` after). Prefer this over `npm run tag`: it is roughly a quarter the
+  decisions for the same archive.
+- **Rachel**: name the remaining 329 individual faces (`npm run tag`, see
+  `docs/FACE_TAGGING_TOOL.md`), then run the post-session commands in that doc.
+  Do this after the clusters, since naming a cluster removes faces from it. The
+  signature rebuilds did not shrink this queue and cannot: it is built from the
+  tracked unresolved/partial crop CSVs plus the catalog, never from the model.
+- ~~Identify the woman in `metadata/faces/mystery-woman.jpg`~~ **DONE
+  2026-08-05**: she is Dominique Caron. Her five tags are wave 13, the rebuild
+  separated the couple's profiles, and the `mike-caron` correction retired
+  itself. See `metadata/face-profile-corrections.json`.
+- **Zach, two rows**: confirm or deny the two Jeff Rush candidates in
+  `metadata/faces/review-2026-08-05-b/sheet-001.jpg` (sims 0.615 and 0.483),
+  surfaced by the post-wave-13 rebuild. Nothing is applied.
 - **Rachel**: two face crops are correct but unflattering and worth replacing in `/admin/faces`, which outranks anything the script picks: `charlie-weisman` (mid-sentence) and `dee-burton` (another woman shares the frame).
 - **Zach**: optional, drop a screenshot at `public/nyc/instagram-post.jpg` to fill the Instagram card on `/nyc`. It degrades to type-only without one, so nothing is broken.
