@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "source": {
-    "auditFingerprint": "c965908b0450d5aabdacfa5b3ab34238f6e3f4fc17993e92369907b886432709",
+    "auditFingerprint": "aa3171d3ca9425e7620c4e772100e309b1d695e813e9eb22734b9866b0ad476c",
     "auditFingerprints": [
       "89d7732b1be5606d7413bc21b5f634c0fb71b1af0e4dee964905ce02de6fd08b",
       "a6bb35488b45afb864280e3a16a656bd26b627d1d2fbe7552977105d76b90a45",
@@ -11,18 +11,19 @@
       "2b262da3fac115b71f385e0a7604e62600d24fd3a9c63950585890a9183fd8c5",
       "dc904d11f72724558dcc70396379e2e5e7934482f466b97c415fbc484b256edb",
       "c965908b0450d5aabdacfa5b3ab34238f6e3f4fc17993e92369907b886432709",
-      "c965908b0450d5aabdacfa5b3ab34238f6e3f4fc17993e92369907b886432709"
+      "c965908b0450d5aabdacfa5b3ab34238f6e3f4fc17993e92369907b886432709",
+      "aa3171d3ca9425e7620c4e772100e309b1d695e813e9eb22734b9866b0ad476c"
     ],
-    "reviewedAt": "2026-07-27",
-    "reviewedBy": "Codex visual side-by-side review + Zach recurring-face identification",
+    "reviewedAt": "2026-08-05",
+    "reviewedBy": "Codex visual side-by-side review + Zach recurring-face identification + Zach contact-sheet confirmation",
     "reviewMethod": "Committed saved profiles were compared with detected candidate faces in local derivatives. Zero-tag photos were also reviewed as complete images, repeated faces were grouped across photos, and lower-score confirmations required matching same-day visual context. Wedding originals were not opened or changed. Recurring unnamed clusters are promoted only when Zach selects an attendee in the private local tagger; those human decisions do not depend on model similarity.",
-    "savedFaceProfileCount": 131,
-    "learnedSignatureCount": 108,
-    "savedCropAnchorCount": 23,
+    "savedFaceProfileCount": 164,
+    "learnedSignatureCount": 138,
+    "savedCropAnchorCount": 26,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 1011,
-    "candidatesApproved": 831,
+    "candidatesReviewed": 1037,
+    "candidatesApproved": 857,
     "candidatesRejected": 180,
     "reviewWaves": [
       {
@@ -483,10 +484,47 @@
         "reviewType": "Danny Listrani, identified from a human-picked anchor face",
         "reviewMethod": "Zach spotted him in the tagger and named the face. He had no profile and no cluster, so nothing could ever have proposed him: his best match against all 131 existing profiles was 0.142, which is noise. The face was matched across the archive and every hit reviewed as a contact sheet. He now has a hand-picked anchor so the next rebuild can learn him properly.",
         "minSimilarity": 0.472,
-        "minMargin": 0.0,
+        "minMargin": 0,
         "candidatesReviewed": 16,
         "candidatesApproved": 16,
         "candidatesRejected": 0
+      },
+      {
+        "wave": 12,
+        "auditFingerprint": "aa3171d3ca9425e7620c4e772100e309b1d695e813e9eb22734b9866b0ad476c",
+        "reviewType": "Candidates surfaced by the 2026-08-05 signature rebuild",
+        "reviewMethod": "Signatures were stale against the human waves 10 and 11, so they were rebuilt: resolution rose from 118 of 132 tagged people to 138 of 152, and Danny Listrani gained a learned profile from the anchor wave 11 left him. The widened sweep was re-run on the rebuilt profiles and all 21 rows at or above 0.48 similarity and 0.08 margin were rendered as saved profile beside proposed face. Zach reviewed the four contact sheets and confirmed all 21. Six of them reverse his own earlier denials, which is expected: those were denied against profiles that have since been rebuilt or, in Danny Listrani's case, did not exist. Wedding originals were opened read-only for rendering and were not changed.",
+        "minSimilarity": 0.48,
+        "minMargin": 0.08,
+        "minFaceFraction": 0.015,
+        "candidatesReviewed": 21,
+        "candidatesApproved": 21,
+        "candidatesRejected": 0,
+        "humanConfirmation": true,
+        "overturnsEarlierDenials": [
+          "#4 Jorie Soskin (09 Reception/rachelzach-664.jpg), denied in wave 8",
+          "#5 Lindsey Miller (12 After Party/rachelzach-1125.jpg), denied in wave 6",
+          "#9 Jorie Soskin (09 Reception/rachelzach-754.jpg), denied in wave 8",
+          "#13 David Burton (10 Dancing/rachelzach-963.jpg), denied in wave 6",
+          "#14 Maddie Chaness (10 Dancing/rachelzach-1003.jpg), denied in wave 6",
+          "#16 Alex Dubov (09 Reception/rachelzach-871.jpg), denied in wave 6"
+        ],
+        "profileDefectFound": {
+          "slug": "mike-caron",
+          "detail": "The rebuild gave this slug the archive's three highest untagged matches (0.786, 0.773, 0.728). Every face in its learned cluster is a woman with a chin-length bob; Zach confirmed Mike Caron is a heavyset man, which is who his committed saved face shows. The three rows were removed from this wave before review and the slug is now recorded in metadata/face-profile-corrections.json, so it carries no recognition profile at all. The woman in cluster c0259 recurs across 5 photographs and is still unnamed."
+        }
+      },
+      {
+        "wave": 13,
+        "auditFingerprint": "aa3171d3ca9425e7620c4e772100e309b1d695e813e9eb22734b9866b0ad476c",
+        "reviewType": "Dominique Caron, identified from the cluster that had mislabelled the mike-caron profile",
+        "reviewMethod": "The wave-12 profile correction dropped learned cluster c0259 from mike-caron after every face in it proved to be a woman. Her five faces were matched across the archive from that cluster centroid and rendered as a contact sheet. Zach reviewed it and identified her as Dominique Caron, seated guest, previously zero tagged photographs, and Mike Caron's companion in the couple photograph tagged only with his name. Same defect shape as Chris and Maura Gutierrez: a couple photographed together where only one identity ever resolved, so co-occurrence handed her face to his name.",
+        "minSimilarity": 0.72,
+        "minMargin": 0,
+        "candidatesReviewed": 5,
+        "candidatesApproved": 5,
+        "candidatesRejected": 0,
+        "humanConfirmation": true
       }
     ]
   },
@@ -7243,7 +7281,7 @@
       "photoId": "11d4eace936cd0345899f5d1331d153a",
       "path": "07 Cocktail Hour/rachelzach-568.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 0,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7255,7 +7293,7 @@
       "photoId": "5783c735d7da8922e6fbd2e2b21594f1",
       "path": "07 Cocktail Hour/rachelzach-589.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 1,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7267,7 +7305,7 @@
       "photoId": "865a45e6669b27c1d9fbfb8561dff5ff",
       "path": "12 After Party/rachelzach-1137.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 15,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7279,7 +7317,7 @@
       "photoId": "c202ab3b86930c223b68110e3b12d494",
       "path": "10 Dancing/rachelzach-992.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 1,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7291,7 +7329,7 @@
       "photoId": "e2a921871a11b30b6459b1131472fcf4",
       "path": "14 Film/rachelzachfilm-179.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 2,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7303,7 +7341,7 @@
       "photoId": "4148942945d91a9a6a83621c8a8aad70",
       "path": "10 Dancing/rachelzach-1087.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 5,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7315,7 +7353,7 @@
       "photoId": "34df1c9e6509bf07af535486eca4f29f",
       "path": "07 Cocktail Hour/rachelzach-591.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 2,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7327,7 +7365,7 @@
       "photoId": "7ad501b8fb85d8882504570ccf77f06c",
       "path": "07 Cocktail Hour/rachelzach-608.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 8,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7339,7 +7377,7 @@
       "photoId": "50e6006129569894a9dd4bfb879b03d4",
       "path": "05 Ceremony/rachelzach-298.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 0,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -7351,7 +7389,7 @@
       "photoId": "f6f0d707d4c8146fdde67a7073ae1d66",
       "path": "05 Ceremony/rachelzach-420.jpg",
       "personSlug": "brend-wasserman",
-      "displayName": "Brend Wasserman",
+      "displayName": "Brenda Wasserman",
       "faceIndex": 4,
       "confirmationKind": "human-recurring-cluster",
       "reviewWave": 10,
@@ -9405,8 +9443,8 @@
       "personSlug": "danny-listrani",
       "displayName": "Danny Listrani",
       "faceIndex": 1,
-      "similarity": 1.0,
-      "margin": 0.0,
+      "similarity": 1,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9422,7 +9460,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 18,
       "similarity": 0.684,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9438,7 +9476,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 5,
       "similarity": 0.673,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9454,7 +9492,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 10,
       "similarity": 0.641,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9470,7 +9508,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 6,
       "similarity": 0.631,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9486,7 +9524,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 9,
       "similarity": 0.596,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9502,7 +9540,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 4,
       "similarity": 0.593,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9518,7 +9556,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 9,
       "similarity": 0.589,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9534,7 +9572,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 3,
       "similarity": 0.582,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9550,7 +9588,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 0,
       "similarity": 0.574,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9566,7 +9604,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 18,
       "similarity": 0.542,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9582,7 +9620,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 0,
       "similarity": 0.517,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9598,7 +9636,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 3,
       "similarity": 0.506,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9614,7 +9652,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 17,
       "similarity": 0.501,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9630,7 +9668,7 @@
       "displayName": "Danny Listrani",
       "faceIndex": 0,
       "similarity": 0.491,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
@@ -9646,13 +9684,324 @@
       "displayName": "Danny Listrani",
       "faceIndex": 10,
       "similarity": 0.472,
-      "margin": 0.0,
+      "margin": 0,
       "profileSource": "human-anchor",
       "reviewWave": 11,
       "anchorEvidence": {
         "anchorPhoto": "01 Day 1/rachelzachday1-100.jpg",
         "anchorFaceIndex": 1,
         "note": "Similarity is measured against a face Zach identified as Danny Listrani, not against a stored profile: he had none. He never clustered, so no sweep could propose him. Margin is 0 because there is no competing profile to lead."
+      }
+    },
+    {
+      "photoId": "3d60077610ab13d478c56e95cdd84dfd",
+      "path": "01 Day 1/rachelzachday1-208.jpg",
+      "personSlug": "danny-listrani",
+      "displayName": "Danny Listrani",
+      "faceIndex": 1,
+      "similarity": 0.484,
+      "margin": 0.328,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "379b03c00237c6b16bc07362885b9458",
+      "path": "01 Day 1/rachelzachday1-255.jpg",
+      "personSlug": "brend-wasserman",
+      "displayName": "Brenda Wasserman",
+      "faceIndex": 9,
+      "similarity": 0.481,
+      "margin": 0.279,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "3bfa5266c847b1736fb37a1b7fdca0bc",
+      "path": "05 Ceremony/rachelzach-198.jpg",
+      "personSlug": "jill-myers",
+      "displayName": "Jill Myers",
+      "faceIndex": 0,
+      "similarity": 0.572,
+      "margin": 0.163,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "eae230d0e0ec425b745a93a1922bc940",
+      "path": "05 Ceremony/rachelzach-211.jpg",
+      "personSlug": "emily-myers",
+      "displayName": "Emily Myers",
+      "faceIndex": 1,
+      "similarity": 0.604,
+      "margin": 0.387,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "5fe37a5aeda47ae5d2f83bc6fabbe703",
+      "path": "05 Ceremony/rachelzach-398.jpg",
+      "personSlug": "danny-listrani",
+      "displayName": "Danny Listrani",
+      "faceIndex": 15,
+      "similarity": 0.654,
+      "margin": 0.428,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "258a11dc0603cf3a43ec24fb8a1d0a2e",
+      "path": "05 Ceremony/rachelzach-404.jpg",
+      "personSlug": "linda-willey",
+      "displayName": "Linda Willey",
+      "faceIndex": 3,
+      "similarity": 0.684,
+      "margin": 0.504,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "8b1150348a72e18ae7eab9cf41557eff",
+      "path": "05 Ceremony/rachelzach-409.jpg",
+      "personSlug": "danny-listrani",
+      "displayName": "Danny Listrani",
+      "faceIndex": 7,
+      "similarity": 0.682,
+      "margin": 0.528,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "0cd436cc6fe8e799db702465e15a1b9f",
+      "path": "09 Reception/rachelzach-664.jpg",
+      "personSlug": "jorie-soskin",
+      "displayName": "Jorie Soskin",
+      "faceIndex": 0,
+      "similarity": 0.65,
+      "margin": 0.467,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "1717999961e6a4d54239b81fe80a59bc",
+      "path": "09 Reception/rachelzach-725.jpg",
+      "personSlug": "toby-auwerter",
+      "displayName": "Toby AuWerter",
+      "faceIndex": 3,
+      "similarity": 0.485,
+      "margin": 0.314,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "09cfd480a051b988b7efc5fd0fe3ee22",
+      "path": "09 Reception/rachelzach-754.jpg",
+      "personSlug": "jorie-soskin",
+      "displayName": "Jorie Soskin",
+      "faceIndex": 5,
+      "similarity": 0.593,
+      "margin": 0.386,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "ec100d02c828a6d37aca48bed1a3bace",
+      "path": "09 Reception/rachelzach-864.jpg",
+      "personSlug": "danny-listrani",
+      "displayName": "Danny Listrani",
+      "faceIndex": 6,
+      "similarity": 0.558,
+      "margin": 0.369,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "e83e9bcde2036c0aeda11d452b30a075",
+      "path": "09 Reception/rachelzach-871.jpg",
+      "personSlug": "alex-dubov",
+      "displayName": "Alex Dubov",
+      "faceIndex": 12,
+      "similarity": 0.5,
+      "margin": 0.328,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "f88fa691d1832f53d2ef27bd2b90ebb7",
+      "path": "10 Dancing/rachelzach-1003.jpg",
+      "personSlug": "maddie-chaness",
+      "displayName": "Maddie Chaness",
+      "faceIndex": 9,
+      "similarity": 0.504,
+      "margin": 0.295,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "f61628196f7ad5803c74e7bcdf74924a",
+      "path": "10 Dancing/rachelzach-1007.jpg",
+      "personSlug": "alicia-garrity",
+      "displayName": "Alicia Garrity",
+      "faceIndex": 1,
+      "similarity": 0.503,
+      "margin": 0.292,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "6d0aae393edf751757c6aa4350facb3c",
+      "path": "10 Dancing/rachelzach-1073.jpg",
+      "personSlug": "emily-myers",
+      "displayName": "Emily Myers",
+      "faceIndex": 2,
+      "similarity": 0.485,
+      "margin": 0.315,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "6d0aae393edf751757c6aa4350facb3c",
+      "path": "10 Dancing/rachelzach-1073.jpg",
+      "personSlug": "laura-weisman",
+      "displayName": "Laura Weisman",
+      "faceIndex": 1,
+      "similarity": 0.579,
+      "margin": 0.434,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "d2a9d18b4edebb050b91af3526866f10",
+      "path": "10 Dancing/rachelzach-953.jpg",
+      "personSlug": "lisa-gilbert",
+      "displayName": "Lisa Gilbert",
+      "faceIndex": 5,
+      "similarity": 0.621,
+      "margin": 0.507,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "bf2287e33d9f827a3cfa3d434d31d186",
+      "path": "10 Dancing/rachelzach-963.jpg",
+      "personSlug": "david-burton",
+      "displayName": "David Burton",
+      "faceIndex": 9,
+      "similarity": 0.506,
+      "margin": 0.269,
+      "profileSource": "saved-crop",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "47fba0f6f0e82fbbe6c40f65f5ba8de6",
+      "path": "12 After Party/rachelzach-1125.jpg",
+      "personSlug": "lindsey-miller",
+      "displayName": "Lindsey Miller",
+      "faceIndex": 2,
+      "similarity": 0.644,
+      "margin": 0.497,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "7c5c1c7185be59fc4da8197a3419cf71",
+      "path": "14 Film/rachelzachfilm-154.jpg",
+      "personSlug": "danny-listrani",
+      "displayName": "Danny Listrani",
+      "faceIndex": 5,
+      "similarity": 0.484,
+      "margin": 0.32,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "c098a520cb3bb651a9b96a4c761224bd",
+      "path": "14 Film/rachelzachfilm-244.jpg",
+      "personSlug": "danny-listrani",
+      "displayName": "Danny Listrani",
+      "faceIndex": 12,
+      "similarity": 0.616,
+      "margin": 0.479,
+      "profileSource": "learned",
+      "reviewWave": 12
+    },
+    {
+      "photoId": "45bc13fa532e2accc058759e8b6afe58",
+      "path": "05 Ceremony/rachelzach-233.jpg",
+      "personSlug": "dominique-caron",
+      "displayName": "Dominique Caron",
+      "faceIndex": 3,
+      "similarity": 0.822,
+      "margin": 0,
+      "profileSource": "human-anchor",
+      "reviewWave": 13,
+      "anchorEvidence": {
+        "anchorPhoto": "01 Day 1/rachelzachday1-86.jpg",
+        "anchorFaceIndex": 0,
+        "note": "Similarity is measured against the centroid of learned cluster c0259, which is her own five faces: the cluster that had wrongly trained the mike-caron profile. Margin is 0 because the only profile that ever competed for these faces was that same mislabelled one."
+      }
+    },
+    {
+      "photoId": "28ea4531af910f080b7852a9d94cc727",
+      "path": "01 Day 1/rachelzachday1-86.jpg",
+      "personSlug": "dominique-caron",
+      "displayName": "Dominique Caron",
+      "faceIndex": 0,
+      "similarity": 0.791,
+      "margin": 0,
+      "profileSource": "human-anchor",
+      "reviewWave": 13,
+      "anchorEvidence": {
+        "anchorPhoto": "01 Day 1/rachelzachday1-86.jpg",
+        "anchorFaceIndex": 0,
+        "note": "Similarity is measured against the centroid of learned cluster c0259, which is her own five faces: the cluster that had wrongly trained the mike-caron profile. Margin is 0 because the only profile that ever competed for these faces was that same mislabelled one."
+      }
+    },
+    {
+      "photoId": "189821a1f0659c254e8f259ff4e14dcc",
+      "path": "05 Ceremony/rachelzach-245.jpg",
+      "personSlug": "dominique-caron",
+      "displayName": "Dominique Caron",
+      "faceIndex": 0,
+      "similarity": 0.786,
+      "margin": 0,
+      "profileSource": "human-anchor",
+      "reviewWave": 13,
+      "anchorEvidence": {
+        "anchorPhoto": "01 Day 1/rachelzachday1-86.jpg",
+        "anchorFaceIndex": 0,
+        "note": "Similarity is measured against the centroid of learned cluster c0259, which is her own five faces: the cluster that had wrongly trained the mike-caron profile. Margin is 0 because the only profile that ever competed for these faces was that same mislabelled one."
+      }
+    },
+    {
+      "photoId": "d943dd48498ad787a7b92f2c65133a83",
+      "path": "07 Cocktail Hour/rachelzach-590.jpg",
+      "personSlug": "dominique-caron",
+      "displayName": "Dominique Caron",
+      "faceIndex": 0,
+      "similarity": 0.773,
+      "margin": 0,
+      "profileSource": "human-anchor",
+      "reviewWave": 13,
+      "anchorEvidence": {
+        "anchorPhoto": "01 Day 1/rachelzachday1-86.jpg",
+        "anchorFaceIndex": 0,
+        "note": "Similarity is measured against the centroid of learned cluster c0259, which is her own five faces: the cluster that had wrongly trained the mike-caron profile. Margin is 0 because the only profile that ever competed for these faces was that same mislabelled one."
+      }
+    },
+    {
+      "photoId": "863e65758c5f09f291b5f6a8e45c97bd",
+      "path": "05 Ceremony/rachelzach-377.jpg",
+      "personSlug": "dominique-caron",
+      "displayName": "Dominique Caron",
+      "faceIndex": 14,
+      "similarity": 0.728,
+      "margin": 0,
+      "profileSource": "human-anchor",
+      "reviewWave": 13,
+      "anchorEvidence": {
+        "anchorPhoto": "01 Day 1/rachelzachday1-86.jpg",
+        "anchorFaceIndex": 0,
+        "note": "Similarity is measured against the centroid of learned cluster c0259, which is her own five faces: the cluster that had wrongly trained the mike-caron profile. Margin is 0 because the only profile that ever competed for these faces was that same mislabelled one."
       }
     }
   ]

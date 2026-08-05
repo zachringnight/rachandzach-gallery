@@ -256,6 +256,138 @@ Fresh local verification on that branch:
   console errors or horizontal overflow
 - `git diff --check` passed
 
+### Face pipeline rebuild (2026-08-05)
+
+The three places a confirmed name is supposed to land were checked and all
+three were already current before this pass, so no tagging work was lost when
+the last session ended:
+
+- local catalog: all 831 reviewed tags present, 0 to add
+  (`node scripts/apply-catalog-overlays.mjs`)
+- live database: 5,035 `rachandzach_photo_people` rows, all 831 reviewed tags
+  present, 0 people and 0 tags pending
+  (`node scripts/sync-catalog-overlays.mjs`, read-only)
+- master originals: all 487 photos carrying additions already current, 0 to
+  write (`python3 scripts/write-additions-to-master.py`, dry run)
+
+Two exported decision files were found unfiled in `~/Downloads`
+(`rachandzach-recurring-face-decisions*.json`, 4 and 61 decisions). Both were
+verified as already applied: their 53 tag decisions across 50 identities are
+all present in the overlay as wave 10. Nothing was orphaned.
+
+Signatures were stale against the human waves 10 and 11, so they were rebuilt.
+Resolution improved from 118 of 132 tagged people to **138 of 152**, and the
+re-run audit surfaced 18 untagged candidates that no earlier sweep could have
+produced, mostly for people who only just earned a profile.
+
+That rebuild also exposed a profile defect. Every face in the learned
+`mike-caron` cluster is a woman with a chin-length bob; his committed saved
+face is a heavyset man. The cluster was named on thin evidence (support 2,
+confidence 0.325, from 4 tagged photos) and it had begun winning the archive's
+three highest untagged matches at 0.786, 0.773 and 0.728, which would have put
+his name on three photographs of somebody else. Recorded in
+`metadata/face-profile-corrections.json`, the same mechanism that held the
+Chris/Maura Gutierrez defect. He has no hand-picked crop, so he now carries no
+recognition profile at all, which is the intended outcome: no profile beats a
+confidently wrong one. The three rows are gone from the audit.
+
+`scripts/export-face-overrides.mjs` had not been re-run since 2026-07-27, so
+two live `/admin/faces` decisions existed only in the database. Both are now
+committed: `brend-wasserman` renamed to "Brenda Wasserman", and `lauren-kunz`
+renamed to "Lauren Lurie" and hidden.
+
+Zach then confirmed all 21 rendered candidates, which landed as **wave 12** and
+is the first wave to reverse earlier denials: six of the 21 were his own
+rejections from waves 6 and 8, denied against profiles that have since been
+rebuilt or, for Danny Listrani, did not exist at the time. The reversals are
+listed in the wave's `overturnsEarlierDenials` rather than applied quietly.
+The 21 are now in all three destinations: catalog, 20 master originals, and
+the live database, which verified at **5,056** `rachandzach_photo_people` rows.
+
+**Automatic matching has converged.** After rebuilding on wave 12, both the
+calibrated and the widened audits return **zero** untagged candidates. Every
+prominent face that matches a known profile is tagged. Everything left needs a
+human to name a face the model has never been shown. Signature resolution
+reads 136 of 152 rather than the 138 seen mid-pass; two marginal clusters fell
+back below the 1.6x naming lead when the new tags added competing evidence,
+which is the guard doing its job, not lost data.
+
+The remaining work is now shaped for one sitting rather than 329 separate
+decisions. `npm run faces:recurring -- --report
+metadata/faces/unresolved-cluster-review.json` offers **93 same-face clusters
+covering 388 faces across 247 photographs**, largest 20 faces, where one name
+applies to the whole cluster. The report deliberately drops 29 clusters as too
+small or too soft to judge and 3 that hold two faces from one photograph and
+therefore are not one person.
+
+One person could not be reached by that queue. The woman whose face trained
+the `mike-caron` signature appeared in 5 photographs, and because the pipeline
+believed she was Mike Caron she was never offered as unnamed. Zach identified
+her from her contact sheet: **Dominique Caron**, his companion, seated guest,
+previously zero tagged photographs. Same defect shape as the Gutierrezes: a
+couple photographed together where only one identity ever resolved. Her five
+tags landed as wave 13 (catalog, masters, live at 5,061 rows), and the next
+rebuild did exactly what the correction's own retirement rule predicted:
+cluster c0259 now resolves to her, Mike gained his own genuine cluster c0305
+(visually verified against his saved thumbnail), and the correction was retired
+into the `resolved` list beside the Gutierrez entry. Resolution now reads 138
+of 153 tagged people.
+
+That rebuild surfaced two below-default Jeff Rush candidates
+(`metadata/faces/review-2026-08-05-b/sheet-001.jpg`, sims 0.615 and 0.483).
+They await Zach's eyes; nothing is applied.
+
+### Visual baselines regenerated (2026-08-05)
+
+All 24 stale snapshots (six pages by four projects) were regenerated after
+inspecting the rendered pages at desktop and 390px mobile per `AGENTS.md`. The
+`home` baseline was the big one: it still showed the retired public marketing
+homepage, which the password gate replaced outright. The gate pages and the two
+guest pages (12px growth from a shared spacing change) all render as intended.
+WebKit 26.5 was installed locally for the webkit and mobile-390 projects.
+`npm run verify` is now fully green end to end: typecheck, lint 0 errors,
+Vitest 1,101 passed with 17 documented skips, production build, and Chromium
+e2e **84 passed** with 28 documented skips, the first fully green gate since
+the password-gate release. One caveat worth keeping: with the whole site
+gated, `home`, `enter`, `enter-error` and `404` all render essentially the
+same screen, so four of the six visual baselines now cover one page.
+
+### The "Brend Wasserman" name chain, resolved (2026-08-05)
+
+The seating chart's truncated spelling had reached the roster, the catalog, the
+reviewed additions, and the embedded metadata of 10 originals. Only the live
+database was right, because it had been corrected by hand in `/admin/faces`.
+All four layers now read "Brenda Wasserman", and the live sync guard that had
+been throwing `Live name mismatch` passes.
+
+`scripts/reconcile-clean-master-aliases.py` was the obvious tool and was the
+wrong one. It is driven by `_Metadata/photo-manifest.csv`, and **zero manifest
+rows carry her name**: hers arrived later through
+`write-additions-to-master.py`. It would have reported success having changed
+nothing, and worse, its write path rebuilds `PersonInImage` from the manifest,
+so aiming it at those photos would have deleted every face-tag name added since
+the manifest was built.
+
+`scripts/rename-person-in-master.py` covers that gap: one name at a time,
+exact case-insensitive matching rather than a regex that matches "Dan" inside
+"Danny", symlinks skipped so the `By Person` and `_Review` farms cannot cause
+the same photograph to be written once per link that references it, and
+`ImageDataHash` plus dimensions compared before and after so a run that altered
+a pixel fails instead of reporting success. It also verifies that no other name
+moved. Dry run by default. The run touched 10 files and verified clean.
+
+Two things were deliberately left alone: `seatingName` in the roster, which
+records what the chart actually said, and the wave-10 `contextEvidence` prose,
+which records the identification as Zach made it at the time.
+
+Verification: Vitest 1,101 passed with 17 documented skips, typecheck clean,
+lint 0 errors and 19 existing warnings, production build passed, Chromium
+end-to-end 78 passed with 28 documented skips. Six visual snapshots fail, and
+they fail identically on a clean `main` with no local changes, so that is
+pre-existing baseline drift from the password gate rather than a regression
+from this pass. It is written up in `docs/BACKLOG.md` along with a suspected
+second profile defect in `jorie-soskin`.
+
 ### TEMPORARY: Preview is unauthenticated (2026-07-26)
 
 **The Preview environment currently has no access control at all, and it talks
@@ -297,6 +429,8 @@ That is enforced in code, not by convention.
 |---|---|---|---|
 | P0 | Rachel | Next session | Name the remaining 329 faces: `npm run tag`, then the post-session commands in `docs/FACE_TAGGING_TOOL.md` (apply overlays, rebuild thumbnails, embed names into the masters). Decisions save as you go and the session resumes if interrupted. |
 | P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 46 real names and their messages. Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
+| DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
+| P1 | Zach | Two rows | Confirm or deny the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`. Nothing is applied. |
 | P1 | Engineer | Next UI pass | Work `docs/BACKLOG.md` "Mobile and touch". The filter panel not closing after a selection is the one that reads as broken on a phone. |
 | P2 | Rachel | Any time | Replace two correct-but-unflattering face crops in `/admin/faces`: `charlie-weisman`, `dee-burton`. Admin picks outrank the script. |
 | P2 | Engineer | Before wide sharing | No AVIF fallback: the client is AVIF-only by design, so a browser without support gets broken images. See `docs/BACKLOG.md` "Technical debt"; needs a `<picture>` element and a matching serialization change, together. |

@@ -4,6 +4,14 @@
   "corrections": [],
   "resolved": [
     {
+      "slug": "mike-caron",
+      "recordedOn": "2026-08-05",
+      "resolvedOn": "2026-08-05",
+      "wasWrongBecause": "Every face in his learned cluster (c0259, 5 faces across 5 photos) was a woman with a chin-length bob and large square sunglasses; his committed saved face is a heavyset man. The cluster was named on thin evidence (support 2, soloSupport 1, confidence 0.325, from only 4 tagged photos), and after the 2026-08-05 rebuild it began winning the archive's three highest untagged matches, which would have put his name on three photographs of somebody else.",
+      "resolution": "The woman is Dominique Caron, his companion, seated guest, previously zero tagged photographs. Same defect shape as the Gutierrezes: a couple photographed together where only one identity ever resolved, so co-occurrence handed her face to his name. Zach identified her from the cluster contact sheet (wave 13); tagging her five photographs let the next rebuild assign c0259 to her (confidence 0.451) and give Mike his own genuine cluster c0305 (4 faces, confidence 0.381), visually verified against his saved thumbnail. Retired per this file's own rule rather than left to discard his now-good signature.",
+      "keptAnchors": "He never had a hand-picked crop; both identities now run on learned signatures."
+    },
+    {
       "slug": "maura-keith-gutierrez",
       "recordedOn": "2026-07-27",
       "resolvedOn": "2026-07-27",
