@@ -17,13 +17,16 @@ import { join } from "node:path";
 
 import { parseCsv } from "./photo-metadata.mjs";
 
-// Grouping thresholds. The face signature run measured impostor pairs topping
-// out near 0.59 and genuine pairs at a 0.77 median, and the signature builder
-// itself uses 0.6 as its graph edge. Same numbers here, plus a floor on the
-// weakest pair in a group, because a wrong group is worse than no group.
-const GROUP_EDGE = 0.6;
-const GROUP_MIN_PAIR = 0.5;
-const GROUP_MAX = 14;
+// Fallback grouping thresholds, for faces the pipeline's own clusters do not
+// place (those clusters are the primary stacking; see buildNamingModel). The
+// signature run's calibration puts impostor P99 at 0.244 and genuine P05 at
+// 0.577, so 0.5/0.4 still sits far above noise; the original 0.6/0.5 was set
+// before that calibration existed and left most of the queue unstacked. A
+// wrong stack is visible, not silent: every member renders on screen and can
+// be answered individually.
+const GROUP_EDGE = 0.5;
+const GROUP_MIN_PAIR = 0.4;
+const GROUP_MAX = 24;
 // Room left around a detected face box, as a multiple of its longest side.
 const CROP_TIGHT = 2.1;
 const CROP_WIDE = 4.4;
@@ -470,13 +473,234 @@ export async function buildNamingModel({ repoRoot, assetBase = "/", readOnly = f
     if (item) items.push(item);
   }
 
-  const groups = groupFaces(
-    items.filter((item) => item.embedding).map((item) => ({ key: item.key, embedding: item.embedding })),
+  // Stacks. Primary source: the pipeline's own unresolved clusters
+  // (build-face-signatures.py), which cluster the WHOLE archive's detections
+  // and are calibrated against 5,000+ confirmed tags, so they stack far more
+  // of the queue than the conservative in-tool grouper ever could. Faces the
+  // pipeline did not cluster fall back to that grouper, unchanged. Decisions
+  // survive re-stacking either way: the ledger keys on the face, not the
+  // stack, and the fingerprint does not cover grouping.
+  const clusterOfFace = new Map();
+  const signaturesPath = join(repoRoot, "metadata", "faces", "signatures.json");
+  if (existsSync(signaturesPath)) {
+    const signatures = JSON.parse(await fs.readFile(signaturesPath, "utf8"));
+    for (const cluster of signatures.unresolvedClusters ?? []) {
+      for (const member of cluster.members ?? []) {
+        clusterOfFace.set(member.photoId + ":" + member.faceIndex, cluster.clusterId);
+      }
+    }
+  }
+
+  // Synthetic queue items: every unresolved-cluster face the June CSVs never
+  // queued. The pipeline clusters the whole archive, so most cluster members
+  // have no CSV row at all; without this they were reachable only through a
+  // separate export/import tool. Keys are "cluster:" + catalogPath + ":" +
+  // detector faceIndex - a namespace no CSV key can produce (CSV keys start
+  // with "missing:" or "partial:" and use review-style paths), and stable
+  // across rebuilds because both parts come from the committed catalog and the
+  // detector run, not from queue ordering. The decisions ledger depends on
+  // that stability.
+  const photoById = new Map(catalog.photos.map((photo) => [photo.imageDataHash, photo]));
+  const detectionByPhotoId = new Map();
+  for (const record of detections.values()) detectionByPhotoId.set(record.photoId, record);
+  // A face already reachable through a CSV row must not appear twice. CSV rows
+  // resolve to detector face indexes through matchDetection, so photoId +
+  // faceIndex is the identity both worlds share.
+  const csvCoveredFaces = new Set(
+    items
+      .filter((item) => item.faceIndex !== null)
+      .map((item) => item.photoId + ":" + item.faceIndex),
   );
+  let fromClusters = 0;
+  let fromClustersUncatalogued = 0;
+  for (const [faceKey, clusterId] of clusterOfFace) {
+    if (csvCoveredFaces.has(faceKey)) continue;
+    const separator = faceKey.lastIndexOf(":");
+    const photoId = faceKey.slice(0, separator);
+    const faceIndex = Number(faceKey.slice(separator + 1));
+    const photo = photoById.get(photoId);
+    const detection = detectionByPhotoId.get(photoId);
+    const face = detection?.faces?.find((candidate) => candidate.i === faceIndex);
+    if (!photo || !face) {
+      // Not in the catalog (Sneak Peek duplicates the import consolidated
+      // away) or the detector record is gone. Same exclusion the CSV path
+      // applies, counted separately so the report stays honest.
+      fromClustersUncatalogued += 1;
+      continue;
+    }
+    const photoUrl = derivativeUrl(photo.imageDataHash, ["1600.webp", "960.webp", "2400.jpeg"]);
+    if (!photoUrl) {
+      undisplayable += 1;
+      continue;
+    }
+    const reviewPath = photo.originalRelativePath.replace(/^\d{2} /, "");
+    const aspectRatio = photo.width && photo.height ? photo.width / photo.height : 1;
+    const box = {
+      x: face.bbox[0] / detection.dw,
+      y: face.bbox[1] / detection.dh,
+      width: (face.bbox[2] - face.bbox[0]) / detection.dw,
+      height: (face.bbox[3] - face.bbox[1]) / detection.dh,
+    };
+    items.push({
+      key: "cluster:" + photo.originalRelativePath + ":" + faceIndex,
+      kind: "cluster",
+      path: reviewPath,
+      catalogPath: photo.originalRelativePath,
+      photoId: photo.imageDataHash,
+      event: (photo.eventSlug || "").replace(/-/g, " "),
+      filename: reviewPath.split("/").pop() || "",
+      faceLabel: String(faceIndex),
+      faceIndex,
+      scope: "face",
+      photoUrl,
+      thumbUrl: derivativeUrl(photo.imageDataHash, ["480.webp", "960.webp"]) || photoUrl,
+      originalUrl: "/original/" + encodePath(reviewPath),
+      aspectRatio: round(aspectRatio),
+      box: {
+        x: round(box.x),
+        y: round(box.y),
+        width: round(box.width),
+        height: round(box.height),
+      },
+      tightCrop: cropWindow(box, aspectRatio, CROP_TIGHT),
+      wideCrop: cropWindow(box, aspectRatio, CROP_WIDE),
+      fallbackCropUrl: null,
+      otherFaces: (detection.faces || [])
+        .filter((candidate) => candidate.i !== faceIndex)
+        .slice(0, 24)
+        .map((candidate) => ({
+          x: round(candidate.bbox[0] / detection.dw),
+          y: round(candidate.bbox[1] / detection.dh),
+          width: round((candidate.bbox[2] - candidate.bbox[0]) / detection.dw),
+          height: round((candidate.bbox[3] - candidate.bbox[1]) / detection.dh),
+        })),
+      knownPeople: (photo.peopleSlugs || [])
+        .map((slug) => rosterFinal.get(slug))
+        .filter(Boolean)
+        .map((person) => ({ slug: person.slug, name: person.name })),
+      notes: queueByPath.get(reviewPath)?.notes || "",
+      suggestions: suggestionsByPath.get(reviewPath) || [],
+      // The cluster id above is this face's stack; no centroid attachment is
+      // ever needed, so the embedding has no build-time job either.
+      embedding: null,
+      groupId: null,
+    });
+    fromClusters += 1;
+  }
+
+  // Cluster centroids, for queue faces the pipeline saw but did not place:
+  // computed here from the members' own embeddings, since signatures.json
+  // does not publish unresolved centroids. Attachment threshold 0.45 comes
+  // from the build's calibration (impostor P99 = 0.244, genuine P05 = 0.577):
+  // above it, two faces are overwhelmingly the same person, and every stack
+  // member is shown on screen anyway, so a rare wrong attach is visible and
+  // individually answerable rather than silently propagated.
+  const STACK_ATTACH = 0.45;
+  const embeddingOfFace = new Map();
+  for (const detection of detectionByReviewPath.values()) {
+    for (const face of detection.faces || []) {
+      if (face.emb) {
+        embeddingOfFace.set(detection.photoId + ":" + face.i, decodeEmbedding(face.emb));
+      }
+    }
+  }
+  const clusterCentroids = new Map();
+  for (const [faceKey, clusterId] of clusterOfFace) {
+    const embedding = embeddingOfFace.get(faceKey);
+    if (!embedding) continue;
+    if (!clusterCentroids.has(clusterId)) clusterCentroids.set(clusterId, []);
+    clusterCentroids.get(clusterId).push(embedding);
+  }
+  for (const [clusterId, embeddings] of clusterCentroids) {
+    const centroid = embeddings[0].map((_, index) => {
+      let total = 0;
+      for (const embedding of embeddings) total += embedding[index];
+      return total / embeddings.length;
+    });
+    const norm = Math.hypot(...centroid) || 1;
+    clusterCentroids.set(clusterId, centroid.map((value) => value / norm));
+  }
+
+  const stackMembers = new Map();
+  const fallbackPool = [];
+  for (const item of items) {
+    let clusterId =
+      item.faceIndex === null
+        ? undefined
+        : clusterOfFace.get(item.photoId + ":" + item.faceIndex);
+    if (!clusterId && item.embedding) {
+      let bestScore = STACK_ATTACH;
+      for (const [candidateId, centroid] of clusterCentroids) {
+        const score = cosine(item.embedding, centroid);
+        if (score > bestScore) {
+          bestScore = score;
+          clusterId = candidateId;
+        }
+      }
+    }
+    if (clusterId) {
+      if (!stackMembers.has(clusterId)) stackMembers.set(clusterId, []);
+      stackMembers.get(clusterId).push(item.key);
+    } else if (item.embedding) {
+      fallbackPool.push({ key: item.key, embedding: item.embedding });
+    }
+  }
+  let groups = [
+    ...[...stackMembers.entries()]
+      .filter(([, keys]) => keys.length > 1)
+      .map(([clusterId, keys]) => ({ id: clusterId, keys })),
+    ...groupFaces(fallbackPool),
+  ].sort((left, right) => right.keys.length - left.keys.length);
   const itemByKey = new Map(items.map((item) => [item.key, item]));
   for (const group of groups) {
     for (const key of group.keys) itemByKey.get(key).groupId = group.id;
   }
+
+  // Quality floors: nobody should be asked to put a name to a face that is
+  // too small or too blurred to recognize. Same floors the cluster report
+  // uses (face fraction 0.03, Laplacian-variance focus 25, measured in
+  // metadata/faces/cluster-face-quality.json); a face with no measurement is
+  // judged on size alone rather than hidden. One deliberate exception: a
+  // soft face KEEPS its place when it stacks with a sharp one, because
+  // naming the sharp face names the whole stack, so the soft members cost
+  // no extra squinting and tagging them is the point of the stack. Only
+  // stacks with no recognizable member, and lone unrecognizable faces, are
+  // dropped. Already-decided faces always stay.
+  const QUALITY_MIN_FRAC = 0.03;
+  const QUALITY_MIN_FOCUS = 25;
+  const qualityByFace = new Map();
+  const qualityPath = join(repoRoot, "metadata", "faces", "cluster-face-quality.json");
+  if (existsSync(qualityPath)) {
+    for (const entry of JSON.parse(await fs.readFile(qualityPath, "utf8"))) {
+      if (entry?.faceKey) qualityByFace.set(entry.faceKey, entry);
+    }
+  }
+  const recognizable = (item) => {
+    if (item.faceIndex === null) return true;
+    const detection = detectionByReviewPath.get(item.path);
+    const face = detection?.faces?.find((f) => f.i === item.faceIndex);
+    const frac = face
+      ? (face.bbox[3] - face.bbox[1]) / Math.max(detection.dw, detection.dh)
+      : null;
+    if (frac !== null && frac < QUALITY_MIN_FRAC) return false;
+    const measured = qualityByFace.get(item.photoId + ":" + item.faceIndex);
+    if (measured && measured.focus < QUALITY_MIN_FOCUS) return false;
+    return true;
+  };
+  const keptKeys = new Set();
+  for (const item of items) {
+    if (ledger?.entries?.[item.key] || recognizable(item)) keptKeys.add(item.key);
+  }
+  for (const group of groups) {
+    if (group.keys.some((key) => keptKeys.has(key))) {
+      for (const key of group.keys) keptKeys.add(key);
+    }
+  }
+  const droppedUnrecognizable = items.length - keptKeys.size;
+  const keptItems = items.filter((item) => keptKeys.has(item.key));
+  items.length = 0;
+  items.push(...keptItems);
+  groups = groups.filter((group) => group.keys.some((key) => keptKeys.has(key)));
   // Embeddings are a build-time input only. They never reach the page.
   for (const item of items) delete item.embedding;
 
@@ -528,6 +752,11 @@ export async function buildNamingModel({ repoRoot, assetBase = "/", readOnly = f
       items: items.length,
       missing: items.filter((item) => item.kind === "missing").length,
       partial: items.filter((item) => item.kind === "partial").length,
+      // Recounted after the quality filter, so it reflects the queue as
+      // served rather than as synthesized.
+      fromClusters: items.filter((item) => item.kind === "cluster").length,
+      fromClustersUncatalogued,
+      droppedUnrecognizable,
       groups: groups.length,
       grouped: groups.reduce((total, group) => total + group.keys.length, 0),
       roster: roster.length,
@@ -773,7 +1002,7 @@ const clientJs = String.raw`
   }
   function isAnswered(item) {
     const s = statusOf(item);
-    return s === "tag" || s === "not-a-guest" || s === "remove";
+    return s === "tag" || s === "not-a-guest" || s === "too-blurry" || s === "remove";
   }
 
   function visible() {
@@ -926,12 +1155,23 @@ const clientJs = String.raw`
     const keys = item.groupId ? groupKeys.get(item.groupId) : null;
     els.groupStrip.hidden = !keys;
     els.applyGroup.hidden = !keys;
+    els.tooBlurryGroup.hidden = !keys;
+    els.notSureGroup.hidden = !keys;
+    els.notGuestGroup.hidden = !keys;
     if (!keys) return;
     const open = keys.filter((k) => !isAnswered(itemByKey.get(k))).length;
     els.groupLabel.textContent =
       "These " + keys.length + " look like the same person. Check them, then one name covers all " +
       open + " that are still open.";
-    els.applyGroup.textContent = "Same person in all " + open;
+    const inherited = nameAlreadyOnStack(item);
+    const inheritedNames = inherited
+      ? inherited.map((slug) => (rosterBySlug.get(slug) || {}).name || slug).join(", ")
+      : "";
+    // Say the name when the stack already has one, so "apply it to the rest"
+    // reads as an offer rather than something to discover.
+    els.applyGroup.textContent = inheritedNames && !pending.length
+      ? inheritedNames + " in all " + open
+      : "Same person in all " + open;
     els.groupRow.innerHTML = "";
     for (const key of keys) {
       const member = itemByKey.get(key);
@@ -1096,6 +1336,7 @@ const clientJs = String.raw`
       status === "tag"
         ? (r.personSlugs || []).map((s) => (rosterBySlug.get(s) || {}).name || s).join(", ")
         : status === "not-a-guest" ? "Not a guest"
+        : status === "too-blurry" ? "Too blurry to name"
         : status === "remove" ? "Name removed"
         : status === "skip" ? "Not sure" : "";
     els.changeButton.hidden = status === "open";
@@ -1238,6 +1479,45 @@ const clientJs = String.raw`
     else render();
   }
 
+  /**
+   * "Same person in all", from whatever state the box is in: a name typed
+   * but not yet taken, names already staged, or nothing typed at all because
+   * this face was just named and the rest of its stack should follow.
+   */
+  function saveNamesToStack() {
+    if (query.trim()) pick(highlight, false);
+    if (!pending.length) {
+      const inherited = nameAlreadyOnStack(current());
+      if (inherited) pending = inherited;
+    }
+    saveNames(true);
+  }
+
+  /**
+   * The name already given to some face in this stack, newest first, or null.
+   *
+   * This is what makes "I named one, now apply it to the rest" a single
+   * keystroke. Naming a face advances the cursor to the next open one, so by
+   * the time the guest reaches for "same person in all" the named face is
+   * behind them and the box is empty; without this the action could only
+   * report that nothing was typed.
+   */
+  function nameAlreadyOnStack(item) {
+    if (!item) return null;
+    const own = state.get(item.key);
+    if (own && own.action === "tag" && (own.personSlugs || []).length) {
+      return [...own.personSlugs];
+    }
+    if (!item.groupId) return null;
+    let best = null;
+    for (const key of groupKeys.get(item.groupId) || []) {
+      const record = state.get(key);
+      if (!record || record.action !== "tag" || !(record.personSlugs || []).length) continue;
+      if (!best || String(record.decidedAt || "") >= String(best.decidedAt || "")) best = record;
+    }
+    return best ? [...best.personSlugs] : null;
+  }
+
   function saveNames(alsoGroup) {
     const item = current();
     if (!item) return;
@@ -1253,14 +1533,53 @@ const clientJs = String.raw`
       keys.length > 1 ? names + " on " + keys.length + " photos" : names);
   }
 
-  function notAGuest() {
+  function notAGuest(wholeStack) {
     const item = current();
-    if (item) decide([item.key], "not-a-guest", [], els.noteInput.value.trim(), "Not a guest");
+    if (!item) return;
+    const keys = stackKeys(item, wholeStack);
+    decide(keys, "not-a-guest", [], els.noteInput.value.trim(),
+      keys.length > 1 ? "Not a guest, all " + keys.length : "Not a guest");
   }
 
-  function notSure() {
+  /**
+   * The face under the cursor, plus its stack when a whole-stack form was
+   * asked for. Already-answered members are left alone, exactly as naming a
+   * stack does: a confirmed name must never be overwritten by a sweep, both
+   * because it is the more considered answer and because the name is already
+   * written into the additions overlay, which a ledger-only action does not
+   * unwind.
+   */
+  function stackKeys(item, wholeStack) {
+    const keys = [item.key];
+    if (wholeStack && item.groupId) {
+      for (const key of groupKeys.get(item.groupId)) {
+        if (key !== item.key && !isAnswered(itemByKey.get(key))) keys.push(key);
+      }
+    }
+    return keys;
+  }
+
+  function notSure(wholeStack) {
     const item = current();
-    if (item) decide([item.key], "skip", [], els.noteInput.value.trim(), "Marked not sure");
+    if (!item) return;
+    const keys = stackKeys(item, wholeStack);
+    decide(keys, "skip", [], els.noteInput.value.trim(),
+      keys.length > 1 ? "Not sure, all " + keys.length : "Marked not sure");
+  }
+
+  /**
+   * Too blurred or too small to name, which is a different answer from "not
+   * sure who this is": nobody could name it, so it should never come back.
+   * The whole-stack form matters because look-alike stacks are built from
+   * face geometry, so a soft face usually arrives with its equally soft
+   * siblings from the same distant frame.
+   */
+  function tooBlurry(wholeStack) {
+    const item = current();
+    if (!item) return;
+    const keys = stackKeys(item, wholeStack);
+    decide(keys, "too-blurry", [], els.noteInput.value.trim(),
+      keys.length > 1 ? "Too blurry, all " + keys.length : "Too blurry to name");
   }
 
   function removeName() {
@@ -1339,8 +1658,15 @@ const clientJs = String.raw`
     const key = event.key;
     if (key === "Enter") {
       event.preventDefault();
-      if (query.trim()) pick(highlight, !event.shiftKey);
-      else if (event.shiftKey) saveNames(true);
+      // Shift+Enter always means "same person in every photo in this stack",
+      // as the on-screen button and the help table both say. It used to mean
+      // that ONLY when the search box was already empty: with a name typed,
+      // the shift was read as "take the name but stay", so the most natural
+      // gesture in the tool (type the name, shift-enter to apply it to the
+      // whole row) silently answered one face. Staging a typed name and then
+      // saving to the stack is what both readings wanted.
+      if (event.shiftKey) { saveNamesToStack(); return; }
+      if (query.trim()) pick(highlight, true);
       else saveNames(false);
       return;
     }
@@ -1350,16 +1676,25 @@ const clientJs = String.raw`
     if (key >= "1" && key <= "9") { event.preventDefault(); pick(Number(key) - 1, !event.shiftKey); return; }
     if (key === "Escape") {
       event.preventDefault();
+      // Shift+Esc is an explicit chord, so it skips the clear-first layering
+      // and always sweeps the stack. Nothing is written to a photograph and
+      // undo covers it, so a stray press costs one keystroke.
+      if (event.shiftKey) { notSure(true); return; }
       if (query) { setQuery(""); highlight = 0; renderOptions(current()); }
       else if (pending.length) { pending = []; render(); }
-      else notSure();
+      else notSure(false);
       return;
     }
     if (key === "Tab") { event.preventDefault(); step(event.shiftKey ? -1 : 1); return; }
-    if (key === "-" || key === "_") { event.preventDefault(); notAGuest(); return; }
+    // Shift+minus sweeps the stack, matching Shift+Enter, Shift+Esc and {.
+    // It used to be a plain alias for the single-face form.
+    if (key === "-") { event.preventDefault(); notAGuest(false); return; }
+    if (key === "_") { event.preventDefault(); notAGuest(true); return; }
+    if (key === "[") { event.preventDefault(); tooBlurry(false); return; }
+    if (key === "{") { event.preventDefault(); tooBlurry(true); return; }
     if (key === "=" || key === "+") { event.preventDefault(); cycleZoom(); return; }
     if (key === "?" || key === "/") { event.preventDefault(); els.help.classList.add("open"); return; }
-    if (key === "\\") { event.preventDefault(); saveNames(true); return; }
+    if (key === "\\") { event.preventDefault(); saveNamesToStack(); return; }
     if (query.trim() === "" && (key === "p" || key === "P")) { event.preventDefault(); openRoster(); return; }
   });
 
@@ -1441,8 +1776,12 @@ const clientJs = String.raw`
   }
   els.saveButton.addEventListener("click", () => saveNames(false));
   els.applyGroup.addEventListener("click", () => saveNames(true));
-  els.notGuest.addEventListener("click", notAGuest);
-  els.notSure.addEventListener("click", notSure);
+  els.notGuest.addEventListener("click", () => notAGuest(false));
+  els.notGuestGroup.addEventListener("click", () => notAGuest(true));
+  els.tooBlurry.addEventListener("click", () => tooBlurry(false));
+  els.tooBlurryGroup.addEventListener("click", () => tooBlurry(true));
+  els.notSure.addEventListener("click", () => notSure(false));
+  els.notSureGroup.addEventListener("click", () => notSure(true));
   els.removeButton.addEventListener("click", removeName);
   els.changeButton.addEventListener("click", reopen);
   els.undoButton.addEventListener("click", undo);
@@ -1481,10 +1820,14 @@ export function renderNamingPage(model) {
     ["Enter", "that is them, save and go to the next face"],
     ["1 … 9", "pick that name from the list and save"],
     ["↑ ↓", "move up and down the list"],
-    ["Shift+Enter or \\", "same person in every photo in the row below"],
+    ["Shift+Enter or \\", "same person in every photo in the row below; with an empty box it reuses the name already on the row"],
     ["Shift+1 … 9 or ,", "add the name but stay, to name a second person"],
     ["Esc", "clear what you typed; on an empty box, mark not sure"],
+    ["Shift+Esc", "not sure, all of them in the row below"],
     ["− (minus)", "not a wedding guest"],
+    ["_  (Shift+minus)", "not a guest, all of them in the row below"],
+    ["[", "too blurry or too small to name, do not ask again"],
+    ["{  (Shift+[)", "too blurry, all of them in the row below"],
     ["= (equals)", "close up / with surroundings / whole photo"],
     ["Tab / Shift+Tab", "next and previous face without answering"],
     ["⌘Z", "undo the last answer"],
@@ -1566,7 +1909,11 @@ export function renderNamingPage(model) {
           <button type="button" class="primary wide" id="saveButton">That's them<kbd>Enter</kbd></button>
           <button type="button" class="gold wide" id="applyGroup" hidden>Same person in all<kbd>\\</kbd></button>
           <button type="button" id="notSure">Not sure<kbd>Esc</kbd></button>
+          <button type="button" id="notSureGroup" hidden>Not sure, all<kbd>&#8679;Esc</kbd></button>
           <button type="button" class="warn" id="notGuest">Not a guest<kbd>&minus;</kbd></button>
+          <button type="button" class="warn" id="notGuestGroup" hidden>Not a guest, all<kbd>_</kbd></button>
+          <button type="button" id="tooBlurry">Too blurry<kbd>[</kbd></button>
+          <button type="button" id="tooBlurryGroup" hidden>Too blurry, all<kbd>{</kbd></button>
           <button type="button" id="undoButton" disabled>Undo<kbd>&#8984;Z</kbd></button>
           <button type="button" class="warn" id="removeButton" hidden>A name here is wrong</button>
           <button type="button" id="prevButton">Back</button>

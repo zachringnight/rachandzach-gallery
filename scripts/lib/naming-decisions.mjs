@@ -235,7 +235,7 @@ export class NamingSession {
       return item;
     });
     invariant(
-      ["tag", "not-a-guest", "skip", "remove", "reopen"].includes(action),
+      ["tag", "not-a-guest", "skip", "too-blurry", "remove", "reopen"].includes(action),
       `unknown action ${action}`,
     );
 
@@ -461,6 +461,7 @@ export class NamingSession {
       facesNamed: entries.filter((entry) => entry.action === "tag").length,
       notAGuest: entries.filter((entry) => entry.action === "not-a-guest").length,
       notSure: entries.filter((entry) => entry.action === "skip").length,
+      tooBlurry: entries.filter((entry) => entry.action === "too-blurry").length,
       namesRemoved: entries.filter((entry) => entry.action === "remove").length,
     };
   }

@@ -38,6 +38,9 @@ async function main() {
     `Wrote ${relative(repoRoot, modelFile)}`,
     `Faces to name: ${model.counts.items}` +
       ` (${model.counts.missing} untagged photos, ${model.counts.partial} extra faces)`,
+    `  from recurring clusters: ${model.counts.fromClusters} new faces the June CSVs never queued`,
+    `  left out as too small or blurred to recognize: ${model.counts.droppedUnrecognizable}` +
+      ` (soft faces stacked with a sharp one stay, since naming the stack tags them free)`,
     `Look-alike rows: ${model.counts.groups} covering ${model.counts.grouped} faces`,
     `Guest list: ${model.counts.roster} names`,
   ];
@@ -52,6 +55,12 @@ async function main() {
   }
   if (model.counts.undisplayable) {
     lines.push(`Skipped ${model.counts.undisplayable} rows with no image to show`);
+  }
+  if (model.counts.fromClustersUncatalogued) {
+    lines.push(
+      `Skipped ${model.counts.fromClustersUncatalogued} cluster faces` +
+        " whose photos are not in the catalog",
+    );
   }
   lines.push("", "To actually name faces, run: npm run tag");
   process.stdout.write(lines.join("\n") + "\n");

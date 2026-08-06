@@ -57,22 +57,41 @@ deploy rather than in a local harness.
 
 ## Waiting on a person, not an engineer
 
-**Automatic matching is finished.** As of 2026-08-05 both audits return zero
-untagged candidates, so nothing below is waiting on the model. Every remaining
-name needs somebody who recognizes the face.
+**Automatic matching is finished.** Both audits converge to nothing new at the
+calibrated thresholds, so nothing below is waiting on the model. Every
+remaining name needs somebody who recognizes the face. Each naming round does
+feed the next: rebuilding signatures on the evening of 2026-08-05 took
+resolution from 136 to 142 of 155 tagged people and surfaced 6 fresh
+candidates in the widened sweep, rendered to
+`metadata/faces/review-2026-08-06/`.
 
-- **Rachel or Zach, highest leverage**: name the 91 same-face clusters.
-  `npm run faces:recurring -- --report metadata/faces/unresolved-cluster-review.json`.
-  One name applies to the whole cluster: 91 decisions reach 381 faces across
-  244 photographs, and the largest single cluster is 20 faces. Export the
-  decisions, then `npm run faces:recurring:apply -- <file>` (read-only first,
-  `--write` after). Prefer this over `npm run tag`: it is roughly a quarter the
-  decisions for the same archive.
-- **Rachel**: name the remaining 329 individual faces (`npm run tag`, see
-  `docs/FACE_TAGGING_TOOL.md`), then run the post-session commands in that doc.
-  Do this after the clusters, since naming a cluster removes faces from it. The
-  signature rebuilds did not shrink this queue and cannot: it is built from the
-  tracked unresolved/partial crop CSVs plus the catalog, never from the model.
+**Use the contact sheets, not the browser tagger.** See
+`docs/FACE_TAGGING_TOOL.md`. On 2026-08-05 the sheets named 90 stacks and 264
+faces in one evening; a browser session of similar length managed 107
+single-face decisions. Answers are called out as plain text and applied in
+batches with validation.
+
+- **Rachel or Zach, highest leverage**: name the remaining **33 nameless
+  stacks, 152 faces**, on 3 contact sheets in `metadata/faces/stack-sheets/`
+  (re-render any time with `node scripts/face/render-stack-sheets.mjs`). The
+  sheets carry a suggestion per stack drawn from who is already tagged in the
+  same photographs, plus the list of **32 seated guests who still appear in no
+  photograph** across the header. Those two lists are largely the same people:
+  Chris Bishop came off the second list by naming a stack on the first.
+- **Zach**: confirm or deny the 6 candidates in
+  `metadata/faces/review-2026-08-06/sheet-001.jpg`, surfaced by the rebuild
+  after the evening's naming. One is Chris Bishop, who had no profile at all
+  until tonight.
+- **Zach**: `node scripts/face/deduce-unmatched-tags.mjs` found **87
+  photographs** where a name a human already applied has exactly one unmatched
+  face left, so the face is that person by elimination. Worth a review pass:
+  it is the only route to a first face for Lisa Caplan, Max Gordichuk and
+  Maura Keith-Gutierrez, none of whom the recognition side can find today. Not
+  applied, because for a person who already has a profile, being left over
+  means their own profile disagreed with the deduction.
+- **Rachel**: the individual-face queue behind `npm run tag` is the long tail
+  and should come last. It is built from the tracked crop CSVs plus the
+  catalog, so signature rebuilds never shrink it.
 - ~~Identify the woman in `metadata/faces/mystery-woman.jpg`~~ **DONE
   2026-08-05**: she is Dominique Caron. Her five tags are wave 13, the rebuild
   separated the couple's profiles, and the `mike-caron` correction retired

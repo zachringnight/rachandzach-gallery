@@ -352,6 +352,56 @@ the password-gate release. One caveat worth keeping: with the whole site
 gated, `home`, `enter`, `enter-error` and `404` all render essentially the
 same screen, so four of the six visual baselines now cover one page.
 
+### The naming evening (2026-08-05)
+
+The browser tagger was the wrong instrument and was replaced mid-session. It
+asks one face at a time; an evening of it produced 107 single-face decisions.
+Rendering the same queue as numbered contact sheets, answered in batches as
+plain text, produced **90 stacks and 264 faces** in about the same time. The
+sheets are now the documented first choice (`docs/FACE_TAGGING_TOOL.md`); the
+tagger remains for faces that need their surrounding photograph to answer.
+
+What made the sheets work is not the format but what they print beside each
+face: **who is already tagged in that stack's photographs**. Unresolved stacks
+exist precisely because no saved profile matched, so the model has no
+suggestion to offer, but "standing beside two Myerses" is usually enough for a
+human. The sheets now show only stacks nobody has named, and carry the list of
+seated guests who appear in no photograph, because those two sets are largely
+the same people. Chris Bishop, Lauren Wasmuth's husband, moved from the second
+list to the first that way, gaining 5 photographs and his first face profile.
+
+Ambiguity is resolved by measurement before it is ever handed back. A first
+name matching several guests is settled by scoring the stack against each
+candidate's saved profile and by co-occurrence, which decided 7 of 11 outright
+(Emily Myers at 0.93, Alex Kamins at 0.91 while Alex Dubov sat in the same
+frame at 0.06). Only genuinely undecidable ones go back to a person.
+
+`scripts/face/deduce-unmatched-tags.mjs` came out of this session: it reads
+names a human already put on a photograph and asks which face they belong to.
+Where exactly one name and one face are unmatched, the face is that person by
+elimination, no model similarity involved. It found **87 such photographs** and
+is the only route to a first face for three guests the recognition side cannot
+find at all. It writes nothing; the candidates await review.
+
+Also corrected: six display names that existed only in `/admin/faces` and had
+never reached the local catalog, the tagger roster, or the photographs' own
+embedded metadata (Elizabeth Adame, Emily Cronin-Stillman, Maddie Lurie, Maura
+Keith-Gutierrez, Pat Burton, Ron Harris). Guests already saw the right names,
+because the overrides table wins at render time; everything underneath
+disagreed, including the metadata that outlives this site. The live base rows
+were aligned to the same values, so `sync-catalog-overlays.mjs` stops
+objecting.
+
+**One incident worth recording.** The first version of
+`scripts/face/merge-person.mjs` wrote a column that does not exist (`status`
+instead of `confidence`), ignored the resulting error, and deleted the old
+rows anyway, destroying three live tags. It was caught by the script's own
+verification step (`joan-auwerter now has 0 rows`) and all three were
+restored within minutes; the table is back to its expected count. The lesson
+is in the code now: ordering the insert before the delete was never the
+protection, checking that the insert landed is, and the merge refuses to
+delete anything until it has confirmed the replacement row exists.
+
 ### The "Brend Wasserman" name chain, resolved (2026-08-05)
 
 The seating chart's truncated spelling had reached the roster, the catalog, the

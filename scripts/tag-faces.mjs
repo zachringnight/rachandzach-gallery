@@ -177,6 +177,9 @@ async function main() {
       `Faces to name: ${model.counts.items}` +
         (alreadyDone ? `  (${alreadyDone} already answered)` : ""),
       `Look-alike rows: ${model.counts.groups} covering ${model.counts.grouped} faces, biggest first`,
+      model.counts.droppedUnrecognizable
+        ? `Left out: ${model.counts.droppedUnrecognizable} faces too small or blurred to recognize`
+        : null,
       `Guest list: ${model.counts.roster} names`,
       model.counts.uncatalogued
         ? `Skipped ${model.counts.uncatalogued} Sneak Peek duplicates that are no longer in the catalog`
@@ -207,6 +210,7 @@ async function main() {
         `  names added:     ${summary.namesAdded}`,
         `  not a guest:     ${summary.notAGuest}`,
         `  not sure:        ${summary.notSure}`,
+        `  too blurry:      ${summary.tooBlurry}`,
         `  names removed:   ${summary.namesRemoved}`,
         "",
         "Fold them into the local catalog with:",
