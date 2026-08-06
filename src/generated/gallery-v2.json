@@ -85814,7 +85814,9 @@
       "orientation": "portrait",
       "eventSlug": "reception",
       "capturedAt": "2025-07-19T19:54:27-07:00",
-      "peopleSlugs": [],
+      "peopleSlugs": [
+        "zach-soskin"
+      ],
       "keywords": [
         "Wedding"
       ],
@@ -98171,7 +98173,9 @@
       "orientation": "portrait",
       "eventSlug": "dancing",
       "capturedAt": "2025-07-19T21:07:30-07:00",
-      "peopleSlugs": [],
+      "peopleSlugs": [
+        "todd-lurie"
+      ],
       "keywords": [
         "Wedding"
       ],
@@ -130570,7 +130574,7 @@
     {
       "slug": "todd-lurie",
       "name": "Todd Lurie",
-      "photoCount": 25
+      "photoCount": 26
     },
     {
       "slug": "tom-myers",
@@ -130600,7 +130604,7 @@
     {
       "slug": "zach-soskin",
       "name": "Zach Soskin",
-      "photoCount": 656
+      "photoCount": 657
     }
   ],
   "events": [

@@ -24,9 +24,9 @@
     "savedCropAnchorCount": 26,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 1142,
-    "candidatesApproved": 962,
-    "candidatesRejected": 180,
+    "candidatesReviewed": 1150,
+    "candidatesApproved": 964,
+    "candidatesRejected": 186,
     "reviewWaves": [
       {
         "wave": 1,
@@ -536,7 +536,9 @@
         "manualConfirmation": true,
         "candidatesReviewed": 5,
         "candidatesApproved": 5,
-        "candidatesRejected": 0
+        "candidatesRejected": 0,
+        "minSimilarity": 1,
+        "minMargin": 0
       },
       {
         "wave": 15,
@@ -557,6 +559,50 @@
         "candidatesReviewed": 5,
         "candidatesApproved": 5,
         "candidatesRejected": 0
+      },
+      {
+        "wave": 15,
+        "auditFingerprint": "f6ca639ad3fc214c034b118c8b5dc02ee9068fb2607e2f045dea3c6639b36ee3",
+        "reviewType": "Photographs carrying no tags at all, with one clear foreground face",
+        "reviewMethod": "Every photograph in the archive with zero names was checked for a face big and sharp enough to be a subject rather than background (at least 6 percent of the frame, detector 0.75, focus 60). 217 photographs have no tags; 32 contain any face; 8 met the bar and were rendered as one contact sheet. Zach named two and ruled out six. Two of the six are not people at all: a poster on a wall and a member of the catering staff.",
+        "manualConfirmation": true,
+        "photosWithNoTags": 217,
+        "photosWithAnyFace": 32,
+        "candidatesReviewed": 8,
+        "candidatesApproved": 2,
+        "candidatesRejected": 6,
+        "rejections": [
+          {
+            "number": 2,
+            "path": "02 Getting Ready/rachelzach-3.jpg",
+            "reason": "a poster in the background, not a person"
+          },
+          {
+            "number": 8,
+            "path": "14 Film/rachelzachfilm-38.jpg",
+            "reason": "a server, not a wedding guest"
+          },
+          {
+            "number": 1,
+            "path": "01 Day 1/rachelzachday1-98.jpg",
+            "reason": "not recognized"
+          },
+          {
+            "number": 3,
+            "path": "07 Cocktail Hour/rachelzach-553.jpg",
+            "reason": "not recognized"
+          },
+          {
+            "number": 4,
+            "path": "07 Cocktail Hour/rachelzach-572.jpg",
+            "reason": "not recognized"
+          },
+          {
+            "number": 6,
+            "path": "10 Dancing/rachelzach-1004.jpg",
+            "reason": "blurred background face"
+          }
+        ]
       }
     ]
   },
@@ -11190,6 +11236,28 @@
       "reviewWave": 16,
       "reviewFingerprint": "f6ca639ad3fc214c034b118c8b5dc02ee9068fb2607e2f045dea3c6639b36ee3",
       "contextEvidence": "Rachel identified this face as Chris Bishop while looking at 07 Cocktail Hour/rachelzach-640.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "c3269e5da26d3990530e208cdd2eced9",
+      "path": "09 Reception/rachelzach-873.jpg",
+      "personSlug": "zach-soskin",
+      "displayName": "Zach Soskin",
+      "faceIndex": 0,
+      "reviewWave": 15,
+      "confirmationKind": "human-face-naming",
+      "reviewFingerprint": "9e536d5fc71fddff3fe4fef2139a6a667f54cb50106bad11cbcf71dd35aee985",
+      "contextEvidence": "Zach identified this face as Zach Soskin on the contact sheet of photographs carrying no tags at all. No model score was used: this photograph had no names on it, so nothing could be inferred from them."
+    },
+    {
+      "photoId": "5970a23c6411103b78ea0106d06f22c5",
+      "path": "10 Dancing/rachelzach-1033.jpg",
+      "personSlug": "todd-lurie",
+      "displayName": "Todd Lurie",
+      "faceIndex": 1,
+      "reviewWave": 15,
+      "confirmationKind": "human-face-naming",
+      "reviewFingerprint": "9e536d5fc71fddff3fe4fef2139a6a667f54cb50106bad11cbcf71dd35aee985",
+      "contextEvidence": "Zach identified this face as Todd Lurie on the contact sheet of photographs carrying no tags at all. No model score was used: this photograph had no names on it, so nothing could be inferred from them."
     }
   ]
 }
