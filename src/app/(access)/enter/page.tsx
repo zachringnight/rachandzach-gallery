@@ -17,7 +17,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const DEFAULT_DESTINATION = "/photos";
+// Sign-in lands on Find me, not the 1,721-photo archive: choosing your name
+// is the primary guest job, and the full wall is one click away from there.
+// A sanitized ?next= deep link still wins (sanitizeNextPath below), so a
+// shared /photos or person URL keeps landing exactly where it pointed.
+const DEFAULT_DESTINATION = "/my-weekend";
 
 const ERROR_MESSAGES: Record<string, string> = {
   invalid:

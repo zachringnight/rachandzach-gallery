@@ -13,6 +13,12 @@ export class SelectionPreparationError extends Error {
 
 export interface FetchSelectionOptions {
   signal?: AbortSignal;
+  /** Called just before each bounded signing POST with the 1-based index of
+   *  the batch about to be prepared and the total batch count, so a caller
+   *  can show "Preparing 2 of 4" while a large selection is being signed
+   *  sequentially. Fires exactly once per batch, including a single-batch
+   *  selection (as 1 of 1). */
+  onBatchStart?: (batchIndex: number, batchCount: number) => void;
 }
 
 function chunks<T>(items: T[], size: number): T[][] {
@@ -45,7 +51,10 @@ export async function fetchSelectionDownloads(
   const items: OriginalDownload[] = [];
   let estimatedBytes = 0;
 
-  for (const batch of chunks(ids, MAX_SELECTION_ITEMS)) {
+  const batches = chunks(ids, MAX_SELECTION_ITEMS);
+  for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+    const batch = batches[batchIndex];
+    options.onBatchStart?.(batchIndex + 1, batches.length);
     const response = await fetch("/api/downloads/selection", {
       method: "POST",
       headers: { "content-type": "application/json" },

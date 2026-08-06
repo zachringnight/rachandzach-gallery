@@ -3032,6 +3032,22 @@ button {
   color: var(--rz-ink);
 }
 
+/* "+N" summary of the chips collapsed below 720px. Static text, not a
+ * control, so it carries no hover state. Hidden on desktop, where every
+ * chip is shown. */
+.atlas-active-filter-overflow {
+  display: none;
+  min-height: 2.25rem;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--rz-ink);
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+  font-size: 0.72rem;
+  font-weight: 620;
+}
+
 .atlas-filter-groups {
   display: none;
   grid-template-columns:
@@ -5024,6 +5040,36 @@ button {
   }
 }
 
+/*
+ * Touch ergonomics. A phone photo tile is ~132px tall; three permanent 36px
+ * overlay buttons on it made mis-taps that download instead of open near
+ * certain. On coarse pointers the card keeps a single thumb-sized action,
+ * Favorite, and per-photo download lives in the viewer, where the control is
+ * larger and the guest is already looking at the one photograph they mean.
+ * 2.75rem is the 44px Apple HIG touch floor.
+ */
+@media (pointer: coarse) {
+  .atlas-photo-favorite,
+  .atlas-photo-select {
+    min-width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .atlas-photo-download {
+    display: none;
+  }
+
+  .atlas-lightbox-icon,
+  .atlas-lightbox-control {
+    min-width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .atlas-lightbox-arrow {
+    width: 2.75rem;
+  }
+}
+
 @media (max-width: 1040px) {
   .atlas-filter-rail {
     position: sticky;
@@ -5142,10 +5188,20 @@ button {
     display: none;
   }
 
-  /* Active filters stay visible through the Filters badge and panel; the
-   * chips would otherwise crush the single-row bar at phone widths. */
-  .atlas-active-filters {
+  /* Active filters collapse to one line so the single-row bar survives
+   * phone widths: the first chip stays tappable (ellipsized, capped at
+   * 45vw), the rest fold into the static "+N" indicator, and the full
+   * set stays reachable through the Filters panel. */
+  .atlas-active-filter {
+    max-width: 45vw;
+  }
+
+  .atlas-active-filter + .atlas-active-filter {
     display: none;
+  }
+
+  .atlas-active-filter-overflow {
+    display: inline-flex;
   }
 
   .atlas-filter-groups {
@@ -5172,6 +5228,27 @@ button {
 
   .atlas-light-bar {
     top: 9.7rem;
+  }
+
+  /* On a phone the sticky chapter tab and Light Bar float over the
+   * photographs, and together with the header they cost about a quarter of
+   * a 667px viewport. While the guest is actively scrolling down they fade
+   * out of the way; the first upward gesture (or nearing the top) brings
+   * them back. Opacity only, never display: both are sticky overlays, so
+   * nothing reflows and the virtualized grid's offset math is untouched.
+   * The data attribute is set by useHideOnScrollDown via GalleryShell. */
+  .atlas-chapter,
+  .atlas-light-bar {
+    transition:
+      opacity var(--rz-dur-fast) ease,
+      transform var(--rz-dur-fast) ease;
+  }
+
+  .atlas-gallery-shell[data-mobile-chrome="hidden"] .atlas-chapter,
+  .atlas-gallery-shell[data-mobile-chrome="hidden"] .atlas-light-bar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.45rem);
   }
 
   .atlas-selection-bar {

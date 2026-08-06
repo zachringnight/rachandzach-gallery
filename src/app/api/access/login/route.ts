@@ -34,7 +34,7 @@ import {
 
 export const runtime = "nodejs";
 
-const DEFAULT_DESTINATION = "/photos";
+const DEFAULT_DESTINATION = "/my-weekend";
 
 function clientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");

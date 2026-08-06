@@ -64,13 +64,20 @@ export function PersonPicker({
 
   if (people.length === 0) return null;
 
+  // The two variants do different jobs, so they announce different jobs. The
+  // chip variant narrows the gallery ("Filter by person"); the face variant is
+  // the Find me surface, where a guest is locating themselves, and hearing
+  // "Filter by person" there misstates the page's purpose entirely.
+  const purposeLabel = faces ? "Choose your name" : "Filter by person";
+  const heading = faces ? "Find your name" : "People";
+
   return (
     <section
-      aria-label="Filter by person"
+      aria-label={purposeLabel}
       className="atlas-picker atlas-person-picker"
       data-variant={variant}
     >
-      <h2>People</h2>
+      <h2>{heading}</h2>
       <label className="sr-only" htmlFor="person-search">
         Search people
       </label>

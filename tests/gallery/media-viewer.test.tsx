@@ -154,6 +154,23 @@ describe("photo surfaces", () => {
     ).toBeNull();
   });
 
+  it("deep-links keyword chips to the archive's Moment Search, not /my-weekend", () => {
+    // /photos reads plain "q" as the Moment Search seed and runs it on load;
+    // /my-weekend renders its search panel below the guest's whole gallery
+    // with no scroll-to, so a chip pointed there appeared to do nothing.
+    render(
+      <Lightbox
+        photo={{ ...photo("keyworded"), keywords: ["sunset kiss"] }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const chip = screen.getByRole("link", { name: "sunset kiss" });
+    expect(chip.getAttribute("href")).toBe(
+      `/photos?q=${encodeURIComponent("sunset kiss")}`,
+    );
+  });
+
   it("pages on a horizontal touch swipe and ignores vertical or mouse drags", () => {
     const onPrev = vi.fn();
     const onNext = vi.fn();
