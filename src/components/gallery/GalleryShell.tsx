@@ -20,6 +20,7 @@ import {
 import { FilterBar } from "@/components/gallery/FilterBar";
 import { LightBar } from "@/components/gallery/LightBar";
 import { SelectionBar } from "@/components/gallery/SelectionBar";
+import { useHideOnScrollDown } from "@/components/gallery/useHideOnScrollDown";
 import { useSelection } from "@/components/gallery/useSelection";
 import {
   VirtualPhotoGrid,
@@ -494,8 +495,15 @@ export function GalleryShell({
     }
   }, [selectedIds]);
 
+  // Phone widths only (CSS-scoped): the chapter strip and Light Bar step
+  // aside while the guest scrolls down into the photographs.
+  const chromeHidden = useHideOnScrollDown();
+
   return (
-    <div className="atlas-gallery-shell">
+    <div
+      className="atlas-gallery-shell"
+      data-mobile-chrome={chromeHidden ? "hidden" : "shown"}
+    >
       {heading ? (
         <header className="atlas-page-bar">
           <h1>{heading}</h1>

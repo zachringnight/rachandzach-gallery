@@ -56,6 +56,21 @@ export function FilterBar({
 }: FilterBarProps) {
   const [open, setOpen] = useState(false);
   const [momentOpen, setMomentOpen] = useState(false);
+
+  /**
+   * Filter-group changes route through here so the panel can decide
+   * whether to stay open. Picking a person or an event answers the
+   * guest's question, so the panel closes to reveal the grid changing
+   * (on a phone it covers most of the screen and "nothing happened"
+   * reads as broken). Orientation, source, and sort are refinements,
+   * so they keep the panel open for further tuning.
+   */
+  const applyGroupChange = (patch: Partial<GalleryFilterState>) => {
+    onChange(patch);
+    if ("person" in patch || "event" in patch) {
+      setOpen(false);
+    }
+  };
   const activeFilterCount = [
     filters.q,
     filters.person,
@@ -150,6 +165,14 @@ export function FilterBar({
                 <X aria-hidden="true" size={13} strokeWidth={1.7} />
               </button>
             ))}
+            {activeFilters.length > 1 ? (
+              /* Below 720px only the first chip fits, so the rest fold
+               * into this static count; the full set stays reachable
+               * through the Filters panel. Desktop hides it in CSS. */
+              <span className="atlas-active-filter-overflow">
+                +{activeFilters.length - 1}
+              </span>
+            ) : null}
           </div>
         ) : null}
 
@@ -258,12 +281,12 @@ export function FilterBar({
             <Toggle
               label="Chronological"
               active={filters.sort === "weekend"}
-              onClick={() => onChange({ sort: "weekend" })}
+              onClick={() => applyGroupChange({ sort: "weekend" })}
             />
             <Toggle
               label="Newest"
               active={filters.sort === "newest"}
-              onClick={() => onChange({ sort: "newest" })}
+              onClick={() => applyGroupChange({ sort: "newest" })}
             />
           </div>
         </fieldset>
@@ -271,7 +294,7 @@ export function FilterBar({
         <EventPicker
           events={facets.events}
           selected={filters.event}
-          onSelect={(event) => onChange({ event })}
+          onSelect={(event) => applyGroupChange({ event })}
         />
 
         <fieldset>
@@ -285,7 +308,7 @@ export function FilterBar({
                 label={option.label}
                 active={filters.orientation === option.value}
                 onClick={() =>
-                  onChange({
+                  applyGroupChange({
                     orientation:
                       filters.orientation === option.value ? null : option.value,
                   })
@@ -306,7 +329,7 @@ export function FilterBar({
                 label={option.label}
                 active={filters.source === option.value}
                 onClick={() =>
-                  onChange({
+                  applyGroupChange({
                     source:
                       filters.source === option.value ? null : option.value,
                   })
@@ -319,7 +342,7 @@ export function FilterBar({
         <PersonPicker
           people={facets.people}
           selected={filters.person}
-          onSelect={(person) => onChange({ person })}
+          onSelect={(person) => applyGroupChange({ person })}
         />
       </div>
 

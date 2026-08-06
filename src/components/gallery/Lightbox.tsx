@@ -650,7 +650,7 @@ export function Lightbox({
             {photo.keywords.map((keyword) => (
               <li key={keyword}>
                 {featureFlags.momentSearch ? (
-                  <Link href={`/my-weekend?q=${encodeURIComponent(keyword)}`}>
+                  <Link href={`/photos?q=${encodeURIComponent(keyword)}`}>
                     {keyword}
                   </Link>
                 ) : (

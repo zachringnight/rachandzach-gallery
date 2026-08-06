@@ -13,22 +13,30 @@ the site-wide password gate (`4f3bd22`).
 These came out of a guest-UX audit of the whole `(guest)` surface. Most guests
 open this from a text message on a phone, and many are older relatives.
 
-| Item | Where | Why it matters |
-|---|---|---|
-| The filter panel never closes after a selection | `src/components/gallery/FilterBar.tsx` (`open` is only toggled by the Filters button; `onChange` does not close it) | On a phone the panel covers ~68% of the screen. Tap "The Wedding", nothing visibly changes, tap again. Reads as broken. Close on a `person`/`event` change; keep it open for orientation/sort, which are refinements. |
-| Active-filter chips hidden below 720px | `globals.css`, `.atlas-active-filters { display: none }` | The only signal a filter is applied is a numeric badge. A guest arriving from a name link cannot see whose photos they are looking at, or get back to everything. Keep the first chip with `max-width: 45vw`, collapse the rest to "+2". |
-| Tap targets under 44px | Photo card controls 36px; filter actions 34px; lightbox controls 38px, arrows 32px | Photo tiles are ~132px tall on a phone with two 36px overlay buttons, so mis-taps that trigger a download instead of opening are near certain. Consider showing only Favorite on touch and moving per-card Download into the lightbox. |
-| No guest-scoped `not-found` | `src/app/(guest)/` has none, so `notFound()` in `[personSlug]` falls through to the public 404 | Person URLs are now guessable and typeable by design, so mistypes are the expected failure, not an edge case. A signed-in guest gets a different header, different nav, and no route back to Find me. Add `src/app/(guest)/not-found.tsx` with a link to `/my-weekend`. |
-| Sticky chrome eats ~25% of a phone viewport | `VirtualPhotoGrid.tsx` hard-codes `VISIBLE_TOP_OFFSET = 170` (header + filter rail + chapter strip + light bar) | On a 667px screen that is a quarter of the viewport before a single photograph. Hide the chapter strip and light bar on scroll-down below 720px. |
+**All five shipped 2026-08-05** in the guest-UX mobile pass, along with the
+whole "Guest journey" section below. What each became:
 
-## Guest journey
+| Item | Resolution |
+|---|---|
+| Filter panel never closed after a selection | Closes on a `person`/`event` change (including clearing one); stays open for orientation, source, and sort refinements. One handler in `FilterBar.tsx` owns the policy. |
+| Active-filter chips hidden below 720px | First chip shows at `max-width: 45vw`, the rest collapse to a non-interactive "+N". Desktop pixel-identical. |
+| Tap targets under 44px | On coarse pointers the card keeps one thumb-sized action (Favorite, 44px); per-card Download is viewer-only, where the control is also now 44px, as are the lightbox controls and arrows. |
+| No guest-scoped `not-found` | `src/app/(guest)/not-found.tsx`: guest header preserved, primary link to Find me, secondary to the archive. Unit-tested; it cannot be visually snapshotted because `[personSlug]` needs the live database before it can 404. |
+| Sticky chrome eats ~25% of a phone viewport | Below 720px the chapter tab and Light Bar fade out while scrolling down and return on the first upward gesture (`useHideOnScrollDown`, opacity-only so the virtualized grid's offset math is untouched). |
 
-| Item | Where | Why it matters |
-|---|---|---|
-| Sign-in lands on the full archive | `src/app/(access)/enter/page.tsx`, `DEFAULT_DESTINATION = "/photos"` | Everything else points at Find me first. Change to `/my-weekend`; deep links via `?next=` still win, so shared URLs are unaffected. |
-| The download button wall | `src/components/personalization/DownloadMyWeekendButton.tsx` renders one Download **and** one Save per 50-photo batch | A guest in 180 photos sees eight buttons at the emotional peak of the product. `DownloadSelectionButton.runBatches` already sequences batches behind one click; lift the chunking inside it so the caller passes all ids and the guest sees one button and one progress bar. |
-| Lightbox keyword chips deep-link somewhere that hides the result | `Lightbox.tsx` links keywords to `/my-weekend?q=…`; the search panel sits *below* the guest's entire gallery with no scroll-to | Tapping "sunset" appears to do nothing. Point at `/photos?q=…` instead. |
-| `PersonPicker` announces the wrong purpose on Find me | `PersonPicker.tsx` hard-codes `aria-label="Filter by person"` and an `<h2>People</h2>` in both variants | A screen-reader user hears "Filter by person" on a page whose job is "tell us who *you* are". Derive label and heading from `variant`. |
+The one caveat: the gallery grid renders only against the live database, so
+the phone-width chrome and chip changes shipped on unit tests plus the green
+visual suite of the data-free pages, and were eyeballed on production after
+deploy rather than in a local harness.
+
+## Guest journey (shipped 2026-08-05, same pass)
+
+| Item | Resolution |
+|---|---|
+| Sign-in landed on the full archive | `DEFAULT_DESTINATION` is `/my-weekend` in both the enter page and the login route; sanitized `?next=` deep links still win, so shared URLs are unaffected. |
+| The download button wall | One Download and one Save regardless of count; the signing loop was already sequential per 50 under the hood, so the wall was pure UI. Multi-batch runs read "Preparing 2 of 4" on the one button. The orphaned `weekend-download-batches` module is deleted. |
+| Lightbox keyword chips deep-linked somewhere that hid the result | Chips point at `/photos?q=…`, and plain `q` was added to the photos page's `GRID_PARAM_KEYS` so the deep link actually mounts the grid and runs Moment Search instead of stopping at the browse landing. |
+| `PersonPicker` announced the wrong purpose on Find me | The Find me variant says "Choose your name" / "Find your name"; the gallery filter variant keeps "Filter by person" / "People". |
 
 ## Technical debt
 

@@ -325,7 +325,7 @@ test.describe("the real login endpoint, database unreachable", () => {
 
 test.describe("known gaps requiring a live database (out of scope here)", () => {
   test.fixme(
-    "a correct password logs a guest in via the real UI and lands on /photos",
+    "a correct password logs a guest in via the real UI and lands on /my-weekend",
     async () => {
       // UNBLOCK: provide a real Supabase project (or `supabase start`, which
       // needs Docker -- unavailable in this environment) with
@@ -334,7 +334,8 @@ test.describe("known gaps requiring a live database (out of scope here)", () => 
       // SUPABASE_SERVICE_ROLE_KEY / NEXT_PUBLIC_SUPABASE_* at it, set
       // GALLERY_PASSWORD_HASH to a hash of a known test password, then
       // drive POST /api/access/login with that password and assert the
-      // redirect lands on /photos with a rz_gallery_session cookie set.
+      // redirect lands on /my-weekend (the /enter form's default next) with
+      // a rz_gallery_session cookie set.
     },
   );
 

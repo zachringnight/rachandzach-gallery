@@ -57,6 +57,9 @@ function first(value: string | string[] | undefined): string | null {
  */
 const GRID_PARAM_KEYS = [
   GALLERY_SEARCH_URL_PARAM,
+  // Plain `q` is Moment Search's param: keyword chips in the viewer deep-link
+  // to /photos?q=..., and the browse landing would swallow that query.
+  "q",
   "person",
   "event",
   "orientation",

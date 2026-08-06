@@ -32,7 +32,11 @@ export interface DownloadSelectionButtonProps {
 
 type Status =
   | { phase: "idle" }
-  | { phase: "requesting" }
+  /** batchIndex/batchCount track fetchSelectionDownloads's sequential signing
+   *  POSTs (one per MAX_SELECTION_ITEMS ids), so a large selection reads as
+   *  one operation ("Preparing 2 of 4...") instead of a silent stall. Both
+   *  are 0 until the first batch starts. */
+  | { phase: "requesting"; batchIndex: number; batchCount: number }
   | { phase: "confirming"; items: OriginalDownload[]; estimatedBytes: number }
   | {
       phase: "streaming";
@@ -67,8 +71,12 @@ const GHOST_BUTTON_CLASS =
 /**
  * Fetches signed originals for a selection and streams a ZIP straight to the
  * guest's device (see src/lib/downloads/stream-zip.ts) -- never through
- * Vercel. On a browser without the File System Access API, once the
- * estimated total exceeds the fallback cap the guest is warned, and
+ * Vercel. Callers pass ALL selected ids in one list, however many: the
+ * server's MAX_SELECTION_ITEMS (50) cap is a per-request signing bound, and
+ * fetchSelectionDownloads already sequences one bounded POST per 50 ids
+ * behind this single control, surfacing "Preparing 2 of 4" style progress on
+ * the button while it does. On a browser without the File System Access API,
+ * once the estimated total exceeds the fallback cap the guest is warned, and
  * confirming splits the selection into multiple bounded, sequential ZIPs
  * (splitIntoBoundedBatches) rather than allocating one giant in-memory Blob.
  * Offers a retry for any items that failed mid-stream, and a cancel button
@@ -146,11 +154,15 @@ export function DownloadSelectionButton({
 
   const handleStart = useCallback(async () => {
     if (photoIds.length === 0) return;
-    setStatus({ phase: "requesting" });
+    setStatus({ phase: "requesting", batchIndex: 0, batchCount: 0 });
     try {
       const selection = await fetchSelectionDownloads(
         photoIds,
         "Could not prepare the download.",
+        {
+          onBatchStart: (batchIndex, batchCount) =>
+            setStatus({ phase: "requesting", batchIndex, batchCount }),
+        },
       );
       if (selection.items.length === 0) {
         setStatus({ phase: "error", message: "Nothing here is available to download yet." });
@@ -302,7 +314,11 @@ export function DownloadSelectionButton({
       onClick={() => void handleStart()}
       disabled={photoIds.length === 0 || status.phase === "requesting"}
     >
-      {status.phase === "requesting" ? "Preparing..." : label}
+      {status.phase === "requesting"
+        ? status.batchCount > 1
+          ? `Preparing ${status.batchIndex} of ${status.batchCount}...`
+          : "Preparing..."
+        : label}
       {photoIds.length > 0 ? ` (${photoIds.length})` : ""}
     </button>
   );

@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { DownloadSelectionButton } from "@/components/downloads/DownloadSelectionButton";
 import { SavePhotosButton } from "@/components/downloads/SavePhotosButton";
-import { chunkPhotoIdsForDownload, partZipFilename } from "./weekend-download-batches";
 
 export interface DownloadMyWeekendButtonProps {
   personName: string;
@@ -25,16 +23,17 @@ export interface DownloadMyWeekendButtonProps {
  * forked download/share logic lives here, and no new API.
  *
  * THE CAP: /api/downloads/selection accepts at most MAX_SELECTION_ITEMS (50)
- * ids per call (src/lib/downloads/contracts.ts), and both
- * DownloadSelectionButton and SavePhotosButton POST every id handed to them
- * to that same endpoint in one request -- so a person tagged in more than 50
- * photos cannot be passed to either as a single 51+ item list without
- * hitting the server's cap. chunkPhotoIdsForDownload
- * (weekend-download-batches.ts, colocated here) splits that person's ids
- * into sequential, clearly-labeled parts ("Download part 1 of 3") up front,
- * and this component renders one DownloadSelectionButton/SavePhotosButton
- * pair per part, each within the cap. No cap bypass: every rendered batch is
- * <= MAX_SELECTION_ITEMS, and nothing merges results across parts.
+ * ids per request (src/lib/downloads/contracts.ts, enforced server-side in
+ * src/lib/downloads/sign-originals.ts). That is a per-request signing bound,
+ * not a per-control one: fetchSelectionDownloads
+ * (src/components/downloads/fetch-selection.ts) already splits any id list
+ * into sequential, bounded POSTs behind a single click, and both child
+ * components go through it. So this component hands the person's ENTIRE
+ * photoIds list to ONE DownloadSelectionButton and ONE SavePhotosButton --
+ * a guest tagged in 180 photos sees two controls, not a wall of eight
+ * per-part buttons -- and each child reports the multi-batch work as one
+ * operation ("Preparing 2 of 4", "Shared 20 of 180, continue?"). No cap
+ * bypass: every POST stays <= MAX_SELECTION_ITEMS.
  *
  * Renders nothing when there is nothing to download: no person's photos
  * loaded yet (My Weekend still fetching) and a person confirmed in zero
@@ -49,42 +48,16 @@ export function DownloadMyWeekendButton({
   photoIds,
   className,
 }: DownloadMyWeekendButtonProps) {
-  const batches = useMemo(() => chunkPhotoIdsForDownload(photoIds), [photoIds]);
-
-  if (batches.length === 0) return null;
-
-  const baseFilename = `${personSlug || "guest"}-photos.zip`;
-  const multipart = batches.length > 1;
+  if (photoIds.length === 0) return null;
 
   return (
-    <div className={className ?? "flex flex-col gap-2"}>
-      {multipart ? (
-        <p className="text-xs text-muted">
-          {personName} has {photoIds.length} photos, more than one download can
-          hold, so the collection comes in {batches.length} parts.
-        </p>
-      ) : null}
-      <div className="flex flex-wrap items-center gap-2">
-        {batches.map((batch, index) => (
-          <div key={index} className="flex flex-wrap items-center gap-2">
-            <DownloadSelectionButton
-              photoIds={batch}
-              label={
-                multipart
-                  ? `Download part ${index + 1} of ${batches.length}`
-                  : `Download ${personName}'s photos`
-              }
-              zipFilename={
-                multipart ? partZipFilename(baseFilename, index, batches.length) : baseFilename
-              }
-            />
-            <SavePhotosButton
-              photoIds={batch}
-              label={multipart ? `Save part ${index + 1} of ${batches.length}` : "Save photos"}
-            />
-          </div>
-        ))}
-      </div>
+    <div className={className ?? "flex flex-wrap items-center gap-2"}>
+      <DownloadSelectionButton
+        photoIds={photoIds}
+        label={`Download ${personName}'s photos`}
+        zipFilename={`${personSlug || "guest"}-photos.zip`}
+      />
+      <SavePhotosButton photoIds={photoIds} />
     </div>
   );
 }
