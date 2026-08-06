@@ -25,38 +25,72 @@ export const dynamic = "force-dynamic";
  */
 const confirmedPerson = cache(async (personSlug: string) => {
   const client = createAdminClient();
-  const exact = await client
-    .from("rachandzach_people")
-    .select("slug, display_name")
-    .eq("slug", personSlug)
-    .maybeSingle();
+  const overrideFor = (slug: string) =>
+    client
+      .from("rachandzach_person_overrides")
+      .select("display_name")
+      .eq("person_slug", slug)
+      .maybeSingle();
+
+  // Override rows are keyed by the catalog slug, and on the exact-match path
+  // that slug IS the requested one, so the override lookup does not actually
+  // depend on the people query. Firing both together collapses the common
+  // case (a guest following the link they were handed) from two round trips
+  // to one. allSettled rather than all: on a miss the speculative override
+  // is discarded unread, failures included, because a nonexistent slug must
+  // still be a plain 404 exactly as it was when the override query never ran
+  // at all. allSettled also keeps both rejections subscribed, so neither
+  // branch can surface as an unhandled rejection while the other settles.
+  const [exactSettled, speculativeSettled] = await Promise.allSettled([
+    client
+      .from("rachandzach_people")
+      .select("slug, display_name")
+      .eq("slug", personSlug)
+      .maybeSingle(),
+    overrideFor(personSlug),
+  ]);
+  if (exactSettled.status === "rejected") throw exactSettled.reason;
+  const exact = exactSettled.value;
   if (exact.error) {
     throw new Error(`Person route query failed: ${exact.error.message}`);
   }
 
-  let person = exact.data;
-  if (!person) {
-    const compact = compactPersonSlug(personSlug);
-    // An empty compact form would match nothing anyway, and scanning for it
-    // is pure waste on the many non-person 404s this dynamic segment catches.
-    if (compact.length === 0) return null;
-    const all = await client
-      .from("rachandzach_people")
-      .select("slug, display_name");
-    if (all.error) {
-      throw new Error(`Person route scan failed: ${all.error.message}`);
+  if (exact.data) {
+    if (speculativeSettled.status === "rejected") {
+      throw speculativeSettled.reason;
     }
-    person =
-      (all.data ?? []).find((row) => compactPersonSlug(row.slug) === compact) ??
-      null;
+    const override = speculativeSettled.value;
+    if (override.error) {
+      throw new Error(
+        `Person route override query failed: ${override.error.message}`,
+      );
+    }
+    return {
+      slug: exact.data.slug,
+      displayName: override.data?.display_name ?? exact.data.display_name,
+    };
   }
+
+  const compact = compactPersonSlug(personSlug);
+  // An empty compact form would match nothing anyway, and scanning for it
+  // is pure waste on the many non-person 404s this dynamic segment catches.
+  if (compact.length === 0) return null;
+  const all = await client
+    .from("rachandzach_people")
+    .select("slug, display_name");
+  if (all.error) {
+    throw new Error(`Person route scan failed: ${all.error.message}`);
+  }
+  const person =
+    (all.data ?? []).find((row) => compactPersonSlug(row.slug) === compact) ??
+    null;
   if (!person) return null;
 
-  const override = await client
-    .from("rachandzach_person_overrides")
-    .select("display_name")
-    .eq("person_slug", person.slug)
-    .maybeSingle();
+  // The scanned slug differs from the requested spelling (its exact form
+  // would have matched above), so the speculative override cannot apply and
+  // the real one has to wait for the scan: a genuine data dependency, left
+  // sequential on purpose.
+  const override = await overrideFor(person.slug);
   if (override.error) {
     throw new Error(
       `Person route override query failed: ${override.error.message}`,

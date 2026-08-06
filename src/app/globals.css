@@ -3271,7 +3271,15 @@ button {
   background: color-mix(in srgb, var(--rz-wheat) 78%, var(--rz-sand));
 }
 
-.atlas-photo-image > img {
+/* The images ride inside <picture> for native AVIF/WebP negotiation
+   (PhotoImage.tsx); display: contents keeps the wrapper out of layout so
+   both imgs position exactly as when they were direct children. */
+.atlas-photo-image > picture {
+  display: contents;
+}
+
+.atlas-photo-image > img,
+.atlas-photo-image > picture > img {
   position: absolute;
   inset: 0;
   display: block;

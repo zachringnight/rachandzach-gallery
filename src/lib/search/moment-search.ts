@@ -50,6 +50,7 @@ import {
   PREVIEW_URL_TTL_SECONDS,
   type SignablePreview,
 } from "@/lib/gallery/signed-previews";
+import { formatRank } from "@/lib/gallery/preview-format";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { featureFlags } from "@/content/features";
 import {
@@ -433,7 +434,11 @@ function toClientMomentPhoto(
       return { url, width: preview.width, height: preview.height, format: preview.format };
     })
     .filter((preview): preview is NonNullable<typeof preview> => preview !== null)
-    .sort((a, b) => a.width - b.width);
+    // Same order contract as serialize.ts: within a width the most
+    // compatible format sorts first, so previews[0] decodes everywhere.
+    .sort(
+      (a, b) => a.width - b.width || formatRank(b.format) - formatRank(a.format),
+    );
   return {
     id: view.id,
     eventSlug: view.eventSlug,
