@@ -72,12 +72,58 @@ export function pickTarget(
 }
 
 /**
+ * The universally-decodable companion for an AVIF target: the non-AVIF
+ * preview closest in width to it (ties prefer the wider candidate, then the
+ * cheaper format). Serialize.ts's nearestUniversal signs with the same rule,
+ * so whatever this picks always arrived with a URL. Returns null when the
+ * target already decodes everywhere (WebP/JPEG) or when the photo has no
+ * non-AVIF derivative at all -- in which case the AVIF renders bare, exactly
+ * the pre-fallback behavior, never worse.
+ */
+export function pickFallback(
+  previews: ClientPreview[],
+  target: ClientPreview | null,
+): ClientPreview | null {
+  if (!target || target.format !== "avif") return null;
+  let best: ClientPreview | null = null;
+  for (const candidate of previews) {
+    if (candidate.format === "avif") continue;
+    if (!best) {
+      best = candidate;
+      continue;
+    }
+    const delta =
+      Math.abs(candidate.width - target.width) -
+      Math.abs(best.width - target.width);
+    if (
+      delta < 0 ||
+      (delta === 0 &&
+        (candidate.width > best.width ||
+          (candidate.width === best.width &&
+            FORMAT_PREFERENCE[candidate.format] <
+              FORMAT_PREFERENCE[best.format])))
+    ) {
+      best = candidate;
+    }
+  }
+  return best;
+}
+
+/**
  * Progressive gallery image using the existing signed preview tiers.
  *
  * The smallest signed preview sits underneath the target as a soft placeholder;
  * once the target decodes it crossfades in. No storage paths or new derivative
  * pipeline are introduced, and the wrapper reserves the source aspect ratio so
  * the grid never shifts while either image loads.
+ *
+ * Both images render inside a <picture>: when the chosen preview is AVIF and
+ * a WebP/JPEG companion was signed, the AVIF rides an
+ * <source type="image/avif"> and the companion is the <img src>, so the
+ * browser negotiates the format natively with zero JS feature detection.
+ * AVIF-capable browsers fetch exactly the same AVIF bytes as before; only
+ * browsers that cannot decode AVIF (older Safari, some TVs) fetch the
+ * fallback, and only one of the two is ever downloaded per slot.
  */
 export function PhotoImage({
   photo,
@@ -95,8 +141,13 @@ export function PhotoImage({
     () => [...photo.previews].sort((a, b) => a.width - b.width),
     [photo.previews],
   );
-  const placeholder = ordered[0] ?? null;
+  // Smallest width, best format at it -- NOT ordered[0], whose format at a
+  // shared width depends on serializer ordering. Capable browsers keep the
+  // cheapest (AVIF) placeholder; the <picture> below covers the rest.
+  const placeholder = pickTarget(ordered, "thumbnail", 0);
+  const placeholderFallback = pickFallback(ordered, placeholder);
   const target = pickTarget(ordered, tier, targetWidth);
+  const targetFallback = pickFallback(ordered, target);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const targetUrl = target?.url ?? null;
@@ -118,39 +169,49 @@ export function PhotoImage({
       data-failed={failed ? "true" : "false"}
     >
       {showPlaceholder ? (
-        <img
-          src={placeholder.url}
-          alt=""
-          aria-hidden="true"
-          width={placeholder.width}
-          height={placeholder.height}
-          loading="eager"
-          decoding="async"
-          className="atlas-photo-image-placeholder"
-        />
+        <picture>
+          {placeholderFallback ? (
+            <source srcSet={placeholder.url} type="image/avif" />
+          ) : null}
+          <img
+            src={placeholderFallback?.url ?? placeholder.url}
+            alt=""
+            aria-hidden="true"
+            width={placeholder.width}
+            height={placeholder.height}
+            loading="eager"
+            decoding="async"
+            className="atlas-photo-image-placeholder"
+          />
+        </picture>
       ) : null}
 
       {target && !failed ? (
-        <img
-          src={target.url}
-          alt={alt}
-          width={photo.width}
-          height={photo.height}
-          loading={loading}
-          decoding="async"
-          fetchPriority={fetchPriority}
-          className={targetClass}
-          onLoad={() => {
-            setLoadedUrl(target.url);
-            setFailedUrl(null);
-            onLoad?.();
-          }}
-          onError={() => {
-            setFailedUrl(target.url);
-            setLoadedUrl(null);
-            onError?.();
-          }}
-        />
+        <picture>
+          {targetFallback ? (
+            <source srcSet={target.url} type="image/avif" />
+          ) : null}
+          <img
+            src={targetFallback?.url ?? target.url}
+            alt={alt}
+            width={photo.width}
+            height={photo.height}
+            loading={loading}
+            decoding="async"
+            fetchPriority={fetchPriority}
+            className={targetClass}
+            onLoad={() => {
+              setLoadedUrl(target.url);
+              setFailedUrl(null);
+              onLoad?.();
+            }}
+            onError={() => {
+              setFailedUrl(target.url);
+              setLoadedUrl(null);
+              onError?.();
+            }}
+          />
+        </picture>
       ) : (
         <span className="atlas-photo-image-fallback">
           {failed ? "Preview unavailable" : ""}

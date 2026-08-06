@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { formatRank } from "@/lib/gallery/preview-format";
 import { signPreviewUrls, type SignablePreview } from "@/lib/gallery/signed-previews";
 import type {
   GalleryPage,
@@ -20,38 +21,43 @@ import type {
  */
 
 /**
- * Format preference, mirroring pickTarget in
- * src/components/gallery/PhotoImage.tsx. These two MUST agree: this decides
- * what gets signed, that decides what gets rendered, and a mismatch means the
+ * Format preference, mirroring pickTarget and pickFallback in
+ * src/components/gallery/PhotoImage.tsx. These MUST agree: this decides
+ * what gets signed, those decide what gets rendered, and a mismatch means the
  * client asks for a URL that was never minted.
  */
-const FORMAT_RANK: Record<string, number> = { avif: 0, webp: 1, jpeg: 2 };
-
-function rank(format: string): number {
-  return FORMAT_RANK[format] ?? 99;
-}
+const rank = formatRank;
 
 /**
- * One preview per WIDTH: the cheapest format stored at that width.
+ * Per WIDTH: the cheapest format stored at that width, PLUS one
+ * universally-decodable fallback for it when that cheapest format is AVIF.
  *
- * Each photo has up to 8 derivatives (4 widths x avif/webp, plus a 2400
- * JPEG), and every one of them used to be signed and shipped. The client can
- * only ever render one format per width -- pickTarget chooses a width, then
- * takes the cheapest format available at it -- so the duplicates were pure
- * payload: on a 60-photo page that meant ~480 signed URLs, roughly 144 KB of
- * the JSON response being URL strings the browser would never request, plus
- * the extra signing round trips to mint them.
+ * The best-per-width half is unchanged: pickTarget chooses a width, then the
+ * cheapest format at it, so at most one format per width is ever the primary
+ * render. All four WIDTHS are kept because the server cannot know whether a
+ * guest will stay on the grid or open the lightbox, and the lightbox reads
+ * from the photo object already in memory rather than re-fetching.
  *
- * All four WIDTHS are kept. The server cannot know whether a guest will stay
- * on the grid or open the lightbox, and the lightbox reads from the photo
- * object already in memory rather than re-fetching, so every width has to be
- * present up front.
+ * The fallback half exists because AVIF is not universal: older Safari
+ * (macOS Catalina and earlier, iOS < 16) and some TV browsers cannot decode
+ * it, and an AVIF-only payload gave those guests broken images. For each
+ * width whose best format is AVIF, the nearest WebP/JPEG derivative is also
+ * signed so PhotoImage can render a <picture> with an AVIF <source> and a
+ * universally-decodable <img>, letting the browser negotiate natively.
+ * Widths whose best format is already WebP or JPEG need no companion, and a
+ * photo with no non-AVIF rows at all just keeps its AVIF-only set (degraded
+ * exactly as before, never worse).
  *
- * NOTE: this codifies an AVIF-only client, which is what already shipped --
- * pickTarget takes AVIF whenever it exists with no feature detection, so the
- * WebP rows were never a working fallback, just unused weight. If a real
- * fallback is ever wanted, it needs a <picture> element on the client AND a
- * change here, together.
+ * Cost, stated precisely: this adds at most one signed URL per width -- one
+ * per rendered-size decision, not the whole WebP ladder -- so a full-ladder
+ * photo goes from 4 signed URLs back up to ~8, and a 60-photo page from ~240
+ * to ~480 paths (still 3 chunks under signed-previews' 200-path ceiling).
+ * That is response-payload and signing cost only: the browser downloads
+ * exactly ONE image per rendered slot, chosen by <picture>, so media egress
+ * does not double. AVIF-capable browsers (the overwhelming majority) fetch
+ * the same AVIF bytes as before, including the 2400 tier's -73% saving over
+ * JPEG; only non-AVIF browsers fetch the larger fallback, which is the
+ * point.
  */
 function renderablePreviews<T extends { width: number; format: string }>(
   previews: readonly T[],
@@ -63,7 +69,45 @@ function renderablePreviews<T extends { width: number; format: string }>(
       bestByWidth.set(preview.width, preview);
     }
   }
-  return [...bestByWidth.values()];
+  const chosen = [...bestByWidth.values()];
+
+  const universal = previews.filter((preview) => preview.format !== "avif");
+  const out = new Set<T>(chosen);
+  for (const best of chosen) {
+    if (best.format !== "avif") continue;
+    const fallback = nearestUniversal(universal, best.width);
+    if (fallback) out.add(fallback);
+  }
+  return [...out];
+}
+
+/**
+ * The non-AVIF derivative closest in width to `width`; ties prefer the wider
+ * candidate (never trade down resolution for nothing), then the cheaper
+ * format. Mirrors pickFallback in PhotoImage.tsx.
+ */
+function nearestUniversal<T extends { width: number; format: string }>(
+  candidates: readonly T[],
+  width: number,
+): T | null {
+  let best: T | null = null;
+  for (const candidate of candidates) {
+    if (!best) {
+      best = candidate;
+      continue;
+    }
+    const delta = Math.abs(candidate.width - width) - Math.abs(best.width - width);
+    if (
+      delta < 0 ||
+      (delta === 0 &&
+        (candidate.width > best.width ||
+          (candidate.width === best.width &&
+            rank(candidate.format) < rank(best.format))))
+    ) {
+      best = candidate;
+    }
+  }
+  return best;
 }
 
 function collectPreviews(views: GalleryPhotoView[]): SignablePreview[] {
@@ -92,7 +136,12 @@ function toClientPhoto(
       };
     })
     .filter((p): p is NonNullable<typeof p> => p !== null)
-    .sort((a, b) => a.width - b.width);
+    // Small -> large; within a width, most-compatible format FIRST (jpeg,
+    // webp, then avif). Deliberate: naive consumers that grab previews[0]
+    // for a bare <img> (filmstrip, capsule module) get a URL every browser
+    // can decode, while previews[length - 1] stays the best large format.
+    // PhotoImage itself never relies on this order -- it picks explicitly.
+    .sort((a, b) => a.width - b.width || rank(b.format) - rank(a.format));
   return {
     id: view.id,
     eventSlug: view.eventSlug,

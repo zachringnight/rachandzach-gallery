@@ -46,6 +46,8 @@
     "@uppy/core": "^5.2.0",
     "@uppy/react": "^5.2.0",
     "@uppy/tus": "^5.1.1",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "@zip.js/zip.js": "^2.8.34",
     "clsx": "^2.1.1",
     "exifr": "^7.1.3",

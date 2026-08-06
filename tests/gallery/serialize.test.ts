@@ -211,6 +211,116 @@ describe("serializeGalleryPage: keywords field", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// AVIF <picture> fallback signing: for each width whose best format is AVIF,
+// the nearest WebP/JPEG derivative is signed alongside it so PhotoImage's
+// <picture> negotiation has a universally-decodable <img src>. Bounded: one
+// extra URL per width, never the whole WebP ladder.
+// ---------------------------------------------------------------------------
+
+type PreviewRow = NonNullable<GalleryPhotoView["previews"]>[number];
+
+function previewRow(
+  id: string,
+  width: number,
+  format: "avif" | "webp" | "jpeg",
+): PreviewRow {
+  return {
+    objectPath: `previews/${id}-hash/${width}.${format}`,
+    bucket: "rachandzach-previews",
+    width,
+    height: Math.round((width * 2) / 3),
+    format,
+  };
+}
+
+async function serializedPreviews(previews: PreviewRow[]) {
+  const page: GalleryPage = {
+    photos: [view({ id: "fb", previews })],
+    nextCursor: null,
+    total: 1,
+    signedUrlExpiresAt: new Date().toISOString(),
+  };
+  const client = await serializeGalleryPage(page, fakeSigningClient());
+  return client.photos[0].previews;
+}
+
+describe("serializeGalleryPage: WebP fallback signing", () => {
+  it("signs both the AVIF primary and the same-width WebP for every width, and nothing more", async () => {
+    const out = await serializedPreviews([
+      previewRow("fb", 480, "avif"),
+      previewRow("fb", 480, "webp"),
+      previewRow("fb", 960, "avif"),
+      previewRow("fb", 960, "webp"),
+      previewRow("fb", 1600, "avif"),
+      previewRow("fb", 1600, "webp"),
+      previewRow("fb", 2400, "avif"),
+      previewRow("fb", 2400, "jpeg"),
+    ]);
+    const shapes = out.map((p) => `${p.width}.${p.format}`);
+    expect(shapes).toEqual([
+      "480.webp",
+      "480.avif",
+      "960.webp",
+      "960.avif",
+      "1600.webp",
+      "1600.avif",
+      "2400.jpeg",
+      "2400.avif",
+    ]);
+  });
+
+  it("picks the nearest WebP width when no exact-width WebP exists", async () => {
+    const out = await serializedPreviews([
+      previewRow("fb", 2400, "avif"),
+      previewRow("fb", 1600, "webp"),
+      previewRow("fb", 480, "webp"),
+    ]);
+    const shapes = out.map((p) => `${p.width}.${p.format}`);
+    // Widths kept: 2400 (avif best) plus the stored webp widths as their own
+    // one-format widths; the 2400 avif's companion is the CLOSEST webp
+    // (1600), which is already present -- no duplicate entry.
+    expect(shapes).toContain("2400.avif");
+    expect(shapes).toContain("1600.webp");
+    expect(shapes.filter((s) => s === "1600.webp")).toHaveLength(1);
+  });
+
+  it("prefers a same-width JPEG over a distant WebP as the fallback", async () => {
+    const out = await serializedPreviews([
+      previewRow("fb", 2400, "avif"),
+      previewRow("fb", 2400, "jpeg"),
+      previewRow("fb", 480, "webp"),
+    ]);
+    const shapes = out.map((p) => `${p.width}.${p.format}`);
+    expect(shapes).toContain("2400.jpeg");
+    expect(shapes).toContain("2400.avif");
+  });
+
+  it("keeps an AVIF-only photo exactly as before: no fallback, no failure", async () => {
+    const out = await serializedPreviews([
+      previewRow("fb", 480, "avif"),
+      previewRow("fb", 960, "avif"),
+    ]);
+    expect(out.map((p) => `${p.width}.${p.format}`)).toEqual([
+      "480.avif",
+      "960.avif",
+    ]);
+  });
+
+  it("adds nothing for widths whose best format is already universal", async () => {
+    const out = await serializedPreviews([
+      previewRow("fb", 480, "webp"),
+      previewRow("fb", 960, "avif"),
+      previewRow("fb", 960, "webp"),
+    ]);
+    expect(out.map((p) => `${p.width}.${p.format}`)).toEqual([
+      "480.webp",
+      "960.webp",
+      "960.avif",
+    ]);
+  });
+});
+
 describe("serializeGalleryPage: approved uploader captions", () => {
   it("copies only the public caption fields onto the client photo", async () => {
     const page: GalleryPage = {

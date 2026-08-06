@@ -35,7 +35,13 @@ export interface ClientPhoto {
     text: string;
     byline: string | null;
   } | null;
-  /** Ordered small -> large; empty if none could be signed. */
+  /**
+   * Ordered small -> large; empty if none could be signed. A width may carry
+   * two formats (an AVIF primary plus its signed WebP/JPEG fallback for the
+   * <picture> negotiation in PhotoImage); within a shared width the
+   * most-compatible format sorts first, so previews[0] favors a URL any
+   * browser can decode whenever one was stored at the smallest width.
+   */
   previews: ClientPreview[];
   /**
    * Dominant light sampled from the photograph itself at import/build time
