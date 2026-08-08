@@ -48,12 +48,15 @@ export const MAX_PATHS_PER_SIGN_REQUEST = 200;
 
 /**
  * Preview TTL, in seconds. THE single tunable constant for signed preview
- * lifetime (packet behavior + task 12 egress tuning). Defaults to 60 minutes;
- * task 12 can lengthen it purely through the environment, no code change:
+ * lifetime (packet behavior + task 12 egress tuning). Defaults to 8 hours
+ * (PREVIEW_TTL_DEFAULT_SECONDS above, which explains why); lengthen or
+ * shorten it purely through the environment, no code change:
  *
  *   GALLERY_PREVIEW_URL_TTL_SECONDS=10800   # 3 hours
  *
- * Values below the floor (or unparseable) fall back to the 60-minute default.
+ * Values below PREVIEW_TTL_FLOOR_SECONDS (60 seconds) or unparseable fall
+ * back to that default. The floor is what stops a fat-fingered 0 or 5 from
+ * signing URLs that expire before the page has finished painting.
  */
 export const PREVIEW_URL_TTL_SECONDS: number = readPreviewTtlSeconds();
 
@@ -69,10 +72,23 @@ function readPreviewTtlSeconds(): number {
     return PREVIEW_TTL_DEFAULT_SECONDS;
   }
   const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed < 60) {
+  if (!Number.isFinite(parsed) || parsed < PREVIEW_TTL_FLOOR_SECONDS) {
     return PREVIEW_TTL_DEFAULT_SECONDS;
   }
   return parsed;
+}
+
+/**
+ * The TTL actually used, floor applied. Both the signing call and the expiry
+ * it reports run through this, so they cannot disagree: clamping only the
+ * reported timestamp would promise callers a lifetime the URL does not have,
+ * and GalleryShell's pre-expiry renewal would fire after every tile had
+ * already 403'd.
+ */
+function resolveTtlSeconds(ttlSeconds: number): number {
+  return Number.isFinite(ttlSeconds)
+    ? Math.max(Math.trunc(ttlSeconds), PREVIEW_TTL_FLOOR_SECONDS)
+    : PREVIEW_URL_TTL_SECONDS;
 }
 
 /** ISO timestamp at which URLs signed now (with `ttlSeconds`) will expire. */
@@ -80,10 +96,7 @@ export function previewExpiresAt(
   ttlSeconds: number = PREVIEW_URL_TTL_SECONDS,
   now: number = Date.now(),
 ): string {
-  const ttl = Number.isFinite(ttlSeconds)
-    ? Math.max(Math.trunc(ttlSeconds), PREVIEW_TTL_FLOOR_SECONDS)
-    : PREVIEW_URL_TTL_SECONDS;
-  return new Date(now + ttl * 1000).toISOString();
+  return new Date(now + resolveTtlSeconds(ttlSeconds) * 1000).toISOString();
 }
 
 /** A private preview object that needs a signed URL. */
@@ -120,6 +133,7 @@ export async function signPreviewUrls(
   ttlSeconds: number = PREVIEW_URL_TTL_SECONDS,
   now: number = Date.now(),
 ): Promise<SignedPreviewBatch> {
+  const ttl = resolveTtlSeconds(ttlSeconds);
   const urls = new Map<string, string>();
   const failures: string[] = [];
 
@@ -163,7 +177,7 @@ export async function signPreviewUrls(
       try {
         const { data, error } = await client.storage
           .from(bucket)
-          .createSignedUrls(group, ttlSeconds);
+          .createSignedUrls(group, ttl);
         return { group, data: error ? null : data };
       } catch {
         return { group, data: null };
@@ -188,5 +202,5 @@ export async function signPreviewUrls(
     });
   }
 
-  return { urls, expiresAt: previewExpiresAt(ttlSeconds, now), failures };
+  return { urls, expiresAt: previewExpiresAt(ttl, now), failures };
 }
