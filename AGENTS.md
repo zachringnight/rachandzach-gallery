@@ -82,7 +82,11 @@ them.
 ## Code map
 
 - `src/app/page.tsx`, `src/components/site/`, `src/styles/tokens.css`, and
-  `src/app/globals.css`: public archive design and shared visual system.
+  `src/app/globals.css`: archive design and shared visual system. "Public" was
+  true before the site-wide gate; `/` now sits behind it like everything except
+  `/nyc`, `/enter` and the crawler files (`PUBLIC_ROUTES` in
+  `src/lib/auth/guest-session.ts` is the list). The homepage is still rendered
+  and still tested, just never anonymously.
 - `src/app/(access)/` and `src/lib/auth/`: guest gate and session security.
 - `src/app/(guest)/`, `src/components/gallery/`, and `src/lib/gallery/`:
   authenticated archive, filters, viewer, and personalized experiences.
@@ -114,6 +118,7 @@ them.
 - For a bounded code change, run the closest focused test first, then:
 
   ```bash
+  npm run verify:vercel
   npm run typecheck
   npm run lint
   npm run test
@@ -121,6 +126,11 @@ them.
   npx playwright test tests/e2e --project=chromium
   git diff --check
   ```
+
+  `verify:vercel` leads because `npm run verify` runs it first: it is the
+  validator added after a malformed `vercel.json` broke deploys, and leaving
+  it out of this list let exactly that class of regression through the
+  bounded check.
 
 - `npm run verify` runs that complete local gate. The suite intentionally
   includes documented live-database skips; report pass and skip counts

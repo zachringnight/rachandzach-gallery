@@ -4,7 +4,10 @@ A private, password-gated wedding photo archive: browse the full catalog, find
 yourself by event or person, search moments in plain language, keep favorites,
 save original photographs to your own cloud account, and contribute new photos
 for approval. Built with Next.js and Supabase. Guests and admin both
-authenticate; nothing here is public except the marketing pages.
+authenticate; since the site-wide password gate, the ONLY public routes are
+`/nyc` (the fundraiser, deliberately findable), its `/marathon` alias and
+assets, `/enter`, and the crawler files. The archive, the homepage and every
+person page sit behind the gate.
 
 **Status: LIVE.** The premium gallery is deployed on Vercel at
 [rachandzach.com](https://rachandzach.com), backed by this private GitHub
@@ -83,12 +86,13 @@ See each script's own `--help` for its full flag set.
 - End-to-end: `npm run e2e` for the full cross-browser/viewport matrix, or `npx playwright test tests/e2e --project=chromium` for the bounded suite `npm run verify` runs. The e2e suite is designed to run without a live database: most specs assert on documented fail-closed behavior against an unreachable synthetic Supabase endpoint (see `tests/e2e/support/env.ts`); a smaller set of specs are explicitly out of scope until a live database exists.
 - A local Supabase stack (`supabase start && supabase db reset`) requires Docker, not available on this development machine as of this writing; the schema test layer degrades to static SQL assertions without it and says so loudly when run.
 
-Current test health: fully green at the premium archive release head.
-`npm run verify` exits 0: typecheck passes; lint reports 0 errors and 14
-existing warnings; Vitest passes 947 tests with 11 intentional live-database
-skips; the production build passes; and the bounded Chromium e2e suite passes
-80 tests with 28 documented skips and 0 failures. Current release evidence is in
-`docs/ONLINE_HANDOFF.md`.
+Current test health: fully green on `main`. `npm run verify` exits 0:
+typecheck passes; lint reports 0 errors and 16 existing warnings; Vitest passes
+1,148 tests with 17 intentional live-database skips; the production build
+passes; and the bounded Chromium e2e suite passes 84 tests with 28 documented
+skips and 0 failures. These counts move every release, so treat
+`docs/ONLINE_HANDOFF.md` as the current evidence and re-run the gate rather
+than trusting the numbers here.
 
 ## Project structure
 
@@ -124,7 +128,7 @@ docs/plans/2026-07-22-0719-digital-wedding-home/   The build plan: manifest, per
 This project follows a few hard rules throughout its build, enforced by convention and by the docs above, not by this README:
 
 - No deploy, publish, email send, or cloud-resource creation without Zach's explicit, separate approval -- see the Launch Checklist's gate sequence.
-- The wedding photo source master is read-only; nothing in this repo ever writes to it.
+- The wedding photo source master's PIXELS are immutable: nothing here recompresses, resizes, renames, moves, or deletes a source original, ever. Its embedded metadata IS written, deliberately, by `write-additions-to-master.py`, `normalize-clean-master-metadata.py` and `rename-person-in-master.py`, so guest names travel with the photographs into Apple Photos or Lightroom long after this site is gone. See the metadata clause in `AGENTS.md`, which gates that on Zach keeping independent backups. Those scripts are dry-run by default; `--write` is always explicit.
 - Original photo downloads must reproduce their source file byte for byte (`npm run verify:originals`).
 - Production credentials fail closed: there is no fallback password or session secret.
 - Private storage buckets are never public; every access goes through a short-lived, server-issued signed URL.
