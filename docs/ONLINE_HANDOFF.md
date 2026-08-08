@@ -19,7 +19,7 @@ the pre-launch history and are not operational instructions.
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to target `production`; current status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `b7d5b6f` -- face waves 12+13, Brenda Wasserman name chain, green visual gate ([#13](https://github.com/zachringnight/rachandzach-gallery/pull/13), merged 2026-08-05) |
+| Latest release | `d11f05a` -- renewal recovery + open-access tests ([#19](https://github.com/zachringnight/rachandzach-gallery/pull/19), merged 2026-08-08). Preceding: [#18](https://github.com/zachringnight/rachandzach-gallery/pull/18) audit fixes, [#17](https://github.com/zachringnight/rachandzach-gallery/pull/17) CI on pull requests, [#16](https://github.com/zachringnight/rachandzach-gallery/pull/16) name-layering fix, [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15) AVIF fallback + field instrumentation, [#14](https://github.com/zachringnight/rachandzach-gallery/pull/14) mobile pass |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 
@@ -314,11 +314,12 @@ which is the guard doing its job, not lost data.
 
 The remaining work is now shaped for one sitting rather than 329 separate
 decisions. `npm run faces:recurring -- --report
-metadata/faces/unresolved-cluster-review.json` offers **93 same-face clusters
-covering 388 faces across 247 photographs**, largest 20 faces, where one name
+metadata/faces/unresolved-cluster-review.json` offers **91 same-face clusters
+covering 381 faces across 244 photographs**, largest 20 faces, where one name
 applies to the whole cluster. The report deliberately drops 29 clusters as too
 small or too soft to judge and 3 that hold two faces from one photograph and
-therefore are not one person.
+therefore are not one person. (These are the generated report's own summary
+numbers; an earlier revision of this section overstated them.)
 
 One person could not be reached by that queue. The woman whose face trained
 the `mike-caron` signature appeared in 5 photographs, and because the pipeline
@@ -437,7 +438,7 @@ That is enforced in code, not by convention.
 | DONE | Codex | 2026-08-05 | Shipped the whole `docs/BACKLOG.md` "Mobile and touch" and "Guest journey" sections in one pass: filter panel closes on selection, mobile filter chips, 44px touch targets, guest-scoped 404, scroll-away mobile chrome, sign-in lands on Find me, one download button, keyword chips deep-link that works, PersonPicker announces its real purpose. |
 | P1 | Zach | After this deploys | Flip through `/photos` on a phone: filter a person, watch the chip row, scroll down and back up (chapter tab and Light Bar should step aside and return), favorite from a card, download from the viewer. The grid only renders against the live database, so this pass shipped on unit tests plus the data-free visual suite; this is the eyeball check that closes it. |
 | P2 | Rachel | Any time | Replace two correct-but-unflattering face crops in `/admin/faces`: `charlie-weisman`, `dee-burton`. Admin picks outrank the script. |
-| P2 | Engineer | Before wide sharing | No AVIF fallback: the client is AVIF-only by design, so a browser without support gets broken images. See `docs/BACKLOG.md` "Technical debt"; needs a `<picture>` element and a matching serialization change, together. |
+| DONE | Codex | 2026-08-05 | AVIF fallback shipped in [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15): `preview-format.ts` orders previews most-compatible-first, `serialize.ts` signs a decodable companion per AVIF width, and `PhotoImage` renders `<picture>` so browsers negotiate natively. This row previously still read as open work and would have sent an engineer to rebuild it. |
 | DONE | Zach | 2026-07-26 | Created the Google Web OAuth client ID and Dropbox Saver app key; only the public identifiers were supplied to deployment configuration. |
 | DONE | Codex | 2026-07-26 | Confirmed `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` and `NEXT_PUBLIC_DROPBOX_APP_KEY` in Vercel Production and Preview, deployed `main`, and verified the production deployment is `READY`. |
 | P0 | Zach/admin | Before announcing cloud save | Complete the two consent-dependent file-transfer rows in the authenticated acceptance pass below using a personal Google Drive and Dropbox account. |
