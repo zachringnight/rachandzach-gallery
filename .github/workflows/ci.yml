@@ -5,13 +5,20 @@ name: CI
 # "Add npm run verify to execute typecheck, lint, unit tests, build, and the
 # bounded Playwright suite").
 #
-# Branch policy mirrors scripts/vercel-ignore-build.mjs, which Vercel's
+# The push list mirrors scripts/vercel-ignore-build.mjs, which Vercel's
 # "ignoreCommand" already enforces for deploys: build main, staging, and
 # preview/*; skip every dependabot/*, codex/*, claude/*, wip/*, and unlisted
-# branch.
-# Keeping CI's trigger list and the Vercel build allowlist in lockstep means a
-# branch that Vercel would deploy always has a green (or red) CI run to point
-# at first.
+# branch. Keeping those two in lockstep means a branch that Vercel would
+# deploy always has a green (or red) CI run to point at first.
+#
+# pull_request is deliberately NOT filtered to that list. Every change in this
+# repository arrives as a pull request from a codex/* or claude/* branch, none
+# of which Vercel deploys, so mirroring the deploy allowlist here left review
+# with nothing to look at: the suite first ran after the merge to main, which
+# is the one moment it can no longer stop anything. Verifying the merge result
+# of any pull request, whatever the branch is called, is the point of having
+# the suite. Deploys stay restricted; only verification is opened up.
+#
 # Quoted "on" deliberately: unquoted `on:` parses as the boolean `true` under
 # YAML 1.1 (the "Norway problem"). GitHub Actions' own parser tolerates the
 # unquoted form, but quoting removes the ambiguity for every other YAML tool
@@ -22,13 +29,17 @@ name: CI
       - main
       - staging
       - "preview/**"
+  pull_request:
   workflow_dispatch: {}
 
 permissions:
   contents: read
 
+# Keyed on the pull request number when there is one, so a rapid series of
+# pushes to the same PR cancels its own superseded runs without touching the
+# push-triggered run for the branch it merges into.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
