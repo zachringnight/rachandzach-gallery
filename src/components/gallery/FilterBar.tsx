@@ -138,7 +138,7 @@ export function FilterBar({
       });
     }
     return chips;
-  }, [facets.events, facets.people, filters]);
+  }, [facets.events, facets.identities, facets.people, filters]);
 
   return (
     <aside className="atlas-filter-rail">

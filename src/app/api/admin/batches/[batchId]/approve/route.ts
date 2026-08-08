@@ -194,7 +194,18 @@ export async function POST(
 
   // Always converge against the latest persisted item/photo state, even when
   // this request carried stale selections and some per-item actions failed.
-  const batch = await recomputeBatchStatus(batchId, actor, db);
+  //
+  // Caught for the same reason the notification below is: every per-item
+  // action has already been committed by this point. Letting a transient
+  // failure here reject the whole POST told the admin the approval failed
+  // when all of its photos were in fact live, inviting them to run it again.
+  // The batch status is derived state and the next request recomputes it.
+  let batch: Awaited<ReturnType<typeof recomputeBatchStatus>> = null;
+  try {
+    batch = await recomputeBatchStatus(batchId, actor, db);
+  } catch {
+    batch = null;
+  }
   if (
     batch &&
     (batch.status === "approved" ||

@@ -109,6 +109,15 @@ export const PUBLIC_ROUTES = {
     "/brand",
     "/_next/static",
     "/_next/image",
+    // Vercel Analytics and Speed Insights, mounted in the root layout on
+    // every page including public /nyc. These are first-party paths served by
+    // the platform, not routes of ours, and they carry no gallery media. Left
+    // out of the allowlist they were default-denied like anything else: an
+    // anonymous visitor to the fundraiser page fetched the script, received a
+    // 307 to /enter, and recorded no pageview or vitals -- so the field
+    // instrumentation added in #15 measured nothing on the one page whose
+    // traffic is the point.
+    "/_vercel",
   ],
 } as const;
 
