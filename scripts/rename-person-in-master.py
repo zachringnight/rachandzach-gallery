@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rename one person across the clean master's embedded metadata.
+"""Rename, or delete, one person across the clean master's embedded metadata.
 
 Why this exists alongside reconcile-clean-master-aliases.py: that script is
 driven by _Metadata/photo-manifest.csv and can only reach names the original
@@ -13,11 +13,16 @@ This is a REPLACEMENT, not an addition, which makes it the one metadata
 operation AGENTS.md gates on Zach. It is therefore deliberately narrow:
 
   * one name at a time, given explicitly on the command line;
-  * only files that actually carry the old name are touched;
+  * only files that actually carry that name are touched;
   * every other name in every field is preserved exactly;
   * ImageDataHash and dimensions are compared before and after, so a run that
     altered a single pixel fails instead of reporting success; and
   * dry run by default. --write is required to touch anything.
+
+--delete drops the name instead of replacing it, for junk entries that are not
+anybody: a truncation like "pa" left in one original's PersonInImage. Same
+matching, same guards; the only difference is that nothing takes the old
+entry's place.
 
 Same exiftool conventions as the scripts either side of it:
 XMP-iptcExt:PersonInImage, XMP-dc:Subject, IPTC:Keywords, ||| separator,
@@ -26,6 +31,7 @@ XMP-iptcExt:PersonInImage, XMP-dc:Subject, IPTC:Keywords, ||| separator,
 Usage (from the repo root):
   python3 scripts/rename-person-in-master.py "Old Name" "New Name"
   python3 scripts/rename-person-in-master.py "Old Name" "New Name" --write
+  python3 scripts/rename-person-in-master.py "pa" --delete --write
 
 After --write, run scripts/sync-manifest-after-write.py so the manifest's
 size check stops reporting the intended growth as tampering.
@@ -164,21 +170,32 @@ def write_exact(path: Path, values: dict[str, list[str]]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("old_name")
-    parser.add_argument("new_name")
+    parser.add_argument("new_name", nargs="?")
+    parser.add_argument("--delete", action="store_true",
+                        help="drop the name instead of replacing it")
     parser.add_argument("--write", action="store_true")
     args = parser.parse_args()
 
-    old, new = args.old_name.strip(), args.new_name.strip()
-    if not old or not new or old.casefold() == new.casefold():
+    old = args.old_name.strip()
+    new = (args.new_name or "").strip()
+    if args.delete:
+        if new:
+            print("--delete takes one name; do not pass a replacement")
+            return 2
+    elif not new or old.casefold() == new.casefold():
         print("old and new names must differ and be non-empty")
         return 2
+    if not old:
+        print("the name to change must be non-empty")
+        return 2
 
-    print(f'Renaming "{old}" -> "{new}" in the clean master')
+    print(f'Deleting "{old}" from the clean master' if args.delete
+          else f'Renaming "{old}" -> "{new}" in the clean master')
     print("DRY RUN: nothing will be written. Re-run with --write to apply.\n"
           if not args.write else "WRITE MODE\n")
 
     targets = find_targets(old)
-    print(f"{len(targets)} file(s) carry the old name")
+    print(f"{len(targets)} file(s) carry that name")
     if not targets:
         return 0
 
@@ -190,7 +207,9 @@ def main() -> int:
         for _, suffix in FIELDS:
             current = list_value(record, suffix)
             if any(v.casefold() == old.casefold() for v in current):
-                current = [v for v in current if v.casefold() != old.casefold()] + [new]
+                current = [v for v in current if v.casefold() != old.casefold()]
+                if not args.delete:
+                    current = current + [new]
             values[suffix] = unique(current)
         planned[path] = values
         rel = str(path).replace(f"{MASTER}/", "")
@@ -220,7 +239,7 @@ def main() -> int:
             got, want = list_value(a, suffix), planned[path][suffix]
             if got != want:
                 failures.append(f"{rel}: {suffix} is {got}, expected {want}")
-            # Nothing but the renamed entry may have moved.
+            # Nothing but the changed entry may have moved.
             lost = [
                 v for v in list_value(b, suffix)
                 if v.casefold() != old.casefold()
@@ -235,8 +254,8 @@ def main() -> int:
             print("  ", f)
         return 1
 
-    print(f"\nrenamed in {len(targets)} file(s); pixels, dimensions and every "
-          f"other name verified unchanged")
+    print(f"\n{'deleted from' if args.delete else 'renamed in'} {len(targets)} "
+          f"file(s); pixels, dimensions and every other name verified unchanged")
     print("next: python3 scripts/sync-manifest-after-write.py")
     return 0
 
