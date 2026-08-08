@@ -51,6 +51,17 @@ const PAGE_LIMIT = 60;
 /** Larger pages while the Light Bar races toward a far scrub target. */
 const JUMP_PAGE_LIMIT = 100;
 const RENEW_LEAD_MS = 60_000;
+/**
+ * Backoff for a renewal that failed. Without one, a single failed renewal was
+ * terminal: the function returned without applying anything, so no state
+ * changed, so the effect that scheduled it never re-ran. One 500 or one
+ * moment of bad phone signal and every tile went blank when the TTL lapsed,
+ * with no retry and nothing on screen to say so. Doubles to the cap and then
+ * keeps trying at the cap, because a gallery with no images is not a state to
+ * give up in.
+ */
+const RENEW_RETRY_BASE_MS = 15_000;
+const RENEW_RETRY_MAX_MS = 300_000;
 
 type LoadState = "idle" | "loading" | "error-session" | "error-network";
 
@@ -137,6 +148,8 @@ export function GalleryShell({
   const [expiresAt, setExpiresAt] = useState<string>(
     initialPage.signedUrlExpiresAt,
   );
+  /** 0 while renewals are healthy; each failure bumps it to back off a retry. */
+  const [renewAttempt, setRenewAttempt] = useState(0);
   const [state, setState] = useState<LoadState>("idle");
   const [activePhotoId, setActivePhotoId] = useState<string | null>(
     initialPhotoId,
@@ -454,9 +467,17 @@ export function GalleryShell({
   }, [runQuery]);
 
   // Renew signed URLs shortly before they expire, in place (no scroll reset).
+  // A failed attempt bumps renewAttempt, which re-runs this effect and
+  // schedules a backed-off retry; a success resets it to 0.
   useEffect(() => {
     if (photos.length === 0) return;
-    const due = new Date(expiresAt).getTime() - Date.now() - RENEW_LEAD_MS;
+    const due =
+      renewAttempt === 0
+        ? new Date(expiresAt).getTime() - Date.now() - RENEW_LEAD_MS
+        : Math.min(
+            RENEW_RETRY_BASE_MS * 2 ** (renewAttempt - 1),
+            RENEW_RETRY_MAX_MS,
+          );
     const timer = setTimeout(
       () => {
         void renewSignedUrls(filters, photos, (fresh, freshExpiry) => {
@@ -466,12 +487,15 @@ export function GalleryShell({
             ),
           );
           setExpiresAt(freshExpiry);
+          setRenewAttempt(0);
+        }).then((renewed) => {
+          if (!renewed) setRenewAttempt((n) => n + 1);
         });
       },
       Math.max(0, due),
     );
     return () => clearTimeout(timer);
-  }, [expiresAt, photos, filters]);
+  }, [expiresAt, photos, filters, renewAttempt]);
 
   const activeIndex = activePhotoId
     ? photos.findIndex((p) => p.id === activePhotoId)
@@ -717,6 +741,7 @@ function ErrorState({
   );
 }
 
+/** Resolves true when fresh URLs were applied, false when the attempt failed. */
 async function renewSignedUrls(
   filters: GalleryFilterState,
   photos: ClientPhoto[],
@@ -724,7 +749,7 @@ async function renewSignedUrls(
     fresh: Map<string, ClientPhoto["previews"]>,
     expiresAt: string,
   ) => void,
-): Promise<void> {
+): Promise<boolean> {
   const ids = photos.map((p) => p.id);
   const fresh = new Map<string, ClientPhoto["previews"]>();
   let latestExpiry = new Date().toISOString();
@@ -734,13 +759,15 @@ async function renewSignedUrls(
       const res = await fetchWithRetry(apiUrl(filters, { ids: chunk }), {
         cache: "no-store",
       });
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const body: ClientGalleryPage = await res.json();
       for (const photo of body.photos) fresh.set(photo.id, photo.previews);
       latestExpiry = body.signedUrlExpiresAt;
     } catch {
-      return;
+      return false;
     }
   }
-  if (fresh.size > 0) apply(fresh, latestExpiry);
+  if (fresh.size === 0) return false;
+  apply(fresh, latestExpiry);
+  return true;
 }
