@@ -25,6 +25,7 @@ REPO = Path(__file__).resolve().parent.parent
 MASTER = Path("/Users/zsoskin/Rachel & Zach - Wedding Master Clean")
 ADDITIONS = REPO / "metadata" / "reviewed-face-tag-additions.json"
 CATALOG = REPO / "src" / "generated" / "gallery-v2.json"
+OVERRIDES = REPO / "src" / "generated" / "person-overrides.json"
 
 
 def unique(values: list[str]) -> list[str]:
@@ -120,9 +121,22 @@ def main() -> int:
     catalog = json.loads(CATALOG.read_text())
     path_by_photo_id = {p["id"]: p["originalRelativePath"] for p in catalog["photos"]}
 
+    # A person can carry two names: the catalog's canonical one, and the
+    # correction Rachel typed at /admin/faces, which is what every guest
+    # surface shows (applied over the catalog in supabase-source.ts, exported
+    # to person-overrides.json). Embed the name guests see. Writing the
+    # canonical one instead put "Patrick Burton" into 29 originals that
+    # already said "Pat Burton", giving one man two names in his own
+    # photographs -- this pass unions, so nothing would ever remove the
+    # second. Missing file: fall back to canonical rather than guess.
+    renames: dict[str, str] = {}
+    if OVERRIDES.exists():
+        renames = json.loads(OVERRIDES.read_text()).get("names") or {}
+
     by_photo: dict[str, set[str]] = {}
     for a in additions:
-        by_photo.setdefault(a["photoId"], set()).add(a["displayName"])
+        name = renames.get(a["personSlug"], a["displayName"])
+        by_photo.setdefault(a["photoId"], set()).add(name)
 
     targets: list[tuple[Path, set[str]]] = []
     missing = []
