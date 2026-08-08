@@ -22,8 +22,8 @@
     "savedCropAnchorCount": 26,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 1037,
-    "candidatesApproved": 857,
+    "candidatesReviewed": 1038,
+    "candidatesApproved": 858,
     "candidatesRejected": 180,
     "reviewWaves": [
       {
@@ -523,6 +523,18 @@
         "minMargin": 0,
         "candidatesReviewed": 5,
         "candidatesApproved": 5,
+        "candidatesRejected": 0,
+        "humanConfirmation": true
+      },
+      {
+        "wave": 14,
+        "auditFingerprint": "aa3171d3ca9425e7620c4e772100e309b1d695e813e9eb22734b9866b0ad476c",
+        "reviewType": "The two below-default Jeff Rush candidates surfaced by the post-wave-13 signature rebuild",
+        "reviewMethod": "The rebuild after wave 13 left two Jeff Rush rows under the default review floor, rendered as saved profile beside proposed face in metadata/faces/review-2026-08-05-b/sheet-001.jpg. Zach reviewed the sheet on 2026-08-07 and confirmed the after-party face (12 After Party/rachelzach-1113.jpg, similarity 0.483, the man in the blue suit at face index 0). The cocktail-hour face (07 Cocktail Hour/rachelzach-614.jpg, similarity 0.615) is behind sunglasses and Zach could not make a confident call, so it stays undecided and unapplied: neither approved nor denied. Wedding originals were opened read-only for rendering and were not changed.",
+        "minSimilarity": 0.48,
+        "minMargin": 0.08,
+        "candidatesReviewed": 2,
+        "candidatesApproved": 1,
         "candidatesRejected": 0,
         "humanConfirmation": true
       }
@@ -10003,6 +10015,17 @@
         "anchorFaceIndex": 0,
         "note": "Similarity is measured against the centroid of learned cluster c0259, which is her own five faces: the cluster that had wrongly trained the mike-caron profile. Margin is 0 because the only profile that ever competed for these faces was that same mislabelled one."
       }
+    },
+    {
+      "photoId": "457c7e364083bf9a3d7360fa67f03b34",
+      "path": "12 After Party/rachelzach-1113.jpg",
+      "personSlug": "jeff-rush",
+      "displayName": "Jeff Rush",
+      "faceIndex": 0,
+      "similarity": 0.483,
+      "margin": 0.355,
+      "profileSource": "learned",
+      "reviewWave": 14
     }
   ]
 }
