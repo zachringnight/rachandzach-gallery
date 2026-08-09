@@ -1,15 +1,14 @@
 /**
- * Add Yours (packet 08). Invited guests submit their own photos into private
+ * Add Yours (packet 08). Guests submit their own photos into private
  * quarantine storage for review. The (guest) layout (packet 06) supplies the
- * shell; this page re-checks the guest session (defense in depth beyond the
- * proxy) and renders the uploader.
+ * shell.
+ *
+ * Open since the password gate was removed (2026-08-09): anyone with the URL
+ * can submit. Nothing they submit is published by that act -- every upload
+ * lands in quarantine and waits for admin review, which is still behind
+ * Supabase auth.
  */
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import {
-  GalleryAccessError,
-  requireGalleryAccess,
-} from "@/lib/auth/guest-session";
 import { UploadClient } from "./UploadClient";
 
 export const metadata: Metadata = {
@@ -18,15 +17,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AddYoursPage() {
-  try {
-    await requireGalleryAccess();
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      redirect("/enter?next=/add-yours");
-    }
-    throw error;
-  }
-
   return (
     <main
       className="atlas-guest-page atlas-upload-page"

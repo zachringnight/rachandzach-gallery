@@ -1,32 +1,24 @@
 /**
- * Guest-session cookie minting for specs that need to reach an authenticated
- * route WITHOUT going through the real login form.
+ * Guest-session cookie minting for specs that want a KNOWN session id.
  *
- * Why this exists: POST /api/access/login rate-limits every attempt through
- * a Postgres RPC (src/lib/auth/rate-limit.ts) BEFORE it ever checks the
- * password. There is no live database in this environment (no Docker, no
- * local Postgres -- packet 12's hard gates), so that RPC call always fails
- * and the real login endpoint always denies with the "slow" error,
- * regardless of the password. access.spec.ts covers that real, documented
- * behavior directly by driving the actual form.
+ * This used to exist because reaching any archive route meant going through
+ * a login POST, which rate-limited through a Postgres RPC before it
+ * ever checks the password -- and there is no live database in this
+ * environment (no Docker, no local Postgres), so the real login endpoint
+ * always denied. That gate, and that route, were removed on 2026-08-09: the
+ * proxy now hands every visitor a session on the way in, so no spec needs
+ * this helper merely to get through a door.
  *
- * Session MINTING itself has no database dependency at all --
- * createGuestSession() in src/lib/auth/guest-session.ts is a pure
- * HMAC-SHA256 signature over a random session id, keyed only by
- * GALLERY_SESSION_SECRET. It is the exact function the login route calls
- * once the RPC succeeds. Calling it directly here, with the same secret the
- * running server was started with (tests/e2e/support/env.ts), produces a
- * cookie byte-for-byte identical to what a real login would have issued. So
- * every spec that uses it is still exercising the real proxy.ts /
- * requireGalleryAccess() verification code on the server -- only the
- * DB-gated rate limiter is bypassed, not auth verification itself. This is
- * standard "programmatic login" e2e practice for a login flow with an infra
- * dependency the suite cannot provide (see
- * https://playwright.dev/docs/auth#basic-shared-account-in-all-tests for the
- * general pattern); it is not a faked pass, and every DB-backed page or
- * route this cookie subsequently reaches is still exercised for real,
- * including its real fail-closed behavior when Supabase is unreachable (see
- * gallery.spec.ts, downloads.spec.ts, uploads.spec.ts, admin.spec.ts).
+ * It stays for the case it is still good at: pinning the exact session id a
+ * spec runs under, so assertions about session-keyed data (favorites, upload
+ * batches) are not racing a cookie the server minted a moment ago.
+ *
+ * Minting has no database dependency -- createGuestSession() in
+ * src/lib/auth/guest-session.ts is a pure HMAC-SHA256 signature over a random
+ * session id, keyed only by GALLERY_SESSION_SECRET. Called here with the same
+ * secret the running server was started with (tests/e2e/support/env.ts), it
+ * produces a cookie byte-for-byte identical to one the proxy would issue, so
+ * the server still runs its real verification path over it.
  */
 import type { BrowserContext } from "@playwright/test";
 import {

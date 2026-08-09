@@ -83,11 +83,18 @@ test.describe("add-yours: real, database-free client-side validation", () => {
     await page.goto("/add-yours");
   });
 
-  test("unauthenticated visitors never reach this page", async ({ browser }) => {
+  test("a visitor with no cookie reaches this page and is given a session", async ({
+    browser,
+  }) => {
+    // Inverted on 2026-08-09: this asserted a redirect to /enter. Uploading
+    // is open now, so what has to hold instead is that the proxy still hands
+    // the visitor an identity -- without one their batch has no owner key.
     const freshContext = await browser.newContext();
     const freshPage = await freshContext.newPage();
     await freshPage.goto("/add-yours");
-    expect(new URL(freshPage.url()).pathname).toBe("/enter");
+    expect(new URL(freshPage.url()).pathname).toBe("/add-yours");
+    const cookies = await freshContext.cookies();
+    expect(cookies.map((c) => c.name)).toContain("rz_gallery_session");
     await freshContext.close();
   });
 

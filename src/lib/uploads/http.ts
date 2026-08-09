@@ -2,18 +2,18 @@
  * Shared HTTP helpers for the guest upload routes (packet 08). SERVER-ONLY:
  * imported only by route handlers.
  *
- * Centralizes the guest-session guard and the error-to-response mapping so
- * every upload route fails closed the same way: a missing session is 401, a
- * missing secret is a loud 500, validation is 422, and a database/storage
- * failure never leaks internals to the guest.
+ * Centralizes the guest-identity lookup and the error-to-response mapping so
+ * every upload route answers the same way: validation is 422 and a
+ * database/storage failure never leaks internals to the guest.
+ *
+ * There is no longer a 401 to hand out. Since the password gate was removed
+ * (2026-08-09) uploading is open to anyone with the URL; the session is only
+ * the key the batch is filed under, so it is fetched, never demanded. What
+ * still bounds this surface is the per-IP rate limit below and the fact that
+ * nothing uploaded is visible until an admin approves it.
  */
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  GalleryAccessConfigError,
-  GalleryAccessError,
-  requireGalleryAccess,
-  type GallerySession,
-} from "@/lib/auth/guest-session";
+import { GalleryAccessConfigError } from "@/lib/auth/guest-session";
 import { consumeRateLimit, hashRateLimitKey } from "@/lib/auth/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -21,38 +21,6 @@ import {
   UploadPersistenceError,
   UploadValidationError,
 } from "./contracts";
-
-export type GuestGuardResult =
-  | { ok: true; session: GallerySession }
-  | { ok: false; response: NextResponse };
-
-/**
- * Re-runs the guest-session check inside the route (the proxy is not the only
- * gate). Returns the session or a ready-to-send failure response.
- */
-export async function requireGuest(): Promise<GuestGuardResult> {
-  try {
-    const session = await requireGalleryAccess();
-    return { ok: true, session };
-  } catch (error) {
-    if (error instanceof GalleryAccessConfigError) {
-      return {
-        ok: false,
-        response: NextResponse.json({ error: error.message }, { status: 500 }),
-      };
-    }
-    if (error instanceof GalleryAccessError) {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { error: "Authentication required." },
-          { status: 401 },
-        ),
-      };
-    }
-    throw error;
-  }
-}
 
 // --- Rate limiting ---------------------------------------------------------
 

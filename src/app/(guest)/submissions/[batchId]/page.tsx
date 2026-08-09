@@ -7,17 +7,15 @@
  * loadSubmissionReceiptView/resolveSubmissionReceiptView in
  * src/lib/modules/contracts.ts, and tests/modules/submission-status.test.ts).
  *
- * Guest-gated: this route has no entry in PUBLIC_ROUTES
- * (src/lib/auth/guest-session.ts), so proxy.ts already default-denies it to
- * anonymous requests. This page re-checks requireGalleryAccess() itself too
- * (defense in depth, matching src/app/(guest)/add-yours/page.tsx), since a
- * receipt link may be the very first URL a guest opens in a new tab.
+ * That receipt token is now the only thing protecting this page. It used to
+ * sit behind the shared password as well; since that gate was removed
+ * (2026-08-09) the token carries the whole load on its own, which is what it
+ * was designed for -- a receipt link is often the very first URL a guest
+ * opens in a new tab.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
-import { GalleryAccessError, requireGalleryAccess } from "@/lib/auth/guest-session";
 import { getUploadStatus } from "@/lib/uploads/create-batch";
 import { loadSubmissionReceiptView } from "@/lib/modules/contracts";
 
@@ -50,16 +48,6 @@ export default async function SubmissionStatusPage({
   searchParams: Promise<{ receipt?: string }>;
 }) {
   const { batchId } = await params;
-
-  try {
-    await requireGalleryAccess();
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      redirect(`/enter?next=${encodeURIComponent(`/submissions/${batchId}`)}`);
-    }
-    throw error;
-  }
-
   const { receipt } = await searchParams;
   const view = await loadSubmissionReceiptView(batchId, receipt, { getUploadStatus });
 

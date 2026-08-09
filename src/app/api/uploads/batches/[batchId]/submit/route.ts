@@ -17,7 +17,7 @@ import {
 } from "@/lib/uploads/create-batch";
 import { GUEST_PENDING_BUCKET } from "@/lib/uploads/contracts";
 import { magicMatchesMediaType } from "@/lib/uploads/validate-upload";
-import { requireGuest, uploadErrorResponse } from "@/lib/uploads/http";
+import { uploadErrorResponse } from "@/lib/uploads/http";
 
 export const runtime = "nodejs";
 
@@ -27,9 +27,6 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ batchId: string }> },
 ) {
-  const guard = await requireGuest();
-  if (!guard.ok) return guard.response;
-
   const { batchId } = await context.params;
 
   let body: unknown;

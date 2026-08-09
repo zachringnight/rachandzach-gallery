@@ -2,15 +2,16 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isOpenAccess } from "@/lib/auth/open-access";
 
 /**
- * This module is one boolean, and that boolean is the whole reason the
- * archive is not public. While open, everything is: all 1,721 photographs,
- * every guest name and face crop, the signed originals, and an /admin that
- * writes to the live database.
+ * This module is one boolean. It used to decide whether the archive was
+ * public; since 2026-08-09 the archive is public either way, and what is left
+ * riding on it is /admin -- rename, hide or remove guests, moderate uploads,
+ * all against the live database. That is now MORE of the module's job than it
+ * was before, not less.
  *
- * Until now nothing tested it, so deleting the VERCEL_ENV clause -- the guard
- * against the flag being copied into Production by a routine "copy env"
- * action -- was a fully green build and a fully open site. These tests exist
- * so that specific edit fails loudly.
+ * Deleting the VERCEL_ENV clause -- the guard against the flag being copied
+ * into Production by a routine "copy env" action -- would be a fully green
+ * build and a wide-open admin. These tests exist so that specific edit fails
+ * loudly.
  */
 describe("isOpenAccess", () => {
   const original = {

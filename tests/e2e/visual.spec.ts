@@ -57,22 +57,10 @@ test.describe("public pages", () => {
     });
   });
 
-  test("login (enter)", async ({ page }) => {
-    await page.goto("/enter");
-    await prepareVisualCapture(page);
-    await expect(page).toHaveScreenshot("enter.png", { animations: "disabled" });
-  });
-
-  test("login, invalid-password error state", async ({ page }) => {
-    await page.goto("/enter?error=invalid");
-    await prepareVisualCapture(page);
-    await expect(page).toHaveScreenshot("enter-error-invalid.png", {
-      animations: "disabled",
-    });
-  });
-
   test("404", async ({ page }) => {
-    await page.goto("/this-page-does-not-exist");
+    // Multi-segment: a one-segment path resolves through /[personSlug],
+    // which needs the database this suite deliberately does not have.
+    await page.goto("/this/page/does/not/exist");
     await prepareVisualCapture(page);
     await expect(page).toHaveScreenshot("not-found.png", {
       fullPage: true,

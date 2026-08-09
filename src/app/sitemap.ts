@@ -3,14 +3,14 @@ import type { MetadataRoute } from "next";
 import { SITE_ORIGIN } from "@/lib/redirects";
 
 /**
- * Only public pages. Protected routes and disabled feature modules must never
- * appear here.
+ * Only pages we want indexed. Disabled feature modules must never appear
+ * here, and neither may anything robots.ts disallows.
  *
- * Since the whole-site password gate (2026-07-30) that leaves exactly one
- * entry. The archive home used to lead this list; it now redirects anonymous
- * visitors to /enter, and a sitemap entry for a page a crawler cannot read is
- * a broken promise, so it was dropped in the same change. /marathon is public
- * too but is a 308 alias for /nyc, and redirects do not belong in a sitemap.
+ * That leaves exactly one entry. Removing the password gate (2026-08-09) did
+ * not add any: the archive is reachable now, but robots.ts still asks for it
+ * not to be indexed, and a sitemap entry for a disallowed URL is two
+ * contradicting signals. /marathon is crawlable too but is a 308 alias for
+ * /nyc, and redirects do not belong in a sitemap.
  *
  * If this file is ever empty, delete the sitemap and the robots.txt reference
  * to it rather than shipping an empty one.

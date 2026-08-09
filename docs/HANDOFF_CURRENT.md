@@ -137,7 +137,12 @@ Standing rule holds: no agent performs visual review. This is the full agenda fo
 This is the complete list. Nothing else is open anywhere in this project. Each gate is its own separate future approval; none of it happens as a side effect of anything in this document.
 
 **Already decided, for the record, no action needed:**
-- Shared guest password: `071925`. Real Argon2id hash and a fresh session secret are staged in `.env.cloud` (gitignored).
+- Shared guest password: RETIRED 2026-08-09. The gate, the `/enter` door and
+  `GALLERY_PASSWORD_HASH` were all removed; the site is open to anyone with the
+  URL and unlisted only by `robots.txt`. The value that used to be recorded
+  here is deleted with it -- it authenticates nothing now. `GALLERY_SESSION_SECRET`
+  is still staged in `.env.cloud` (gitignored) and still needed: it signs the
+  guest identity cookie favorites are keyed to.
 - Supabase project: existing shared "PrizmLounge" (`rnfvmqflktghriqefatc`, us-west-2), not a new dedicated project.
 - Approved guest originals are downloadable, same as photographer originals.
 - Photographer credit: Ali Beck Photo, website and Instagram, wired into the footer.
@@ -168,7 +173,6 @@ vercel env add NEXT_PUBLIC_SUPABASE_URL production
 vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
 vercel env add SUPABASE_URL production
 vercel env add SUPABASE_SERVICE_ROLE_KEY production
-vercel env add GALLERY_PASSWORD_HASH production
 vercel env add GALLERY_SESSION_SECRET production
 ```
 Confirm Vercel Authentication (Standard Protection) is on for previews (Project Settings > Deployment Protection).

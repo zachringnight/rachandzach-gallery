@@ -40,18 +40,19 @@ shorter server-side chain.
 
 This was a single `/story/:path*` rule, back when every story derivative was
 public. The whole-site password gate (2026-07-30) moved four of the six behind
-the guest session, and `public` on a gated path is a real leak: the shared CDN
-would cache a signed-in visitor's copy and hand it to anonymous ones.
+the guest session, and `public` on a gated path is a real leak, so the rule was
+narrowed to the two hero files the sign-in page rendered.
 
-Only the two hero files `/enter` renders are still public, so only those two
-are named. Both are content-hashed or hand-versioned, so `immutable` is still
-honest. The gated four fall through to Next's defaults and are re-fetched per
-session, which is the correct trade for four small derivatives.
+Removing the password gate (2026-08-09) makes all six public again, so the
+narrowing is no longer load-bearing -- it is now just a cache policy that
+covers two of six files. Widening it back to `/story/:path*` is safe and would
+be a small win; left alone here because it is a performance change, not part of
+opening the site. Both named files are content-hashed or hand-versioned, so
+`immutable` is still honest.
 
-If a story derivative is ever re-exported, its filename changes (it carries
-the first 8 chars of the image hash) and this rule must change with it. The
-public allowlist in `src/lib/auth/guest-session.ts` has the same coupling, and
-`tests/auth/route-protection.test.ts` fails loudly when it drifts.
+If a story derivative is ever re-exported its filename changes (it carries the
+first 8 chars of the image hash) and this rule must change with it. The
+allowlist that used to share that coupling is gone.
 
 ### `ignoreCommand`
 

@@ -88,9 +88,10 @@ export async function createUploadBatch(
   if (!parsed.ok) {
     throw new UploadValidationError(parsed.error);
   }
-  // The guest session gates the route (requireGalleryAccess); batches are keyed
-  // by the opaque receipt, not by session id, so nothing session-identifying is
-  // persisted here.
+  // Batches are keyed by the opaque receipt, not by session id, so nothing
+  // session-identifying is persisted here. The receipt is what makes a
+  // submission retrievable -- and since the password gate was removed, it is
+  // the only thing that does.
   void guestSession;
 
   const receiptToken = generateReceiptToken();

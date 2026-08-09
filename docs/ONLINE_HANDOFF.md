@@ -94,11 +94,11 @@ Production smoke results from 2026-07-25:
 | Request | Expected and observed |
 |---|---|
 | `/` | `200` |
-| `/enter` | `200` |
+| `/enter` | `200` -- the sign-in page, removed 2026-08-09; this row is history |
 | `/nyc` | `200` |
 | `/marathon` | `308` to `/nyc` |
-| `/photos?gallery_q=weekend` | `307` to the password gate with the full filtered URL preserved in `next` |
-| `/api/gallery` without a guest session | `401` JSON |
+| `/photos?gallery_q=weekend` | `307` to the password gate with the full filtered URL preserved in `next` -- now a plain `200`, gate removed |
+| `/api/gallery` without a guest session | `401` JSON -- now `200`, gate removed |
 
 Supabase migrations added by this release are checked in and applied:
 
@@ -399,10 +399,12 @@ to the live database.**
 Two changes, both deliberate and both Zach's call, made to get the guest
 manager usable while magic-link sign-in is broken:
 
-1. `OPEN_ACCESS=1` is set on the Vercel **Preview** environment. It bypasses
-   the guest password (`src/proxy.ts`, `requireGalleryAccess`) and returns a
+1. `OPEN_ACCESS=1` is set on the Vercel **Preview** environment. It returns a
    synthetic administrator from `requireAdmin()`. See
-   `src/lib/auth/open-access.ts`.
+   `src/lib/auth/open-access.ts`. (It also used to bypass the guest password;
+   that half became a no-op on 2026-08-09 when the password was removed from
+   every environment. The admin bypass is the whole of it now, which makes
+   this flag MORE dangerous than it was, not less.)
 2. Vercel **Deployment Protection (`ssoProtection`) was disabled** for the
    project so Rachel could open the preview without a Vercel account.
 
@@ -498,7 +500,8 @@ deployments do not receive new build-time `NEXT_PUBLIC_*` values.
 
 Run these checks on `https://rachandzach.com`:
 
-- [ ] Enter through the guest password gate and open `/photos`
+- [ ] Open `/photos` directly (no password since 2026-08-09) and confirm it
+      renders for a browser with no cookies at all
 - [ ] Apply text plus event/person filters, choose **Copy current view**, paste
       the URL in a new tab, and confirm the same filtered result survives
 - [ ] Run a semantic Moment Search and confirm its query does not overwrite

@@ -21,8 +21,9 @@ import { AdminAccessError, requireAdmin } from "@/lib/auth/admin-session";
  * only because requireAdmin() runs again on the server. So this route does
  * exactly that, then streams the bytes itself.
  *
- * Guest faces are private: this must never lose its requireAdmin() call, and
- * /faces must never be added to PUBLIC_ROUTES.
+ * Guest faces are private: this must never lose its requireAdmin() call. It
+ * is the reason face crops stayed out of the 2026-08-09 opening -- the rest of
+ * the site lost its password, /admin and everything it serves did not.
  */
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

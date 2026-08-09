@@ -1,11 +1,21 @@
 /**
- * Route-protection tests (packet 04).
+ * Proxy + admin tests.
  *
- * Proves the default-deny contract at the proxy layer: public routes stay
- * open, guest routes redirect to /enter, API routes return 401 JSON, admin
- * routes never accept a guest cookie, unlisted routes are protected, and the
- * security headers ride every response. requireAdmin is proven against a
- * mocked Supabase server client (no live database exists locally).
+ * The default-deny contract these started life as is gone: the password gate
+ * was removed on 2026-08-09, and the proxy no longer refuses anyone. What is
+ * asserted now is what replaced it --
+ *
+ *   - every route answers an anonymous request, including the ones that used
+ *     to redirect to /enter;
+ *   - the guest identity cookie is issued on the way past, and an existing
+ *     one is left alone;
+ *   - a forged cookie is still not honoured (identity, not permission);
+ *   - /admin and /api/admin are the exception and are still gated, and a
+ *     guest cookie still grants nothing there;
+ *   - the security headers ride every response.
+ *
+ * requireAdmin is proven against a mocked Supabase server client (no live
+ * database exists locally).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
@@ -14,9 +24,8 @@ import nextConfig from "../../next.config";
 import {
   GUEST_SESSION_COOKIE,
   createGuestSession,
-  isPublicRoute,
+  verifyGuestSession,
 } from "@/lib/auth/guest-session";
-import { storyPhotos } from "@/content/story-photos";
 import {
   ADMIN_EMAIL_ALLOWLIST,
   AdminAccessError,
@@ -57,13 +66,12 @@ function expectPassThrough(response: Response, label: string) {
   expect(response.headers.get("location"), label).toBeNull();
 }
 
-function expectRedirectToEnter(response: Response, expectedNext: string) {
-  expect(response.status).toBe(307);
-  const location = response.headers.get("location");
-  expect(location).not.toBeNull();
-  const url = new URL(location as string);
-  expect(url.pathname).toBe("/enter");
-  expect(url.searchParams.get("next")).toBe(expectedNext);
+/** The session token the response tells the browser to keep, if any. */
+function issuedToken(response: Response): string | null {
+  const header = response.headers.get("set-cookie");
+  if (!header) return null;
+  const match = header.match(new RegExp(`${GUEST_SESSION_COOKIE}=([^;]+)`));
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 function expectSecurityHeaders(response: Response) {
@@ -87,169 +95,119 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe("proxy: public routes stay open", () => {
-  // After the whole-site password gate (2026-07-30) this list IS the public
-  // surface of the site, in full. Adding a path here makes it readable by
-  // anyone on the internet, so treat a diff to this array as a security
-  // change and not a test fixup.
-  const publicPaths = [
-    // The one deliberate exception: a fundraiser that has to stay shareable.
+describe("proxy: the whole site answers anonymous requests", () => {
+  // Everything below used to be behind the shared password. A diff that adds
+  // a path here is not a security change any more; a diff that makes one of
+  // these stop returning 200 is.
+  const openPaths = [
+    // The archive itself: this is the URL guests were given.
+    "/",
+    "/photos",
+    "/my-weekend",
+    "/add-yours",
+    "/favorites",
+    "/submissions",
+    "/playlists",
+    "/weekend",
+    // The fundraiser, public all along.
     "/nyc",
     "/marathon",
-    // Public collateral for /nyc. The share card is fetched anonymously by
-    // social apps building link previews, so it must never sit behind the
-    // password gate.
-    "/nyc/rachel-running.jpg",
     "/nyc/nyc-share.jpg",
-    "/nyc/instagram-post.jpg",
-    // The door and the files needed to render or reach it.
-    "/enter",
+    // Crawler files and brand collateral.
     "/robots.txt",
     "/sitemap.xml",
-    "/api/access/login",
-    "/api/access/logout",
-    "/auth/callback",
     "/brand/0719-co-outline.svg",
+    // Story derivatives: the hero was public, the other five were not.
     "/story/hero-sunset-a6fa78bb.jpg",
-    "/story/hero-sunset-mobile-adobe.png",
+    "/story/coast-1dc07dd8.jpg",
+    "/story/after-party-e8e24926.jpg",
+    // Photography that only a signed-in guest could reach before.
+    "/gallery-assets/full/wedding-0001.jpg",
+    // APIs, which used to answer 401 JSON.
+    "/api/gallery",
+    "/api/search",
+    "/api/uploads",
+    "/api/downloads",
+    "/auth/callback",
+    // A route nobody has listed: there is no allowlist left to be off.
+    "/some-brand-new-route",
   ];
 
-  for (const path of publicPaths) {
-    it(`lets ${path} through with no session`, async () => {
+  for (const path of openPaths) {
+    it(`serves ${path} with no session`, async () => {
       const response = await proxy(makeRequest(path));
       expectPassThrough(response, path);
       expectSecurityHeaders(response);
     });
   }
 
-  it("works even when no secret is configured (public pages never verify)", async () => {
-    vi.stubEnv("GALLERY_SESSION_SECRET", "");
-    const response = await proxy(makeRequest("/nyc"));
-    expectPassThrough(response, "/nyc");
-  });
-
-  it("keeps /enter's hero derivative public under its real, hashed filename", () => {
-    // story-photos.ts names each derivative with the first 8 chars of its
-    // image hash, so re-exporting the hero silently changes this path. The
-    // allowlist cannot follow it automatically without pulling content into
-    // the proxy's module graph, so it is pinned here instead: a swapped hero
-    // fails this assertion rather than 404ing inside the password form.
-    expect(isPublicRoute(storyPhotos.hero.src)).toBe(true);
-  });
-
-  it("leaves the rest of public/story/ behind the gate", () => {
-    for (const photo of Object.values(storyPhotos.chapters)) {
-      expect(isPublicRoute(photo.src), `${photo.id} must not be public`).toBe(
-        false,
-      );
+  it("no longer redirects anyone to the door that used to exist", async () => {
+    for (const path of ["/", "/photos?event=wedding", "/api/gallery"]) {
+      const response = await proxy(makeRequest(path));
+      expect(response.status, path).toBe(200);
+      expect(response.headers.get("location"), path).toBeNull();
     }
   });
 });
 
-describe("proxy: guest routes require a session", () => {
-  const guestPages = [
-    "/photos",
-    "/my-weekend",
-    "/add-yours",
-    "/favorites",
-    "/submissions",
-    // Moved behind the gate on 2026-07-30 when the site went fully private.
-    // The archive home is the important one: it is the URL people have, and
-    // an unauthenticated visitor must now meet the password form there.
-    "/",
-    "/playlists",
-    // Only reachable if the legacy 308 in next.config.ts is ever dropped;
-    // asserted so removing that redirect cannot quietly re-open the route.
-    "/weekend",
-    // The four story derivatives that only the home page rendered.
-    "/story/coast-1dc07dd8.jpg",
-    "/story/ceremony-b31285ca.jpg",
-    "/story/dinner-32b4c391.jpg",
-    "/story/dancing-57fd10e8.jpg",
-    "/story/after-party-e8e24926.jpg",
-  ];
-
-  for (const path of guestPages) {
-    it(`redirects ${path} to /enter without a session`, async () => {
-      const response = await proxy(makeRequest(path));
-      expectRedirectToEnter(response, path);
-      expectSecurityHeaders(response);
-    });
-  }
-
-  it("preserves the query string in the next parameter", async () => {
-    const response = await proxy(makeRequest("/photos?event=wedding"));
-    expectRedirectToEnter(response, "/photos?event=wedding");
+describe("proxy: the guest identity cookie", () => {
+  it("issues a valid session to a caller who arrives without one", async () => {
+    const response = await proxy(makeRequest("/photos"));
+    const token = issuedToken(response);
+    expect(token).not.toBeNull();
+    await expect(verifyGuestSession(token)).resolves.not.toBeNull();
   });
 
-  it("defaults to protected for a route nobody has listed", async () => {
-    const response = await proxy(makeRequest("/some-brand-new-route"));
-    expectRedirectToEnter(response, "/some-brand-new-route");
+  it("marks the cookie httpOnly and same-site lax", async () => {
+    const response = await proxy(makeRequest("/photos"));
+    const header = response.headers.get("set-cookie") ?? "";
+    expect(header.toLowerCase()).toContain("httponly");
+    expect(header.toLowerCase()).toContain("samesite=lax");
   });
 
-  it("keeps legacy static gallery assets protected", async () => {
-    const response = await proxy(
-      makeRequest("/gallery-assets/full/wedding-0001.jpg"),
-    );
-    expect(response.status).toBe(307);
-  });
-
-  it("returns 401 JSON for protected API routes instead of redirecting", async () => {
-    for (const path of [
-      "/api/gallery",
-      "/api/search",
-      "/api/uploads",
-      "/api/downloads",
-    ]) {
-      const response = await proxy(makeRequest(path));
-      expect(response.status, path).toBe(401);
-      expect(response.headers.get("location"), path).toBeNull();
-      expect(response.headers.get("content-type"), path).toContain("json");
-      expectSecurityHeaders(response);
-    }
-  });
-
-  it("lets a valid guest session through to pages and APIs", async () => {
+  it("leaves an existing valid session alone", async () => {
     const token = await createGuestSession();
-    const page = await proxy(
+    const response = await proxy(
       makeRequest("/photos", { [GUEST_SESSION_COOKIE]: token }),
     );
-    expectPassThrough(page, "/photos with session");
-    expectSecurityHeaders(page);
-
-    const api = await proxy(
-      makeRequest("/api/gallery", { [GUEST_SESSION_COOKIE]: token }),
-    );
-    expectPassThrough(api, "/api/gallery with session");
+    expectPassThrough(response, "/photos with session");
+    expect(issuedToken(response)).toBeNull();
   });
 
-  it("rejects a tampered guest cookie", async () => {
+  it("replaces a tampered cookie instead of honouring it", async () => {
     const token = await createGuestSession();
+    const real = await verifyGuestSession(token);
     const response = await proxy(
       makeRequest("/photos", { [GUEST_SESSION_COOKIE]: `${token}x` }),
     );
-    expectRedirectToEnter(response, "/photos");
+    expectPassThrough(response, "/photos with tampered cookie");
+    const issued = issuedToken(response);
+    expect(issued).not.toBeNull();
+    const session = await verifyGuestSession(issued);
+    expect(session!.sessionId).not.toBe(real!.sessionId);
   });
 
-  it("fails closed with a clear configuration error when the secret is missing at verify time", async () => {
+  it("serves the page anyway when the secret is missing, without a cookie", async () => {
+    // Fail soft: an unconfigured secret costs favorites continuity, not the
+    // site. This used to be a 500 on every gated route.
     vi.stubEnv("GALLERY_SESSION_SECRET", "");
     const response = await proxy(
       makeRequest("/photos", { [GUEST_SESSION_COOKIE]: "v1.payload.sig" }),
     );
-    expect(response.status).toBe(500);
-    expect(await response.text()).toContain("GALLERY_SESSION_SECRET");
+    expectPassThrough(response, "/photos without a secret");
+    expect(issuedToken(response)).toBeNull();
   });
 });
 
-describe("proxy: admin routes never accept a guest session", () => {
-  it("redirects /admin even with a valid guest cookie", async () => {
+describe("proxy: admin routes are still gated", () => {
+  it("redirects /admin away, even with a valid guest cookie", async () => {
     const token = await createGuestSession();
     const response = await proxy(
       makeRequest("/admin", { [GUEST_SESSION_COOKIE]: token }),
     );
     expect(response.status).toBe(307);
     expect(new URL(response.headers.get("location") as string).pathname).toBe(
-      "/enter",
+      "/",
     );
   });
 
@@ -261,11 +219,12 @@ describe("proxy: admin routes never accept a guest session", () => {
     expect(response.status).toBe(401);
   });
 
-  it("passes /admin through to server-side requireAdmin when a Supabase auth cookie exists", async () => {
+  it("never hands an admin path a guest cookie on the way out", async () => {
     const response = await proxy(
       makeRequest("/admin", { "sb-rnfvmqflktghriqefatc-auth-token": "opaque" }),
     );
     expectPassThrough(response, "/admin with sb cookie");
+    expect(issuedToken(response)).toBeNull();
   });
 
   it("recognizes chunked Supabase auth cookies", async () => {

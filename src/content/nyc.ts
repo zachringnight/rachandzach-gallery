@@ -65,7 +65,7 @@ export const nycFundraiser = {
   /**
    * 1200x630 share card, cropped from the hero photo (sharp, centred on
    * Rachel). Used for link previews when this page gets texted around, which
-   * is most of how it will be found. Must stay in PUBLIC_ROUTES.
+   * is most of how it will be found.
    */
   shareImage: {
     src: "/nyc/nyc-share.jpg",
@@ -207,7 +207,7 @@ export const nycFundraisingDeadline: KeyDate = {
  * ======================================================================== */
 
 export interface InstagramPostImage {
-  /** Local path under public/. Must also be listed in PUBLIC_ROUTES. */
+  /** Local path under public/. */
   src: string;
   width: number;
   height: number;
@@ -235,11 +235,10 @@ export interface InstagramPostContent {
    * Locally saved still of the post. Null renders a typographic card that
    * still links out, rather than a broken image.
    *
-   * To add one: save the post image to public/nyc/instagram-post.jpg, set the
-   * real pixel width/height below, and confirm "/nyc/instagram-post.jpg" is in
-   * PUBLIC_ROUTES.exact in src/lib/auth/guest-session.ts (it already is). Any
-   * OTHER filename must be added there too, or it 404s behind the password
-   * gate.
+   * To add one: save the post image to public/nyc/instagram-post.jpg and set
+   * the real pixel width/height below. (Until 2026-08-09 the filename also had
+   * to be allow-listed in a public-routes array or it 404'd behind the gate;
+   * that gate and that list are gone.)
    */
   image: InstagramPostImage | null;
 }

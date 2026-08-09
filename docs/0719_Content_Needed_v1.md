@@ -37,7 +37,7 @@ All six items below (five plus the lint failure) are now closed. Kept here for t
 
 ## Access and accounts
 
-- [x] **Production guest password decision.** CLOSED 2026-07-22: 071925. Real Argon2id hash and a fresh GALLERY_SESSION_SECRET are staged in .env.cloud (gitignored, not auto-loaded by Next), ready to paste into Vercel's environment variable UI at deploy time.
+- [x] **Production guest password decision.** CLOSED 2026-07-22, then REVERSED 2026-08-09: the shared password was removed entirely and the site is open to anyone with the URL. The value recorded here has been deleted along with it. A fresh GALLERY_SESSION_SECRET is still staged in .env.cloud (gitignored, not auto-loaded by Next) and is still required -- it signs the guest identity cookie, not a gate.
   - Owner: Zach
 - [x] **Supabase project, region, and retention.** CLOSED 2026-07-22: existing shared Pro project PrizmLounge (ref rnfvmqflktghriqefatc, us-west-2), not a new dedicated project. All wedding objects carry the rachandzach_/rachandzach- prefix; migrations applied and live-verified with zero drift, zero anon grants. Storage cap 1 GiB, SMTP already configured project-wide.
   - [x] Bucket backup policy: CLOSED 2026-07-22. Originals exist in three independent copies (local clean master, Zach's personal Dropbox, Supabase buckets), covering the Storage-objects gap in Pro backups. Only future guest uploads lack an offsite copy; revisit if they accumulate (noted in 0719_Round_Two_Features_v1.md).

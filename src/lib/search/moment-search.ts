@@ -28,7 +28,7 @@
  * admin.ts, src/lib/gallery/supabase-source.ts, and
  * src/lib/search/query-embedding.ts all carry that tag). Those three are
  * loaded via dynamic import() inside searchMoments()'s body instead, exactly
- * like src/lib/auth/guest-session.ts's requireGalleryAccess() keeps
+ * like src/lib/auth/guest-session.ts's getGuestSession() keeps
  * next/headers out of proxy.ts's module graph. That is what lets
  * tests/search/moment-search.test.ts import searchMomentsWith,
  * normalizeMomentSearchInput, etc. directly under plain Vitest (no Next.js

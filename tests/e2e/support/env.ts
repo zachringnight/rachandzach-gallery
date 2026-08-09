@@ -10,10 +10,6 @@
  *
  * Nothing here is a real secret and nothing here is reachable. This
  * environment has no Docker and no local Postgres, so:
- *   - GALLERY_PASSWORD_HASH is a REAL Argon2id hash (produced by the same
- *     @node-rs/argon2 the app uses) of the synthetic password below, so the
- *     server's verify() call behaves exactly like production would. The
- *     password itself is never a real guest's password.
  *   - The Supabase URL points at a port nothing listens on, so every
  *     Supabase call the running app makes fails fast with a connection
  *     error instead of hanging. That is what lets DB-dependent routes be
@@ -21,18 +17,13 @@
  *     database: build succeeds without secrets, runtime fails closed, by
  *     design (see next.config.ts / src/lib/auth/guest-session.ts).
  *
- * Regeneration commands (only needed if these are ever rotated):
- *   node -e "require('@node-rs/argon2').hash('test-password-0719').then(console.log)"
+ * The password hash that used to live here went with the gate itself on
+ * 2026-08-09; the session secret below is the only gallery value the server
+ * still needs, and it signs identities rather than guarding anything.
+ *
+ * Regeneration command (only needed if this is ever rotated):
  *   openssl rand -hex 32
  */
-
-/** Plaintext only for documentation and for driving the real login FORM in
- *  tests; only ever sent in that one POST body, never treated as a secret. */
-export const SYNTHETIC_GALLERY_PASSWORD = "test-password-0719";
-
-/** Argon2id hash of SYNTHETIC_GALLERY_PASSWORD. */
-export const SYNTHETIC_GALLERY_PASSWORD_HASH =
-  "$argon2id$v=19$m=19456,t=2,p=1$ZlWMad6EStM4sNnxWDeu9g$c507JzlRlyB6y87+8nP8dTo2+VGZuU5IQvTyjnOvc1g";
 
 /**
  * 64 synthetic hex chars (32 random bytes). Must stay byte-identical between
@@ -59,13 +50,10 @@ export const E2E_PORT = 4310;
  * "localhost", deliberately not "127.0.0.1". Verified against the running
  * server: `next start` (no explicit -H/--hostname) resolves
  * `request.nextUrl.origin` to `http://localhost:<port>` regardless of which
- * literal address a client connects through. src/app/api/access/login's
- * same-origin guard compares the browser's real `Origin` header (which
- * mirrors whatever host the suite actually navigated to) against that
- * value, so navigating this suite through 127.0.0.1 makes every real login
- * POST 403 with "Cross-origin login rejected" even though it is, in every
- * practical sense, the same origin. Using "localhost" throughout makes the
- * browser's Origin header match what the server expects.
+ * literal address a client connects through. Kept as "localhost" so the
+ * browser's Origin header matches what the server computes -- the login
+ * route whose same-origin guard first forced this choice is gone, but any
+ * future origin comparison inherits the same trap.
  */
 export const E2E_BASE_URL = `http://localhost:${E2E_PORT}`;
 
@@ -85,7 +73,6 @@ export function syntheticServerEnv(): Record<string, string> {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: SYNTHETIC_SUPABASE_ANON_KEY,
     SUPABASE_URL: SYNTHETIC_SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: SYNTHETIC_SUPABASE_SERVICE_ROLE_KEY,
-    GALLERY_PASSWORD_HASH: SYNTHETIC_GALLERY_PASSWORD_HASH,
     GALLERY_SESSION_SECRET: SYNTHETIC_GALLERY_SESSION_SECRET,
     PORT: String(E2E_PORT),
     NODE_ENV: "production",

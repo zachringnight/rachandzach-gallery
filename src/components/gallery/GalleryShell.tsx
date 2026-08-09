@@ -63,7 +63,7 @@ const RENEW_LEAD_MS = 60_000;
 const RENEW_RETRY_BASE_MS = 15_000;
 const RENEW_RETRY_MAX_MS = 300_000;
 
-type LoadState = "idle" | "loading" | "error-session" | "error-network";
+type LoadState = "idle" | "loading" | "error-network";
 
 type PageFetchResult =
   | { status: "appended"; photos: ClientPhoto[] }
@@ -194,13 +194,10 @@ export function GalleryShell({
       setState("loading");
       try {
         const res = await fetchWithRetry(apiUrl(next), { cache: "no-store" });
-        if (res.status === 401) {
-          if (seq === requestSeq.current) {
-            requestBusyRef.current = false;
-            setState("error-session");
-          }
-          return;
-        }
+        // A 401 used to mean "your guest session expired, go sign in again".
+        // /api/gallery cannot answer 401 since the password gate was removed
+        // (2026-08-09), so it is no longer special-cased: any non-ok status
+        // is a load failure the guest retries.
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: ClientGalleryPage = await res.json();
         if (seq !== requestSeq.current) return;
@@ -245,13 +242,6 @@ export function GalleryShell({
           apiUrl(filtersRef.current, { cursor: nextCursor, limit }),
           { cache: "no-store" },
         );
-        if (res.status === 401) {
-          if (seq === requestSeq.current) {
-            requestBusyRef.current = false;
-            setState("error-session");
-          }
-          return { status: "stale" };
-        }
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: ClientGalleryPage = await res.json();
         if (seq !== requestSeq.current) return { status: "stale" }; // filters changed
@@ -559,16 +549,7 @@ export function GalleryShell({
           <div className="atlas-gallery-toolbar">{toolbarSlot}</div>
         ) : null}
 
-        {state === "error-session" ? (
-          <ErrorState
-            title="Your session expired"
-            body="Enter the password from your invite to keep browsing."
-            actionLabel="Enter the password"
-            onAction={() => {
-              window.location.href = "/enter?next=/photos";
-            }}
-          />
-        ) : state === "error-network" ? (
+        {state === "error-network" ? (
           <ErrorState
             title="We could not load photos"
             body="This looks like a connection hiccup, not an empty gallery."

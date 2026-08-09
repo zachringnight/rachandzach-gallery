@@ -13,10 +13,9 @@ export const metadata: Metadata = {
 
 /**
  * Public route contract (packet 11): return not found while the playlists
- * flag is off. PUBLIC_ROUTES already allow-lists /playlists
- * (src/lib/auth/guest-session.ts, packet 04), so this page -- not the proxy
- * -- is the only gate; a disabled flag must still behave like the route does
- * not exist, never a placeholder "coming soon" page.
+ * flag is off. The flag is the only gate this page has ever had, and a
+ * disabled flag must behave like the route does not exist -- never a
+ * placeholder "coming soon" page.
  */
 export default function PlaylistsPage() {
   if (!featureFlags.playlists) {
