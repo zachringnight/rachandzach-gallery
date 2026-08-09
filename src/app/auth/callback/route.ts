@@ -21,7 +21,10 @@ export const runtime = "nodejs";
 const DEFAULT_DESTINATION = "/admin";
 
 function failure(request: NextRequest): NextResponse {
-  const url = new URL("/enter", request.url);
+  // The /enter door this used to land on is gone with the password gate; the
+  // home page is the neutral destination now. `error=link` is kept in the URL
+  // as the one breadcrumb for an admin whose magic link did not take.
+  const url = new URL("/", request.url);
   url.searchParams.set("error", "link");
   return NextResponse.redirect(url, 303);
 }

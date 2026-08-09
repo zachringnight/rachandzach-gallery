@@ -1,8 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  GalleryAccessError,
-  requireGalleryAccess,
-} from "@/lib/auth/guest-session";
+import { getGuestSession } from "@/lib/auth/guest-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   listFavoritePhotoIds,
@@ -28,7 +25,7 @@ import {
  *         session rows.
  *
  * Owner-key derivation is strictly server-side: the session id comes from
- * the verified guest-session cookie (requireGalleryAccess; a client-supplied
+ * the verified guest-session cookie (getGuestSession; a client-supplied
  * session id is never read), and ?person= / body.person counts only if it
  * matches a real rachandzach_people slug -- anything else falls back to
  * session keying (see resolveFavoriteOwner).
@@ -36,41 +33,15 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function requireSession(): Promise<
-  { ok: true; sessionId: string } | { ok: false; response: NextResponse }
-> {
-  try {
-    const session = await requireGalleryAccess();
-    return { ok: true, sessionId: session.sessionId };
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { error: "Sign in to sync favorites." },
-          { status: 401 },
-        ),
-      };
-    }
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: "Favorites are unavailable right now." },
-        { status: 500 },
-      ),
-    };
-  }
-}
 
 export async function GET(request: NextRequest) {
-  const auth = await requireSession();
-  if (!auth.ok) return auth.response;
+  const { sessionId } = await getGuestSession();
 
   try {
     const client = createAdminClient();
     const owner = await resolveFavoriteOwner(
       client,
-      auth.sessionId,
+      sessionId,
       request.nextUrl.searchParams.get("person"),
     );
     const photoIds = await listFavoritePhotoIds(client, owner);
@@ -84,8 +55,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const auth = await requireSession();
-  if (!auth.ok) return auth.response;
+  const { sessionId } = await getGuestSession();
 
   let body: unknown;
   try {
@@ -110,7 +80,7 @@ export async function PUT(request: NextRequest) {
     const client = createAdminClient();
     const owner = await resolveFavoriteOwner(
       client,
-      auth.sessionId,
+      sessionId,
       rawBody.person,
     );
     // The migrate flag only means something once the owner actually resolved
@@ -119,7 +89,7 @@ export async function PUT(request: NextRequest) {
       rawBody.migrateFromSession === true && owner.kind === "person"
         ? await mergeSessionFavoritesIntoPerson(
             client,
-            auth.sessionId,
+            sessionId,
             owner,
             photoIds,
           )

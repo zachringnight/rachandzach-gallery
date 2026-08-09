@@ -1,8 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  GalleryAccessError,
-  requireGalleryAccess,
-} from "@/lib/auth/guest-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseGalleryDataSource } from "@/lib/gallery/supabase-source";
 import {
@@ -17,27 +13,11 @@ import {
   surfaceGalleryFacets,
 } from "@/lib/people/overrides";
 
-// Reads cookies + private storage; never static, never cached at the edge.
+// Signs private-storage URLs per request; never static, never cached at the edge.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  try {
-    await requireGalleryAccess();
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      return NextResponse.json(
-        { error: "Sign in to view the gallery." },
-        { status: 401 },
-      );
-    }
-    // Missing configuration (GalleryAccessConfigError) fails closed as a 500.
-    return NextResponse.json(
-      { error: "The gallery is unavailable right now." },
-      { status: 500 },
-    );
-  }
-
   const input = parseGalleryQuery(request.nextUrl.searchParams);
   const wantFacets = request.nextUrl.searchParams.get("facets") === "1";
 

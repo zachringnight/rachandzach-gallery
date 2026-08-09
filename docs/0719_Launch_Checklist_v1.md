@@ -29,7 +29,7 @@ Listed in the order `npm run verify` actually hits them (it is a strict `&&` cha
 - [x] **1b. Rate-limit RPC errors on every call. FIXED and independently re-verified this pass.** `supabase/migrations/202607220004_rate_limit_conflict_fix.sql` now exists (`on conflict on constraint rachandzach_rate_limit_buckets_pkey`, sidestepping the PL/pgSQL column-vs-parameter ambiguity) and was applied to and live-smoke-tested against the cloud project. Detail on the original bug: `docs/plans/2026-07-22-0719-digital-wedding-home/reviews/cloud-schema-verification.md`.
 - [x] **1c. Unit test failure. FIXED and independently re-verified this pass.** `npx vitest run tests/content/site-content.test.ts`: 18/18 passing, including the previously-failing "invents no URLs anywhere in the content" case (now excludes `siteConfig.photographer`'s approved credit links from that specific check).
 - [x] **1d. Bounded e2e suite is not fully green yet, but improving fast.** CLOSED 2026-07-22 (into the early hours of 2026-07-23): fully green. Final run: **82 passed / 0 failed / 28 skipped** (110 total).
-  - The WCAG AA color-contrast cluster from the first snapshot is fixed (footer text and the `/enter` error message both switched from a low-contrast color to `ink`; see the comment at `src/app/(access)/enter/AccessForm.tsx` around line 52 for the contrast-ratio math).
+  - The WCAG AA color-contrast cluster from the first snapshot is fixed (footer text and the `/enter` error message both switched from a low-contrast color to `ink`). The `/enter` half of that fix went away with the page itself on 2026-08-09; the footer fix stands.
   - The `/favorites` failure from the second snapshot is fixed: the underlying cause was the `useFavoriteIds` infinite-loop bug noted under 1a above, not a database-reachability issue. The login-rate-limit-copy assertion and `uploads.spec.ts` findings from the second snapshot are also resolved; nothing failing remains.
   - Verify: `npx playwright test tests/e2e --project=chromium` returns 0 failed. Confirmed.
 - [x] **1e. Real full-catalog media sync is IN PROGRESS, not complete.** CLOSED 2026-07-22 (into the early hours of 2026-07-23): COMPLETE. The root cause (this network corrupting HTTPS request bodies above roughly 1 MB) was fixed by switching the real upload path to TUS resumable uploads in 1 MB chunks. The `--execute` run finished clean overnight: 13,532 of 13,532 objects (1,721 originals + 11,811 previews), 0 failures. The chained catalog sync also finished: 23,885 of 23,885 rows. A post-sync verification sweep sampled 241 photos across 6 shards with zero mismatches. Full numbers: `docs/HANDOFF_CURRENT.md` section 2.
@@ -37,7 +37,9 @@ Listed in the order `npm run verify` actually hits them (it is a strict `&&` cha
 ## 2. Zach's approvals
 
 Already decided (for the record, no action needed):
-- [x] Shared guest-access password: `071925`. Hash staged in `.env.cloud`.
+- [x] Shared guest-access password: REMOVED 2026-08-09. No password, no hash,
+  no `/enter`; the archive is open to anyone with the URL and kept out of
+  search indexes by `robots.txt` alone.
 - [x] Supabase project: existing shared "PrizmLounge" (`rnfvmqflktghriqefatc`, us-west-2), not a new dedicated project.
 - [x] Approved guest originals are downloadable (matches how packet 09 already built it; no code change needed).
 - [x] Photographer credit: Ali Beck Photo, website and Instagram wired into the footer.

@@ -82,14 +82,16 @@ them.
 ## Code map
 
 - `src/app/page.tsx`, `src/components/site/`, `src/styles/tokens.css`, and
-  `src/app/globals.css`: archive design and shared visual system. "Public" was
-  true before the site-wide gate; `/` now sits behind it like everything except
-  `/nyc`, `/enter` and the crawler files (`PUBLIC_ROUTES` in
-  `src/lib/auth/guest-session.ts` is the list). The homepage is still rendered
-  and still tested, just never anonymously.
-- `src/app/(access)/` and `src/lib/auth/`: guest gate and session security.
+  `src/app/globals.css`: archive design and shared visual system. Public
+  again, and this time literally: the password gate was removed on 2026-08-09
+  and there is no `PUBLIC_ROUTES` allowlist any more, because every route is
+  public. `robots.txt` still keeps it out of search indexes.
+- `src/lib/auth/`: guest identity (`guest-session.ts` -- a signed session id
+  that favorites and uploads are keyed to, NOT a permission), admin
+  authentication (`admin-session.ts` -- the only real gate left), security
+  headers, and rate limiting.
 - `src/app/(guest)/`, `src/components/gallery/`, and `src/lib/gallery/`:
-  authenticated archive, filters, viewer, and personalized experiences.
+  the archive, filters, viewer, and personalized experiences.
 - `src/components/downloads/` and `src/lib/downloads/`: original downloads,
   native sharing, Google Drive, Dropbox, selection signing, and ZIP flows.
 - `src/components/uploads/`, `src/lib/uploads/`, and `src/lib/moderation/`:

@@ -2,7 +2,7 @@
  * /api/favorites route tests (Favorites v2): auth requirement, server-side
  * owner-key derivation (verified session id, never a client-supplied one),
  * person-slug validation against rachandzach_people, replace semantics, and
- * the session-to-person merge. requireGalleryAccess and createAdminClient
+ * the session-to-person merge. getGuestSession and createAdminClient
  * are mocked (vi.mock, same pattern as tests/auth/route-protection.test.ts);
  * the Supabase client is a purpose-built in-memory fake that mirrors exactly
  * the call shapes src/lib/favorites/server.ts makes -- a mismatch is a
@@ -13,25 +13,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import {
-  GalleryAccessConfigError,
-  GalleryAccessError,
-} from "@/lib/auth/guest-session";
+import { GalleryAccessConfigError } from "@/lib/auth/guest-session";
 import {
   FAVORITES_SYNC_MAX,
   sanitizePhotoIds,
 } from "@/lib/favorites/server";
 import { GET, PUT } from "@/app/api/favorites/route";
 
-const { requireGalleryAccessMock, createAdminClientMock } = vi.hoisted(() => ({
-  requireGalleryAccessMock: vi.fn(),
+const { getGuestSessionMock, createAdminClientMock } = vi.hoisted(() => ({
+  getGuestSessionMock: vi.fn(),
   createAdminClientMock: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/guest-session", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/lib/auth/guest-session")>();
-  return { ...actual, requireGalleryAccess: requireGalleryAccessMock };
+  return { ...actual, getGuestSession: getGuestSessionMock };
 });
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -193,7 +190,7 @@ const P3 = "33333333-3333-4333-8333-333333333333";
 const P4 = "44444444-4444-4444-8444-444444444444";
 
 function grantSession(sessionId = SESSION_ID): void {
-  requireGalleryAccessMock.mockResolvedValue({
+  getGuestSessionMock.mockResolvedValue({
     sessionId,
     issuedAt: 0,
     expiresAt: 9999999999,
@@ -215,7 +212,7 @@ function putRequest(body: unknown): NextRequest {
 }
 
 beforeEach(() => {
-  requireGalleryAccessMock.mockReset();
+  getGuestSessionMock.mockReset();
   createAdminClientMock.mockReset();
 });
 
@@ -235,17 +232,32 @@ describe("sanitizePhotoIds", () => {
 });
 
 describe("GET /api/favorites", () => {
-  it("requires a guest session", async () => {
-    requireGalleryAccessMock.mockRejectedValue(new GalleryAccessError());
+  it("does not turn an anonymous caller away", async () => {
+    // No 401 left to assert: the password gate is gone and a caller with no
+    // cookie is simply given a session id of their own. What still has to
+    // hold is that the id comes from the server, never the request.
+    getGuestSessionMock.mockResolvedValue({
+      sessionId: "fresh-anonymous-session",
+      issuedAt: 0,
+      expiresAt: 0,
+      version: 1,
+    });
+    createAdminClientMock.mockReturnValue(
+      createFakeFavoritesDb({ photos: [] }).client,
+    );
     const response = await GET(getRequest());
-    expect(response.status).toBe(401);
-    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      ownerKind: "session",
+      photoIds: [],
+    });
   });
 
-  it("maps configuration failures to 500, not 401", async () => {
-    requireGalleryAccessMock.mockRejectedValue(
-      new GalleryAccessConfigError("secret missing"),
-    );
+  it("maps storage failures to 500", async () => {
+    grantSession();
+    createAdminClientMock.mockImplementation(() => {
+      throw new GalleryAccessConfigError("secret missing");
+    });
     const response = await GET(getRequest());
     expect(response.status).toBe(500);
   });
@@ -333,13 +345,6 @@ describe("GET /api/favorites", () => {
 });
 
 describe("PUT /api/favorites", () => {
-  it("requires a guest session", async () => {
-    requireGalleryAccessMock.mockRejectedValue(new GalleryAccessError());
-    const response = await PUT(putRequest({ photoIds: [P1] }));
-    expect(response.status).toBe(401);
-    expect(createAdminClientMock).not.toHaveBeenCalled();
-  });
-
   it("rejects malformed bodies", async () => {
     grantSession();
     createAdminClientMock.mockReturnValue(

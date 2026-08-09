@@ -1,5 +1,10 @@
 /**
- * Login rate limiting (packet 04).
+ * Rate limiting (packet 04).
+ *
+ * The login buckets this module was written for are gone with the password
+ * gate (2026-08-09) -- there is nothing left to guess. What remains uses the
+ * same machinery for abuse control on the open surfaces: guest uploads
+ * (src/lib/uploads/http.ts), memory notes, and moment search.
  *
  * The counting itself lives in Postgres behind the
  * public.rachandzach_consume_rate_limit RPC (service-role only, see
@@ -17,26 +22,6 @@ import {
 } from "./guest-session";
 
 export const RATE_LIMIT_RPC = "rachandzach_consume_rate_limit" as const;
-
-/** Per-IP login limit pinned by the packet: 5 attempts per 15 minutes. */
-export const LOGIN_IP_RATE_LIMIT = {
-  action: "guest_login_ip",
-  attemptLimit: 5,
-  windowSeconds: 15 * 60,
-} as const;
-
-/**
- * Small global safety limit across all IPs, so a distributed guesser cannot
- * simply rotate addresses. Wedding-guest logins are rare; 100 attempts per
- * 15 minutes is generous for humans and hostile to scripts.
- */
-export const LOGIN_GLOBAL_RATE_LIMIT = {
-  action: "guest_login_global",
-  /** Fixed subject hashed in place of an IP for the shared global bucket. */
-  subject: "global",
-  attemptLimit: 100,
-  windowSeconds: 15 * 60,
-} as const;
 
 export interface RateLimitInput {
   keyHash: string;
@@ -112,7 +97,7 @@ export async function hashRateLimitKey(
 /**
  * Consumes one attempt from a rate-limit bucket. Returns true when the
  * attempt is allowed, false when the bucket is exhausted OR anything about
- * the call fails (fail closed: no database, no login).
+ * the call fails (fail closed: no database, no write).
  */
 export async function consumeRateLimit(
   client: RateLimitClient,

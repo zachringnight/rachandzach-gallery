@@ -8,9 +8,8 @@ import { addGuestSession } from "./support/session";
  * source, favorites, My Weekend, URL deep links, pagination) is almost
  * entirely backed by live Supabase data: src/app/(guest)/photos/page.tsx and
  * src/app/(guest)/my-weekend/page.tsx both call createAdminClient() inline,
- * unguarded, so with no database they throw before rendering anything
- * (see access.spec.ts's "auth boundary opens" test, which proves the SESSION
- * gate is not the thing failing). Those flows are test.fixme'd below.
+ * unguarded, so with no database they throw before rendering anything.
+ * Those flows are test.fixme'd below.
  *
  * Two slices ARE real and DB-free, and are covered for real here:
  *   - Query-string validation: normalizeGalleryQuery() in
@@ -29,16 +28,16 @@ import { addGuestSession } from "./support/session";
  *     nothing favorited yet needs no server data at all.
  */
 
-test.describe("deep links preserve destination through the auth gate", () => {
-  test("/photos/:photoId redirects to /enter with the full path in next", async ({
-    page,
-  }) => {
+test.describe("deep links land where they point", () => {
+  test("/photos/:photoId is not bounced to a sign-in door", async ({ page }) => {
+    // Until 2026-08-09 this asserted the opposite: a redirect to /enter with
+    // the full path preserved in ?next=. With the password gone the deep link
+    // simply resolves. (No database here, so the page itself still errors --
+    // what matters is that the URL never changed under the visitor.)
     await page.goto("/photos/00000000-0000-0000-0000-000000000000");
     const url = new URL(page.url());
-    expect(url.pathname).toBe("/enter");
-    expect(url.searchParams.get("next")).toBe(
-      "/photos/00000000-0000-0000-0000-000000000000",
-    );
+    expect(url.pathname).toBe("/photos/00000000-0000-0000-0000-000000000000");
+    expect(url.searchParams.get("next")).toBeNull();
   });
 });
 

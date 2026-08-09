@@ -111,8 +111,8 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 /**
  * Production OriginalsDataSource over the service-role Supabase client.
- * Guests never touch rachandzach_photos or storage directly; this is behind
- * requireGalleryAccess() in the route handlers, the only door.
+ * Guests never touch rachandzach_photos or storage directly: every URL they
+ * get is short-lived and signed here, by the route handlers.
  *
  * `client` is a required argument (no default that eagerly constructs an
  * admin client): route handlers call createAdminClient() themselves and pass
@@ -222,8 +222,7 @@ export async function getOriginalDownload(
 }
 
 /**
- * Signs a batch of approved originals with a single authorization check (the
- * caller runs requireGalleryAccess() once, before calling this). Duplicate,
+ * Signs a batch of approved originals in one pass. Duplicate,
  * unknown, and non-approved ids are silently dropped rather than erroring,
  * matching the ids-lookup semantics of getGalleryPage in
  * src/lib/gallery/query.ts. Only truly invalid input (no array, empty after

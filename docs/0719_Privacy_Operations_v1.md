@@ -66,7 +66,7 @@ The privacy commitments of the 0719 + co. digital wedding home and how each is e
 
 ## Favorites persistence
 
-Favorites sync to one server table (`rachandzach_guest_favorites`) that stores photo ids keyed to either an anonymous guest session id or a self-claimed My Weekend person slug: no emails, no names beyond the slug the guest chose for themselves, no device identifiers, no IP addresses. Like every other gallery table, it is RLS-on with zero policies and readable or writable only through the service role behind the session-checked `/api/favorites` routes; when a guest claims a person, their session-keyed rows are merged into the person slug and the session rows are deleted. A person-keyed favorite set is shared by anyone who claims that person, which is accepted behavior inside a password-gated guest gallery.
+Favorites sync to one server table (`rachandzach_guest_favorites`) that stores photo ids keyed to either an anonymous guest session id or a self-claimed My Weekend person slug: no emails, no names beyond the slug the guest chose for themselves, no device identifiers, no IP addresses. Like every other gallery table, it is RLS-on with zero policies and readable or writable only through the service role behind the session-checked `/api/favorites` routes; when a guest claims a person, their session-keyed rows are merged into the person slug and the session rows are deleted. A person-keyed favorite set is shared by anyone who claims that person. That was accepted behavior inside a password-gated gallery; since the gate was removed (2026-08-09) the set of people who could claim a person is anyone holding a link, so treat a person-keyed shortlist as shared, not personal.
 
 ## Photo memories
 
@@ -92,9 +92,9 @@ Guest notes attached to specific photos (the Memories wall) live in one server t
 
 ## Supporting controls
 
-- Fail-closed credentials: no fallback passwords or session secrets in production
+- No fallback secrets in production; nothing falls back to a default
 - Login rate limiting keyed by hashed IP; network identifiers are hashed with a dedicated secret before storage. This RPC (`rachandzach_consume_rate_limit`) errored on every call against a real Postgres instance until a corrective migration (`202607220004_rate_limit_conflict_fix.sql`) was applied and live-verified during packet 12 -- while broken it failed in the safe direction (denied every attempt rather than allowing an unlimited number), so this was never a privacy leak, only a functionality gap. See `docs/0719_Launch_Checklist_v1.md` section 1b
-- Access responses never reveal whether the password or admin account exists
+- Admin responses never reveal whether the admin account exists
 - Receipt tokens are hashed before database storage
 - Security headers include frame-ancestors, nosniff, strict referrer policy, and a tested Content Security Policy
 - Seeds and test fixtures use synthetic records only; no real guest names or emails

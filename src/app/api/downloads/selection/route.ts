@@ -1,8 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  GalleryAccessError,
-  requireGalleryAccess,
-} from "@/lib/auth/guest-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DownloadValidationError } from "@/lib/downloads/contracts";
 import {
@@ -13,8 +9,8 @@ import {
 /**
  * POST /api/downloads/selection (packet 09). Body: { photoIds: string[] }.
  *
- * One authorization check (requireGalleryAccess, once), one batch-signed
- * response covering the whole selection. Never proxies original bytes
+ * One batch-signed response covering the whole selection, for anyone who
+ * asks -- the site carries no password. Never proxies original bytes
  * through Vercel -- the browser streams the ZIP directly from the signed
  * URLs this returns (see src/lib/downloads/stream-zip.ts). Duplicate,
  * unknown, and non-approved ids are silently dropped from the response
@@ -25,21 +21,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  try {
-    await requireGalleryAccess();
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      return NextResponse.json(
-        { error: "Sign in to download photos." },
-        { status: 401 },
-      );
-    }
-    return NextResponse.json(
-      { error: "Downloads are unavailable right now." },
-      { status: 500 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await request.json();

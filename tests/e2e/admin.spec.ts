@@ -4,6 +4,11 @@ import { addGuestSession } from "./support/session";
 /**
  * Admin (packet 12 / workstream A).
  *
+ * NOTE: /admin is the last gated thing on this site. The shared guest
+ * password was removed on 2026-08-09 and every other route now answers an
+ * anonymous request; these tests are what keep that opening from quietly
+ * extending to the moderation surface.
+ *
  * Admin sign-in rides a real Supabase magic link (packet 04); there is no
  * local bypass for it (by design -- see src/lib/auth/admin-session.ts's
  * header comment) and no live Supabase project exists in this environment.
@@ -22,14 +27,14 @@ import { addGuestSession } from "./support/session";
  */
 
 test.describe("the structural gate denies with no admin session", () => {
-  test("/admin redirects to /enter", async ({ page }) => {
+  test("/admin redirects away", async ({ page }) => {
     await page.goto("/admin");
-    expect(new URL(page.url()).pathname).toBe("/enter");
+    expect(new URL(page.url()).pathname).toBe("/");
   });
 
-  test("/admin/review redirects to /enter", async ({ page }) => {
+  test("/admin/review redirects away", async ({ page }) => {
     await page.goto("/admin/review");
-    expect(new URL(page.url()).pathname).toBe("/enter");
+    expect(new URL(page.url()).pathname).toBe("/");
   });
 
   test("/api/admin/batches returns 401 JSON, not a redirect", async ({ request }) => {
@@ -44,11 +49,11 @@ test.describe("a guest session never substitutes for an admin session", () => {
     await addGuestSession(context);
   });
 
-  test("/admin still redirects to /enter with a valid guest cookie", async ({
+  test("/admin still redirects away with a valid guest cookie", async ({
     page,
   }) => {
     await page.goto("/admin");
-    expect(new URL(page.url()).pathname).toBe("/enter");
+    expect(new URL(page.url()).pathname).toBe("/");
   });
 
   test("/api/admin/batches still returns 401 with a valid guest cookie", async ({
@@ -102,11 +107,11 @@ test.describe("a structurally-shaped but unusable Supabase session", () => {
 });
 
 test.describe("the guest-manager surfaces sit behind the same gate", () => {
-  test("/admin/faces redirects to /enter with no session at all", async ({
+  test("/admin/faces redirects away with no session at all", async ({
     page,
   }) => {
     await page.goto("/admin/faces");
-    expect(new URL(page.url()).pathname).toBe("/enter");
+    expect(new URL(page.url()).pathname).toBe("/");
   });
 
   test("a guest session never opens /admin/faces or its API", async ({
@@ -115,7 +120,7 @@ test.describe("the guest-manager surfaces sit behind the same gate", () => {
   }) => {
     await addGuestSession(context);
     await page.goto("/admin/faces");
-    expect(new URL(page.url()).pathname).toBe("/enter");
+    expect(new URL(page.url()).pathname).toBe("/");
     for (const path of [
       "/api/admin/people",
       "/api/admin/people/zach-soskin/photos",
