@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "description": "Human-confirmed duplicate guest identities that must survive a clean catalog rebuild.",
+    "verifiedAt": "2026-08-05"
+  },
+  "merges": [
+    {
+      "fromSlug": "joan-soskin",
+      "fromName": "Joan Soskin",
+      "intoSlug": "joan-auwerter",
+      "intoName": "Joan AuWerter",
+      "reason": "Human-confirmed duplicate identity; the seating list and reviewed gallery use Joan AuWerter."
+    }
+  ]
+}

@@ -44,8 +44,8 @@ Two more tools worth knowing:
   model similarity involved. It writes nothing; it prints candidates.
 - `scripts/face/merge-person.mjs <from> <into>` merges two records of the same
   person (a maiden and a married name, say) across the reviewed overlay, the
-  local catalog and the live database, and prints the master-metadata command
-  to finish the job.
+  durable rebuild map, local catalog and live database, and prints the
+  master-metadata command to finish the job.
 
 ## The browser tagger
 
@@ -138,6 +138,9 @@ node scripts/apply-catalog-overlays.mjs --write     # names into the catalog
 node scripts/build-face-thumbnails.mjs              # refresh Find me faces
 python3 scripts/write-additions-to-master.py        # DRY RUN, shows what would change
 python3 scripts/write-additions-to-master.py --write
+python3 scripts/sync-manifest-after-write.py         # DRY RUN, verifies pixels + sizes
+python3 scripts/sync-manifest-after-write.py --write # backup + atomic manifest update
+npm run verify:catalog
 ```
 
 The last step writes the names into the original JPEGs' embedded metadata
@@ -145,7 +148,10 @@ The last step writes the names into the original JPEGs' embedded metadata
 travel with the photographs into Apple Photos, Lightroom, or whatever exists
 in twenty years, independent of this site. It edits in place with no exiftool
 sidecar, which is why it previews by default and needs `--write` to act. See
-the metadata clause in `AGENTS.md`.
+the metadata clause in `AGENTS.md`. A metadata write can change the JPEG
+container size without changing a pixel. The manifest sync re-verifies every
+touched file's `ImageDataHash` and dimensions before recording those new
+sizes; it refuses the entire update if either moved.
 
 ## The files
 

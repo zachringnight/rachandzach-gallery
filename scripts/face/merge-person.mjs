@@ -7,16 +7,17 @@
  * was recorded twice under two names, usually a maiden and a married name,
  * and the two records have to become one without losing a single tag.
  *
- * Four layers, and all four have to agree or the guest sees one name on the
+ * Five layers, and all five have to agree or the guest sees one name on the
  * site and a different one in the photograph's own metadata twenty years from
  * now:
  *
- *   1. metadata/reviewed-face-tag-additions.json   the reviewed overlay
- *   2. src/generated/gallery-v2.json               the local catalog
- *   3. the clean master's embedded XMP/IPTC names  (delegated, see below)
- *   4. the live database                           what guests actually read
+ *   1. metadata/person-merges.json                 the durable rebuild rule
+ *   2. metadata/reviewed-face-tag-additions.json   the reviewed overlay
+ *   3. src/generated/gallery-v2.json               the local catalog
+ *   4. the clean master's embedded XMP/IPTC names  (delegated, see below)
+ *   5. the live database                           what guests actually read
  *
- * Layer 3 is deliberately NOT done here: rename-person-in-master.py already
+ * Layer 4 is deliberately NOT done here: rename-person-in-master.py already
  * does it with an ImageDataHash check proving no pixel moved, and duplicating
  * that logic badly is how originals get damaged. This prints the exact
  * command instead.
@@ -33,6 +34,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const PERSON_MERGES = join(repoRoot, "metadata/person-merges.json");
 const ADDITIONS = join(repoRoot, "metadata/reviewed-face-tag-additions.json");
 const CATALOG = join(repoRoot, "src/generated/gallery-v2.json");
 
@@ -48,12 +50,30 @@ async function writeJson(path, value) {
 }
 
 async function main() {
-  const [from, into] = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
-  const write = process.argv.includes("--write");
-  if (!from || !into) throw new Error("usage: merge-person.mjs <from-slug> <into-slug>");
+  const args = process.argv.slice(2);
+  const unknown = args.filter((arg) => arg.startsWith("--") && arg !== "--write");
+  if (unknown.length > 0) throw new Error(`unknown argument: ${unknown[0]}`);
+  const [from, into, extra] = args.filter((arg) => !arg.startsWith("--"));
+  const write = args.includes("--write");
+  if (!from || !into || extra) {
+    throw new Error("usage: merge-person.mjs <from-slug> <into-slug> [--write]");
+  }
   if (from === into) throw new Error("those are the same person");
 
-  const [additions, catalog] = await Promise.all([readJson(ADDITIONS), readJson(CATALOG)]);
+  const [personMerges, additions, catalog] = await Promise.all([
+    readJson(PERSON_MERGES),
+    readJson(ADDITIONS),
+    readJson(CATALOG),
+  ]);
+  if (personMerges.schemaVersion !== 1 || !Array.isArray(personMerges.merges)) {
+    throw new Error("metadata/person-merges.json has an unsupported shape");
+  }
+  if (personMerges.merges.some((merge) => merge.fromSlug === from)) {
+    throw new Error(`${from} already has a durable person-merge rule`);
+  }
+  if (personMerges.merges.some((merge) => merge.fromSlug === into)) {
+    throw new Error(`${into} is already a merge source; merge chains are not supported`);
+  }
 
   const fromPerson = catalog.people.find((person) => person.slug === from);
   const intoPerson = catalog.people.find((person) => person.slug === into);
@@ -63,7 +83,18 @@ async function main() {
   console.log(write ? "WRITING" : "DRY RUN, nothing will be written");
   console.log(`\n  ${fromPerson.name} (${from})  ->  ${intoPerson.name} (${into})\n`);
 
-  // 1. reviewed additions
+  // 1. durable rebuild rule. Without this, a clean import resurrects the old
+  // identity from the master even if the generated catalog was correct.
+  personMerges.merges.push({
+    fromSlug: from,
+    fromName: fromPerson.name,
+    intoSlug: into,
+    intoName: intoPerson.name,
+    reason: `Human-confirmed duplicate identity; ${fromPerson.name} is the same guest as ${intoPerson.name}.`,
+  });
+  console.log("  durable merge map:  1 rule");
+
+  // 2. reviewed additions
   const overlayRows = additions.additions.filter((row) => row.personSlug === from);
   for (const row of overlayRows) {
     row.personSlug = into;
@@ -71,7 +102,7 @@ async function main() {
   }
   console.log(`  reviewed overlay:  ${overlayRows.length} rows`);
 
-  // 2. local catalog. Union rather than replace: a photograph that somehow
+  // 3. local catalog. Union rather than replace: a photograph that somehow
   // carries both names must end with one, not a duplicate.
   const touched = [];
   for (const photo of catalog.photos) {
@@ -88,7 +119,7 @@ async function main() {
   catalog.people = catalog.people.filter((person) => person.slug !== from);
   console.log(`  catalog people:    ${from} removed, ${catalog.people.length} remain`);
 
-  // 4. live database
+  // 5. live database
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   let liveRows = null;
@@ -168,6 +199,7 @@ async function main() {
   }
 
   if (write) {
+    await writeJson(PERSON_MERGES, personMerges);
     await writeJson(ADDITIONS, additions);
     await writeJson(CATALOG, catalog);
     console.log("\nWritten. Still to do, for the photographs' own metadata:");

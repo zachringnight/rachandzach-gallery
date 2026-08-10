@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { applyCatalogOverlays } from "../../scripts/lib/catalog-overlays.mjs";
+import {
+  applyCatalogOverlays,
+  applyDisplayNameOverrides,
+  applyPersonMerges,
+} from "../../scripts/lib/catalog-overlays.mjs";
 
 function fixture() {
   return {
@@ -81,6 +85,75 @@ function removals(rows) {
     ],
   };
 }
+
+function personMerges() {
+  return {
+    schemaVersion: 1,
+    merges: [
+      {
+        fromSlug: "existing-person",
+        fromName: "Existing Person",
+        intoSlug: "merged-person",
+        intoName: "Merged Person",
+        reason: "A human confirmed these records belong to the same guest.",
+      },
+    ],
+  };
+}
+
+describe("tracked person identity corrections", () => {
+  it("durably merges an old identity into a missing target", () => {
+    const catalog = fixture();
+
+    const result = applyPersonMerges(catalog, personMerges());
+
+    expect(result).toMatchObject({
+      reviewedPersonMerges: 1,
+      personMergesApplied: 1,
+      personMergeTargetsAdded: 1,
+      personMergePhotosReattributed: 1,
+    });
+    expect(catalog.people.map((person) => person.slug)).not.toContain("existing-person");
+    expect(catalog.people).toContainEqual({
+      slug: "merged-person",
+      name: "Merged Person",
+      photoCount: 0,
+    });
+    expect(catalog.photos[0].peopleSlugs).toEqual(["merged-person"]);
+  });
+
+  it("is idempotent after a person merge has already landed", () => {
+    const catalog = fixture();
+    applyPersonMerges(catalog, personMerges());
+
+    const result = applyPersonMerges(catalog, personMerges());
+
+    expect(result.personMergesApplied).toBe(0);
+    expect(result.personMergesAlreadyApplied).toBe(1);
+  });
+
+  it("fails closed when a merge source name has drifted", () => {
+    const catalog = fixture();
+    catalog.people[0].name = "Unexpected Name";
+
+    expect(() => applyPersonMerges(catalog, personMerges())).toThrow(
+      /name is Unexpected Name, expected Existing Person/,
+    );
+  });
+
+  it("updates tracked display names and rejects missing identities", () => {
+    const catalog = fixture();
+    const result = applyDisplayNameOverrides(catalog, {
+      names: { "existing-person": "Updated Person" },
+    });
+
+    expect(result.displayNamesUpdated).toBe(1);
+    expect(catalog.people[0].name).toBe("Updated Person");
+    expect(() =>
+      applyDisplayNameOverrides(catalog, { names: { "missing-person": "Nobody" } }),
+    ).toThrow(/references missing person missing-person/);
+  });
+});
 
 describe("catalog overlay removals", () => {
   it("removes a tag the master supplied and recounts the person", () => {

@@ -4,14 +4,15 @@
 // database is reachable, the rachandzach_photos table.
 //
 // Scope boundary: this script proves COUNTS and IDENTITY (image_data_hash)
-// line up across the three layers -- master manifest, local catalog JSON,
-// and (optionally) the database. It does NOT recompute file_sha256 for every
-// photo; see scripts/verify-original-integrity.mjs for the sampled
-// byte-level check (local sha256 vs catalog, catalog vs remote object
-// metadata). "Every approved photo has an existing original object" is
-// proven here against the read-only master (a catalog hash with no matching
-// valid master row is reported under hashDiff.missingFromMaster); remote
-// storage-object existence is verify-original-integrity.mjs's job.
+// line up across the three layers -- master manifest plus tracked local
+// identity overlays, local catalog JSON, and (optionally) the database. It
+// does NOT recompute file_sha256 for every photo; see
+// scripts/verify-original-integrity.mjs for the sampled byte-level check
+// (local sha256 vs catalog, catalog vs remote object metadata). "Every
+// approved photo has an existing original object" is proven here against the
+// read-only master (a catalog hash with no matching valid master row is
+// reported under hashDiff.missingFromMaster); remote storage-object existence
+// is verify-original-integrity.mjs's job.
 //
 // Hard gate for this packet: local only, no cloud resources. There is no
 // default --db-env-file. Without one, the database section is reported
@@ -30,6 +31,7 @@ import { promises as fs } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadCleanMasterManifest } from "./lib/clean-master-manifest.mjs";
+import { applyTrackedCatalogOverlays } from "./lib/catalog-overlays.mjs";
 import {
   parseSyncCatalog,
   readCredentialsFromEnvFile,
@@ -79,6 +81,11 @@ export function isLoopbackHost(urlString) {
   } catch {
     return false;
   }
+}
+
+/** Only the canonical generated catalog is defined as master + tracked overlays. */
+export function shouldApplyTrackedOverlays(catalogPath) {
+  return resolve(catalogPath) === DEFAULT_CATALOG_PATH;
 }
 
 /** Set-diff of image_data_hash values between the master and the catalog. */
@@ -234,6 +241,13 @@ export async function verifyGalleryCatalog(rawArgs, deps = {}) {
     computeSha256: false,
     extractExif: false,
   });
+  const rawMasterPeople = master.people.length;
+  let trackedOverlays = null;
+  if (shouldApplyTrackedOverlays(args.catalogPath)) {
+    log("[verify-gallery-catalog] Applying tracked identity overlays to the master view");
+    const applyOverlays = deps.applyTrackedCatalogOverlays ?? applyTrackedCatalogOverlays;
+    trackedOverlays = await applyOverlays(master, repoRoot);
+  }
 
   log(`[verify-gallery-catalog] Reading local catalog: ${args.catalogPath}`);
   const catalogRaw = JSON.parse(await fs.readFile(resolve(args.catalogPath), "utf8"));
@@ -298,7 +312,7 @@ export async function verifyGalleryCatalog(rawArgs, deps = {}) {
     masterRoot: args.masterRoot,
     catalogPath: resolve(args.catalogPath),
     scopeNote:
-      "Counts and image_data_hash identity only; file_sha256 is sampled separately by verify-original-integrity.mjs.",
+      "Counts and image_data_hash identity only. The canonical catalog is compared with the master plus tracked identity overlays; file_sha256 is sampled separately by verify-original-integrity.mjs.",
     master: {
       manifestRows: master.stats.manifestRows,
       validPhotos: master.photos.length,
@@ -306,6 +320,7 @@ export async function verifyGalleryCatalog(rawArgs, deps = {}) {
       issues: master.stats.issues.slice(0, 50),
       events: master.events.length,
       people: master.people.length,
+      rawPeople: rawMasterPeople,
     },
     catalog: {
       photos: catalogData.photos.length,
@@ -317,6 +332,7 @@ export async function verifyGalleryCatalog(rawArgs, deps = {}) {
     hashDiff,
     eventDiff,
     personDiff,
+    trackedOverlays,
     database: dbSection,
     problems,
     ok: problems.length === 0,
@@ -336,6 +352,13 @@ export async function verifyGalleryCatalog(rawArgs, deps = {}) {
     `[verify-gallery-catalog] events: ${eventDiff.mismatches.length} mismatched of ${master.events.length}; ` +
       `people: ${personDiff.mismatches.length} mismatched of ${master.people.length}`,
   );
+  if (trackedOverlays) {
+    log(
+      `[verify-gallery-catalog] tracked overlays: ${trackedOverlays.reviewedPersonMerges} merge(s), ` +
+        `${trackedOverlays.reviewedDisplayNameOverrides} display-name override(s), ` +
+        `${trackedOverlays.reviewedFaceTags} reviewed face tag(s)`,
+    );
+  }
   log(
     dbSection.attempted
       ? `[verify-gallery-catalog] database: ${

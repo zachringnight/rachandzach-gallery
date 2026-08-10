@@ -7,13 +7,16 @@
 //   2. confirmed manual rachandzach_photo_people upserts for reviewed pairs.
 //
 // It never deletes or renames identities/tags, never touches storage, and
-// writes a local ignored pre-state backup before the first mutation.
+// writes a local ignored pre-state backup before the first mutation. Tracked
+// person merges are reported as pending but are never executed by this
+// additive-only command.
 
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import envPkg from "@next/env";
+import { planLiveCatalogSync } from "./lib/catalog-sync-plan.mjs";
 
 const { loadEnvConfig } = envPkg;
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -43,7 +46,7 @@ const client = createClient(url, serviceRoleKey, {
   },
 });
 
-const [attendance, reviewedTags] = await Promise.all([
+const [attendance, reviewedTags, personMerges] = await Promise.all([
   fs
     .readFile(join(repoRoot, "metadata", "wedding-attendees.json"), "utf8")
     .then((value) => JSON.parse(value)),
@@ -52,6 +55,9 @@ const [attendance, reviewedTags] = await Promise.all([
       join(repoRoot, "metadata", "reviewed-face-tag-additions.json"),
       "utf8",
     )
+    .then((value) => JSON.parse(value)),
+  fs
+    .readFile(join(repoRoot, "metadata", "person-merges.json"), "utf8")
     .then((value) => JSON.parse(value)),
 ]);
 
@@ -98,80 +104,6 @@ async function readLiveState() {
   return { people, overrides, photos, joins };
 }
 
-function planSync(state) {
-  const peopleBySlug = new Map(state.people.map((row) => [row.slug, row]));
-  const photosByHash = new Map(
-    state.photos.map((row) => [row.image_data_hash, row]),
-  );
-  const joinKeys = new Set(
-    state.joins.map((row) => `${row.photo_id}:${row.person_id}`),
-  );
-
-  const peopleToAdd = [];
-  for (const attendee of attendance.attendees) {
-    const existing = peopleBySlug.get(attendee.personSlug);
-    if (existing) {
-      if (existing.display_name !== attendee.displayName) {
-        throw new Error(
-          `Live name mismatch for ${attendee.personSlug}: ` +
-            `${existing.display_name} != ${attendee.displayName}`,
-        );
-      }
-      continue;
-    }
-    if (attendee.resolution !== "added") {
-      throw new Error(
-        `Seating attendee ${attendee.seatingName} resolved as ` +
-          `${attendee.resolution}, but ${attendee.personSlug} is missing live`,
-      );
-    }
-    peopleToAdd.push({
-      slug: attendee.personSlug,
-      displayName: attendee.displayName,
-    });
-  }
-
-  const tagsToAdd = [];
-  const tagsAlreadyPresent = [];
-  for (const addition of reviewedTags.additions) {
-    const photo = photosByHash.get(addition.photoId);
-    if (!photo || photo.status !== "published") {
-      throw new Error(
-        `Reviewed tag photo ${addition.photoId} is missing or not published`,
-      );
-    }
-    const person = peopleBySlug.get(addition.personSlug);
-    if (!person) {
-      // Reviewed face profiles are existing catalog people. A missing one is
-      // drift, not an invitation to invent an identity in this phase.
-      throw new Error(
-        `Reviewed tag person ${addition.personSlug} is missing live`,
-      );
-    }
-    const key = `${photo.id}:${person.id}`;
-    const row = {
-      photo_id: photo.id,
-      person_id: person.id,
-      photoHash: addition.photoId,
-      personSlug: addition.personSlug,
-    };
-    if (joinKeys.has(key)) tagsAlreadyPresent.push(row);
-    else tagsToAdd.push(row);
-  }
-
-  return {
-    peopleToAdd,
-    tagsToAdd,
-    tagsAlreadyPresent,
-    liveCounts: {
-      people: state.people.length,
-      overrides: state.overrides.length,
-      photos: state.photos.length,
-      photoPeople: state.joins.length,
-    },
-  };
-}
-
 async function writeBackup(state, plan) {
   const directory = join(repoRoot, "metadata", "faces", "sync-backups");
   await fs.mkdir(directory, { recursive: true });
@@ -180,6 +112,7 @@ async function writeBackup(state, plan) {
   const relevantPersonSlugs = new Set([
     ...attendance.attendees.map((row) => row.personSlug),
     ...reviewedTags.additions.map((row) => row.personSlug),
+    ...personMerges.merges.flatMap((row) => [row.fromSlug, row.intoSlug]),
   ]);
   const candidateHashes = new Set(
     reviewedTags.additions.map((row) => row.photoId),
@@ -208,12 +141,20 @@ async function writeBackup(state, plan) {
 }
 
 let state = await readLiveState();
-let plan = planSync(state);
+let plan = planLiveCatalogSync(state, {
+  attendance,
+  reviewedTags,
+  personMerges,
+});
 const dryRunSummary = {
   mode: execute ? "execute" : "dry-run",
   ...plan.liveCounts,
   seatedAttendees: attendance.attendees.length,
   peopleToAdd: plan.peopleToAdd.length,
+  effectiveNameOverrides: plan.effectiveNameOverrides.length,
+  hiddenNameOverrides: plan.hiddenNameOverrides.length,
+  personMergesPending: plan.personMergesPending.length,
+  pendingPersonMerges: plan.personMergesPending,
   reviewedTags: reviewedTags.additions.length,
   tagsToAdd: plan.tagsToAdd.length,
   tagsAlreadyPresent: plan.tagsAlreadyPresent.length,
@@ -241,7 +182,7 @@ for (const person of plan.peopleToAdd) {
 
 // Re-read after identity creation so tag rows always use authoritative ids.
 state = await readLiveState();
-plan = planSync(state);
+plan = planLiveCatalogSync(state, { attendance, reviewedTags, personMerges });
 for (let index = 0; index < plan.tagsToAdd.length; index += 100) {
   const batch = plan.tagsToAdd.slice(index, index + 100);
   const { error } = await client.from("rachandzach_photo_people").upsert(
@@ -259,7 +200,11 @@ for (let index = 0; index < plan.tagsToAdd.length; index += 100) {
 }
 
 const verifiedState = await readLiveState();
-const verifiedPlan = planSync(verifiedState);
+const verifiedPlan = planLiveCatalogSync(verifiedState, {
+  attendance,
+  reviewedTags,
+  personMerges,
+});
 if (
   verifiedPlan.peopleToAdd.length !== 0 ||
   verifiedPlan.tagsToAdd.length !== 0
@@ -274,7 +219,7 @@ console.log(
   JSON.stringify(
     {
       ...dryRunSummary,
-      mode: "executed-and-verified",
+      mode: "executed-and-verified-additive-only",
       backupPath,
       peopleAdded: dryRunSummary.peopleToAdd,
       // plan was recomputed after the people adds and immediately before the
