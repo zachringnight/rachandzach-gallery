@@ -404,6 +404,14 @@ is in the code now: ordering the insert before the delete was never the
 protection, checking that the insert landed is, and the merge refuses to
 delete anything until it has confirmed the replacement row exists.
 
+The production-safe continuation is now a separate dry-run-first command:
+`npm run faces:merge:live -- <old-slug> <canonical-slug>`. It only accepts a
+merge already recorded in `metadata/person-merges.json`, snapshots the exact
+people/tags/overrides/favorites/memories state, copies and reads back every
+target reference before deleting its source reference, and uses the existing
+row-locking removal RPC to retire the empty duplicate. `--execute` is required
+for writes; rerunning without it is the final idempotent readback.
+
 ### The "Brend Wasserman" name chain, resolved (2026-08-05)
 
 The seating chart's truncated spelling had reached the roster, the catalog, the
@@ -483,12 +491,16 @@ end-to-end finished 84 passed / 28 skipped. `git diff --check`, the catalog
 gate, the 100-photo originals sample, Python compilation, and the focused
 70-test metadata/reconciliation set also passed.
 
-The live sync was inspected read-only and deliberately not executed. It reports
-27 of the 996 reviewed joins pending and one pre-existing identity cleanup
-still pending (`joan-soskin` -> `joan-auwerter`; live photo counts 1 and 3).
-The planner now reports that merge explicitly and correctly accepts six active
-name overrides plus one differently labeled hidden duplicate. Production data
-was not mutated during this pass.
+The authorized live sync then applied and read back all 27 pending reviewed
+joins. Production now has all **996/996 reviewed tags** with zero pending. Joan
+Soskin's only live row overlapped a photo already confirmed for Joan AuWerter,
+so the safe merge removed one duplicate join, preserved Joan AuWerter's three
+photos, migrated/checkpointed the independent favorite and memory namespaces
+(both had zero source rows), and atomically retired `joan-soskin`. Final live
+readback: **188 people, 87 overrides, 1,721 photos, 5,126 photo-person rows,
+zero pending joins, and zero pending person merges**. Recoverable pre-write
+snapshots are ignored under `metadata/faces/sync-backups/`, including the
+2026-08-10 catalog-overlay and Joan-merge snapshots.
 
 ### TEMPORARY: Preview is unauthenticated (2026-07-26)
 
@@ -530,7 +542,7 @@ That is enforced in code, not by convention.
 | Priority | Owner | Target | Action and definition of done |
 |---|---|---|---|
 | P0 | Rachel | Next session | Name the 16 clear stacks covering 95 faces in `metadata/faces/stack-sheets/`; then run the post-session commands in `docs/FACE_TAGGING_TOOL.md`. Nine stacks / 19 faces with no clear view remain held out unless `--include-blurry` is chosen deliberately. |
-| P1 | Zach/admin | Before calling face data live-current | Review the read-only `node scripts/sync-catalog-overlays.mjs` plan: 27 reviewed joins and the Joan Soskin -> Joan AuWerter live cleanup remain pending. This pass did not authorize or execute production writes. |
+| DONE | Zach + Codex | 2026-08-10 | Applied and verified the 27 live reviewed joins, then safely merged Joan Soskin into Joan AuWerter. The final read-only plans report 996/996 tags present and zero pending joins or merges. |
 | P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 46 real names and their messages. Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
 | DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
 | P1 | Zach | Two rows | Confirm or deny the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`. Nothing is applied. |
