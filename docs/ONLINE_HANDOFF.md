@@ -13,17 +13,17 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Deployed application release | `4fdb61baa9c5427458ed688111417befe6d19d5d` |
+| Deployed application release | `f4f1090f647036922c990afec36641b8f9d07735` |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `d11f05a` -- renewal recovery + open-access tests ([#19](https://github.com/zachringnight/rachandzach-gallery/pull/19), merged 2026-08-08). Preceding: [#18](https://github.com/zachringnight/rachandzach-gallery/pull/18) audit fixes, [#17](https://github.com/zachringnight/rachandzach-gallery/pull/17) CI on pull requests, [#16](https://github.com/zachringnight/rachandzach-gallery/pull/16) name-layering fix, [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15) AVIF fallback + field instrumentation, [#14](https://github.com/zachringnight/rachandzach-gallery/pull/14) mobile pass |
+| Latest release | `f4f1090` -- in-gallery people tagging, automatic Preview builds for every non-`main` branch, and immutable caching for all public story images ([#23](https://github.com/zachringnight/rachandzach-gallery/pull/23), merged 2026-08-10). Preceding: [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22) reviewed face naming and durable metadata reconciliation, [#21](https://github.com/zachringnight/rachandzach-gallery/pull/21) public archive, [#20](https://github.com/zachringnight/rachandzach-gallery/pull/20) documentation corrections |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | [PR #23](https://github.com/zachringnight/rachandzach-gallery/pull/23), `codex/in-gallery-person-tagging`; protected single-photo people tagging in the admin catalog, with automatic Preview builds enabled |
+| Current unmerged app work | None |
 
 Production aliases are active for:
 
@@ -507,7 +507,7 @@ zero pending joins, and zero pending person merges**. Recoverable pre-write
 snapshots are ignored under `metadata/faces/sync-backups/`, including the
 2026-08-10 catalog-overlay and Joan-merge snapshots.
 
-### In-gallery people tagging (unshipped, 2026-08-10)
+### In-gallery people tagging (shipped, 2026-08-10)
 
 The admin catalog now offers **Tag people** on every grid card and table row.
 It opens the selected photograph at viewing size beside a searchable guest
@@ -523,9 +523,16 @@ Focused component and API coverage passes with 14 tests. The interaction was
 also checked without saving against the live read-only catalog at 1440px and
 390px: search receives focus, the background becomes inert, Escape closes and
 returns focus to the originating button, the dialog has no horizontal
-overflow, and Axe reports no serious or critical violations. Production was
-not changed. PR #23 now receives an automatic Vercel Preview; merge to `main`
-remains the explicit Production release decision.
+overflow, and Axe reports no serious or critical violations. PR #23's exact
+head (`c046492`) passed GitHub CI and produced a real `READY` Vercel Preview,
+then merged as `f4f1090`. That merge is `READY` and `PROMOTED` in Production
+with the apex, `www`, project, and `main` aliases attached. The homepage,
+`/photos`, and `/api/gallery?limit=1` returned `200`; `/admin/catalog`
+retained its Production redirect; all public story images returned the new
+one-year immutable cache policy; and the post-smoke runtime error scan was
+empty. Post-merge `main` CI run
+[31423978638](https://github.com/zachringnight/rachandzach-gallery/actions/runs/31423978638)
+passed the full gate against `f4f1090`.
 
 ### TEMPORARY: Preview is unauthenticated (2026-07-26)
 
