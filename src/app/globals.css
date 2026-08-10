@@ -460,6 +460,7 @@ button {
   }
 }
 
+
 @media (max-width: 820px) {
   .galleryShell {
     padding: 18px;
@@ -6398,6 +6399,36 @@ button {
   color: var(--rz-tan-text);
 }
 
+.atlas-catalog-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.atlas-catalog-card-actions > button,
+.atlas-catalog-table-tag {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rz-wheat);
+  background: transparent;
+  color: var(--rz-ink);
+  font-size: 0.55rem;
+  font-weight: 680;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.atlas-catalog-card-actions > button:hover,
+.atlas-catalog-table-tag:hover {
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+}
+
 .atlas-catalog-table-wrap {
   max-width: 100%;
   overflow: auto;
@@ -6407,7 +6438,7 @@ button {
 
 .atlas-catalog-table {
   width: 100%;
-  min-width: 67rem;
+  min-width: 74rem;
   border-collapse: collapse;
   font-size: 0.7rem;
 }
@@ -6453,6 +6484,14 @@ button {
 
 .atlas-catalog-table th:nth-child(6) {
   width: 7rem;
+}
+
+.atlas-catalog-table th:nth-child(7) {
+  width: 7rem;
+}
+
+.atlas-catalog-table th:nth-child(8) {
+  width: 8rem;
 }
 
 .atlas-catalog-table tbody tr {
@@ -6519,6 +6558,344 @@ button {
 .atlas-catalog-table .atlas-catalog-state {
   display: inline-flex;
   white-space: nowrap;
+}
+
+.atlas-catalog-table-tag {
+  min-height: 2.5rem;
+  white-space: nowrap;
+}
+
+.atlas-people-tagger-backdrop {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: color-mix(in srgb, var(--rz-ink) 78%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.atlas-people-tagger {
+  display: grid;
+  width: min(92rem, 100%);
+  height: min(52rem, calc(100dvh - clamp(2rem, 6vw, 5rem)));
+  grid-template-columns: minmax(0, 1.45fr) minmax(22rem, 0.75fr);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--rz-cream) 28%, transparent);
+  background: var(--rz-white);
+  box-shadow: 0 40px 100px -34px color-mix(in srgb, var(--rz-ink) 88%, transparent);
+}
+
+.atlas-people-tagger-figure {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  background: var(--rz-ink);
+}
+
+.atlas-people-tagger-photo {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: clamp(1.25rem, 3vw, 3rem);
+}
+
+.atlas-people-tagger-figure figcaption {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.72rem 0.85rem;
+  background: color-mix(in srgb, var(--rz-ink) 78%, transparent);
+  color: var(--rz-cream);
+  backdrop-filter: blur(12px);
+}
+
+.atlas-people-tagger-figure figcaption span {
+  font-family: var(--rz-font-display);
+  font-size: 1rem;
+}
+
+.atlas-people-tagger-figure figcaption strong {
+  overflow: hidden;
+  color: color-mix(in srgb, var(--rz-cream) 72%, transparent);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atlas-people-tagger-panel {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto auto auto auto minmax(8rem, 1fr) auto auto;
+  gap: 0.9rem;
+  padding: clamp(1.1rem, 2.3vw, 2rem);
+  background: var(--rz-cream);
+}
+
+.atlas-people-tagger-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rz-ink);
+}
+
+.atlas-people-tagger-heading p,
+.atlas-people-tagger-current > div span {
+  margin: 0 0 0.35rem;
+  color: var(--rz-muted);
+  font-size: 0.56rem;
+  font-weight: 680;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.atlas-people-tagger-heading h2 {
+  margin: 0;
+  font-family: var(--rz-font-display);
+  font-size: clamp(1.75rem, 3vw, 2.8rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+}
+
+.atlas-people-tagger-heading > button {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-white);
+  color: var(--rz-ink);
+}
+
+.atlas-people-tagger-help,
+.atlas-people-tagger-current > p {
+  margin: 0;
+  color: var(--rz-muted);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.atlas-people-tagger-current {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.atlas-people-tagger-current > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.atlas-people-tagger-current > div strong {
+  font-family: var(--rz-font-display);
+  font-size: 1.25rem;
+  font-weight: 430;
+}
+
+.atlas-people-tagger-current ul {
+  display: flex;
+  max-height: 5.6rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.atlas-people-tagger-current li button {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-white);
+  color: var(--rz-ink);
+  font-size: 0.62rem;
+}
+
+.atlas-people-tagger-search {
+  display: grid;
+  min-height: 3rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--rz-ink);
+  background: var(--rz-white);
+}
+
+.atlas-people-tagger-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--rz-ink);
+  font-size: 0.8rem;
+}
+
+.atlas-people-tagger-search button {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--rz-muted);
+}
+
+.atlas-people-tagger-list {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-white);
+}
+
+.atlas-people-tagger-option {
+  display: grid;
+  min-height: 3.25rem;
+  grid-template-columns: auto 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.48rem 0.65rem;
+  border-bottom: 1px solid var(--rz-wheat);
+  cursor: pointer;
+}
+
+.atlas-people-tagger-option:last-child {
+  border-bottom: 0;
+}
+
+.atlas-people-tagger-option:hover,
+.atlas-people-tagger-option[data-selected="true"] {
+  background: color-mix(in srgb, var(--rz-sand) 52%, var(--rz-white));
+}
+
+.atlas-people-tagger-option input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--rz-coral);
+}
+
+.atlas-people-tagger-option > span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  background: var(--rz-sand);
+  color: var(--rz-ink);
+  font-family: var(--rz-font-mono);
+  font-size: 0.54rem;
+  font-weight: 650;
+}
+
+.atlas-people-tagger-option[data-selected="true"] > span {
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+}
+
+.atlas-people-tagger-option strong {
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atlas-people-tagger-option small {
+  color: var(--rz-muted);
+  font-size: 0.52rem;
+  font-weight: 680;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.atlas-people-tagger-empty {
+  display: grid;
+  min-height: 10rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.45rem;
+  padding: 1rem;
+  color: var(--rz-muted);
+  text-align: center;
+}
+
+.atlas-people-tagger-empty p,
+.atlas-people-tagger-empty span {
+  margin: 0;
+}
+
+.atlas-people-tagger-error {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-left: 4px solid var(--rz-coral);
+  background: var(--rz-white);
+  color: var(--rz-ink);
+  font-size: 0.7rem;
+}
+
+.atlas-people-tagger-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rz-ink);
+}
+
+.atlas-people-tagger-actions p {
+  margin: 0;
+  color: var(--rz-muted);
+  font-size: 0.58rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.atlas-people-tagger-actions > div {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.atlas-people-tagger-actions button {
+  min-height: 2.75rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--rz-ink);
+  background: transparent;
+  color: var(--rz-ink);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.atlas-people-tagger-actions .atlas-people-tagger-save {
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+}
+
+.atlas-people-tagger-actions .atlas-people-tagger-save:hover:not(:disabled) {
+  background: var(--rz-coral);
+  color: var(--rz-ink);
 }
 
 .atlas-catalog-inspector {
@@ -6757,6 +7134,27 @@ button {
   .atlas-catalog-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .atlas-people-tagger-backdrop {
+    padding: 0;
+  }
+
+  .atlas-people-tagger {
+    width: 100%;
+    height: 100dvh;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(13rem, 0.72fr) minmax(0, 1.28fr);
+    border: 0;
+  }
+
+  .atlas-people-tagger-photo {
+    padding: 0.85rem;
+  }
+
+  .atlas-people-tagger-panel {
+    gap: 0.7rem;
+    padding: 0.9rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -6780,12 +7178,31 @@ button {
   .atlas-catalog-card-copy {
     padding: 0.7rem;
   }
+
+  .atlas-catalog-card-actions,
+  .atlas-people-tagger-actions,
+  .atlas-people-tagger-actions > div {
+    display: grid;
+  }
+
+  .atlas-catalog-card-actions > button {
+    width: 100%;
+  }
+
+  .atlas-people-tagger-current ul {
+    max-height: 4.4rem;
+  }
+
+  .atlas-people-tagger-actions > div {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .atlas-catalog-card,
   .atlas-catalog-image img,
-  .atlas-catalog-contact-sheet {
+  .atlas-catalog-contact-sheet,
+  .atlas-people-tagger-option {
     transform: none;
     transition: none;
   }
@@ -8706,4 +9123,3 @@ button {
     align-items: flex-start;
   }
 }
-

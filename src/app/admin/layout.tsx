@@ -85,7 +85,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             Admin
           </span>
         </div>
-        <nav className="flex items-center gap-4 text-sm" style={{ color: "var(--color-ink)" }}>
+        <nav
+          className="flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm"
+          style={{ color: "var(--color-ink)" }}
+        >
           <Link href="/admin/review">Review queue</Link>
           <Link href="/admin/catalog">Catalog tags</Link>
           <Link href="/admin/faces">Guests &amp; faces</Link>

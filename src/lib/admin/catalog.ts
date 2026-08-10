@@ -4,6 +4,11 @@ import type { GalleryPhotoSource, GallerySort } from "@/lib/gallery/query";
 export const ADMIN_CATALOG_PAGE_SIZE = 36;
 export const ADMIN_CATALOG_MAX_SELECTION = 60;
 
+export interface CatalogOption {
+  slug: string;
+  name: string;
+}
+
 export const ADMIN_CATALOG_NEEDS = [
   "all",
   "missing-people",

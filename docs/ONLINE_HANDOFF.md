@@ -17,12 +17,13 @@ the pre-launch history and are not operational instructions.
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
-| Vercel | `main` auto-deploys to target `production`; current status is `READY` |
+| Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
 | Latest release | `d11f05a` -- renewal recovery + open-access tests ([#19](https://github.com/zachringnight/rachandzach-gallery/pull/19), merged 2026-08-08). Preceding: [#18](https://github.com/zachringnight/rachandzach-gallery/pull/18) audit fixes, [#17](https://github.com/zachringnight/rachandzach-gallery/pull/17) CI on pull requests, [#16](https://github.com/zachringnight/rachandzach-gallery/pull/16) name-layering fix, [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15) AVIF fallback + field instrumentation, [#14](https://github.com/zachringnight/rachandzach-gallery/pull/14) mobile pass |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
-| Current unmerged face work | `codex/naming-session-and-no-tag-sweep`; 996 reviewed tags locally, not deployed or live-synced in this pass |
+| Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
+| Current unmerged app work | [PR #23](https://github.com/zachringnight/rachandzach-gallery/pull/23), `codex/in-gallery-person-tagging`; protected single-photo people tagging in the admin catalog, with automatic Preview builds enabled |
 
 Production aliases are active for:
 
@@ -82,8 +83,9 @@ The redesigned release was verified on `main` before deployment:
 - The Vercel production deployment containing application release `4fdb61b`
   is `READY`; use
   `npx vercel inspect https://rachandzach.com` for its current immutable ID
-- The Vercel branch guard is present in the deployment bundle and correctly
-  selected `main` for build
+- At the time of this release, the Vercel branch guard correctly selected
+  `main` for build. The custom guard was retired on 2026-08-10 so every pull
+  request now receives a runnable Preview deployment.
 - No Vercel runtime errors were returned during the 2026-07-26 production
   checks
 - An authenticated live-browser check selected an original and reached the
@@ -505,6 +507,26 @@ zero pending joins, and zero pending person merges**. Recoverable pre-write
 snapshots are ignored under `metadata/faces/sync-backups/`, including the
 2026-08-10 catalog-overlay and Joan-merge snapshots.
 
+### In-gallery people tagging (unshipped, 2026-08-10)
+
+The admin catalog now offers **Tag people** on every grid card and table row.
+It opens the selected photograph at viewing size beside a searchable guest
+list, shows the current names as removable chips, and saves only the exact add
+and remove deltas through the existing protected `PATCH /api/admin/catalog`
+route. It does not expose a public or guest-authorized write path, replace the
+complete join set, add a browser-side service credential, or require a schema
+change. Approved display-name overrides are used in the picker, so Joan
+AuWerter and the other admin name corrections do not regress to base catalog
+names.
+
+Focused component and API coverage passes with 14 tests. The interaction was
+also checked without saving against the live read-only catalog at 1440px and
+390px: search receives focus, the background becomes inert, Escape closes and
+returns focus to the originating button, the dialog has no horizontal
+overflow, and Axe reports no serious or critical violations. Production was
+not changed. PR #23 now receives an automatic Vercel Preview; merge to `main`
+remains the explicit Production release decision.
+
 ### TEMPORARY: Preview is unauthenticated (2026-07-26)
 
 **The Preview environment currently has no access control at all, and it talks
@@ -646,10 +668,10 @@ npm ci
 npm run verify
 ```
 
-`main`, `staging`, and `preview/**` run CI/Vercel builds. Ordinary `codex/*`
-branches are skipped by those remote build guards. Use a
-`preview/<task-name>` branch when a new protected Vercel preview and GitHub CI
-run are required.
+`main` auto-deploys to Vercel Production. Every other Git branch auto-deploys
+to Vercel Preview, and every pull request runs the full GitHub CI gate. Confirm
+that a green Vercel check points to a `READY` deployment for the exact commit;
+an ignored or canceled deployment is not a test build.
 
 For production checks:
 

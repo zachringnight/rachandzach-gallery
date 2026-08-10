@@ -151,11 +151,10 @@ them.
 
 - Start new work from a freshly verified `origin/main` on a `codex/<task>`
   branch unless Zach explicitly requests a direct `main` change.
-- `main`, `staging`, and `preview/**` are Vercel build branches. Ordinary
-  `codex/**`, `claude/**`, `wip/**`, and Dependabot branches are intentionally
-  skipped.
-- Keep `scripts/vercel-ignore-build.mjs` available to Vercel. If
-  `.vercelignore` changes, preserve its explicit exception for that file.
+- `main` auto-deploys to Vercel Production. Every other Git branch auto-deploys
+  to Vercel Preview so pull requests always have a runnable test build.
+- GitHub CI runs for every pull request. A green Vercel status must point to a
+  `READY` Preview, not an ignored/canceled build.
 - After an authorized production push, verify the exact commit is `READY`, the
   custom-domain aliases are attached, the homepage returns `200`, protected
   routes still gate correctly, and recent runtime errors are empty.

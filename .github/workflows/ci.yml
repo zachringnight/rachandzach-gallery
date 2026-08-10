@@ -5,19 +5,10 @@ name: CI
 # "Add npm run verify to execute typecheck, lint, unit tests, build, and the
 # bounded Playwright suite").
 #
-# The push list mirrors scripts/vercel-ignore-build.mjs, which Vercel's
-# "ignoreCommand" already enforces for deploys: build main, staging, and
-# preview/*; skip every dependabot/*, codex/*, claude/*, wip/*, and unlisted
-# branch. Keeping those two in lockstep means a branch that Vercel would
-# deploy always has a green (or red) CI run to point at first.
-#
-# pull_request is deliberately NOT filtered to that list. Every change in this
-# repository arrives as a pull request from a codex/* or claude/* branch, none
-# of which Vercel deploys, so mirroring the deploy allowlist here left review
-# with nothing to look at: the suite first ran after the merge to main, which
-# is the one moment it can no longer stop anything. Verifying the merge result
-# of any pull request, whatever the branch is called, is the point of having
-# the suite. Deploys stay restricted; only verification is opened up.
+# Vercel's Git integration creates a Preview deployment for every non-main
+# branch and a Production deployment for main. The pull_request trigger is
+# deliberately unfiltered so every deployable review commit also runs this
+# complete verification suite before merge.
 #
 # Quoted "on" deliberately: unquoted `on:` parses as the boolean `true` under
 # YAML 1.1 (the "Norway problem"). GitHub Actions' own parser tolerates the

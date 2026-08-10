@@ -9,4 +9,3 @@ out
 # package files, and the generated gallery JSON.
 metadata
 scripts/**
-!scripts/vercel-ignore-build.mjs
