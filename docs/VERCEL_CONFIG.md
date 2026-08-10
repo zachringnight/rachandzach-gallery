@@ -36,29 +36,24 @@ near Postgres beats being near the visitor. `sfo1` is the closest Vercel
 region to us-west-2. East-coast guests trade a little HTML TTFB for a much
 shorter server-side chain.
 
-### The two `/story/hero-sunset-*` cache rules
+### The `/story/:path*` cache rule
 
-This was a single `/story/:path*` rule, back when every story derivative was
-public. The whole-site password gate (2026-07-30) moved four of the six behind
-the guest session, and `public` on a gated path is a real leak, so the rule was
-narrowed to the two hero files the sign-in page rendered.
-
-Removing the password gate (2026-08-09) makes all six public again, so the
-narrowing is no longer load-bearing -- it is now just a cache policy that
-covers two of six files. Widening it back to `/story/:path*` is safe and would
-be a small win; left alone here because it is a performance change, not part of
-opening the site. Both named files are content-hashed or hand-versioned, so
-`immutable` is still honest.
+The whole-site password gate once narrowed this rule to the two hero files the
+sign-in page rendered. The gate was removed on 2026-08-09, so all seven public
+story derivatives now receive the same one-year immutable browser/CDN cache
+policy. Their filenames are content-hashed or hand-versioned, so `immutable`
+is honest and a changed image receives a new URL.
 
 If a story derivative is ever re-exported its filename changes (it carries the
-first 8 chars of the image hash) and this rule must change with it. The
-allowlist that used to share that coupling is gone.
+first 8 chars of the image hash), so existing cached files remain correct.
 
-### `ignoreCommand`
+### Git deployment behavior
 
-`scripts/vercel-ignore-build.mjs` decides whether a commit needs a build at
-all. Note that it runs *after* schema validation, so it cannot rescue a
-malformed `vercel.json`.
+There is deliberately no `ignoreCommand`. Vercel's Git integration builds
+every non-`main` branch as a Preview and builds `main` as Production. This
+keeps pull-request checks honest: a green Vercel status represents a runnable
+test artifact rather than an ignored/canceled deployment. The repository's
+`verify:vercel` check fails if an `ignoreCommand` is reintroduced.
 
 ## Before changing this file
 

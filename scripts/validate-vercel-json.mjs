@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Guards vercel.json against the failure that cost four deployments.
+ * Guards vercel.json against the failure that cost four deployments and
+ * against silently restoring skipped pull-request previews.
  *
  * Vercel validates vercel.json against https://openapi.vercel.sh/vercel.json,
  * which sets "additionalProperties": false at the top level. A key the schema
@@ -88,4 +89,16 @@ if (unknown.length > 0 && sealed) {
   process.exit(1);
 }
 
-console.log(`OK    vercel.json top-level keys valid (checked against the ${source}).`);
+if (Object.hasOwn(config, "ignoreCommand")) {
+  console.error(
+    "FAIL  vercel.json must not define ignoreCommand. This repository relies " +
+      "on Vercel's default Git behavior so every non-main branch receives a " +
+      "runnable Preview deployment.",
+  );
+  process.exit(1);
+}
+
+console.log(
+  `OK    vercel.json top-level keys valid (checked against the ${source}); ` +
+    "automatic Preview builds remain enabled.",
+);

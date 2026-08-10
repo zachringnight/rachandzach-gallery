@@ -1,20 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "ignoreCommand": "node scripts/vercel-ignore-build.mjs",
   "regions": ["sfo1"],
   "headers": [
     {
-      "source": "/story/hero-sunset-a6fa78bb.jpg",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public,max-age=31536000,immutable"
-        }
-      ]
-    },
-    {
-      "source": "/story/hero-sunset-mobile-adobe.png",
+      "source": "/story/:path*",
       "headers": [
         {
           "key": "Cache-Control",
