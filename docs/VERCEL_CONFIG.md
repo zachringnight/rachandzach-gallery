@@ -55,6 +55,12 @@ keeps pull-request checks honest: a green Vercel status represents a runnable
 test artifact rather than an ignored/canceled deployment. The repository's
 `verify:vercel` check fails if an `ignoreCommand` is reintroduced.
 
+GitHub protects `main` with strict required checks for both `npm run verify`
+and `Vercel`. A pull request therefore cannot merge until its full CI gate
+passes, its exact head commit has a successful Vercel Preview, and the branch
+is current with `main`. Keep those check names synchronized with GitHub Actions
+and the Vercel integration if either provider is renamed.
+
 ## Before changing this file
 
 ```bash
