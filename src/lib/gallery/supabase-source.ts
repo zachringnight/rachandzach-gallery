@@ -22,7 +22,11 @@ import {
  * is an optimization, not the security boundary.
  *
  * Rows are fetched in pages of 1000 (supabase-js default cap) so the full
- * 1,721-photo catalog is returned without silent truncation.
+ * 1,721-photo catalog is returned without silent truncation. Each page is
+ * ordered by `id`: Postgres gives no row order across separate LIMIT/OFFSET
+ * statements, so without a total order the second page could repeat rows the
+ * first already returned and skip others entirely. A unique key is what makes
+ * the pages disjoint, not the page size.
  */
 
 const PAGE_SIZE = 1000;
@@ -203,6 +207,7 @@ export function createSupabaseGalleryDataSource(
               .from("rachandzach_photos")
               .select(SELECT)
               .eq("status", VISIBLE_PHOTO_STATUS)
+              .order("id", { ascending: true })
               .range(offset, offset + PAGE_SIZE - 1);
             if (error) {
               throw new Error(`Gallery photo query failed: ${error.message}`);

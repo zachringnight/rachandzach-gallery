@@ -1,27 +1,27 @@
 /**
- * Guest session unit tests (packet 04).
+ * Guest session unit tests.
  *
- * Covers the packet-required cases: valid, expired, tampered, wrong-version,
- * and missing-secret tokens, plus the redirect sanitizer, the PUBLIC_ROUTES
- * allowlist shape, and the rate-limit helpers with the Supabase RPC boundary
- * mocked at the client seam (no live database exists locally).
+ * Covers valid, expired, tampered, wrong-version, and missing-secret tokens,
+ * plus the redirect sanitizer and the rate-limit helpers with the Supabase RPC
+ * boundary mocked at the client seam (no live database exists locally).
+ *
+ * The session is an identity, not a permission, since the password gate was
+ * removed (2026-08-09). Token forgery still has to fail -- one guest must not
+ * be able to claim another's favorites -- but a caller with no token at all is
+ * answered with a new session rather than a refusal, and that asymmetry is
+ * what the getGuestSession block below pins.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   GUEST_SESSION_COOKIE,
   GUEST_SESSION_MAX_AGE_SECONDS,
   GalleryAccessConfigError,
-  GalleryAccessError,
-  PUBLIC_ROUTES,
   createGuestSession,
-  isPublicRoute,
-  requireGalleryAccess,
+  getGuestSession,
   sanitizeNextPath,
   verifyGuestSession,
 } from "@/lib/auth/guest-session";
 import {
-  LOGIN_GLOBAL_RATE_LIMIT,
-  LOGIN_IP_RATE_LIMIT,
   RATE_LIMIT_RPC,
   consumeRateLimit,
   hashRateLimitKey,
@@ -31,7 +31,7 @@ import {
 const TEST_SECRET =
   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
-// Cookie holder for the next/headers mock used by requireGalleryAccess tests.
+// Cookie holder for the next/headers mock used by getGuestSession tests.
 const cookieJar = vi.hoisted(() => ({ value: undefined as string | undefined }));
 
 vi.mock("next/headers", () => ({
@@ -220,26 +220,56 @@ describe("createGuestSession / verifyGuestSession", () => {
   });
 });
 
-describe("requireGalleryAccess", () => {
-  it("returns the session for a valid cookie", async () => {
-    cookieJar.value = await createGuestSession();
-    const session = await requireGalleryAccess();
-    expect(session.version).toBe(1);
-  });
-
-  it("throws GalleryAccessError when the cookie is missing", async () => {
-    cookieJar.value = undefined;
-    await expect(requireGalleryAccess()).rejects.toBeInstanceOf(
-      GalleryAccessError,
-    );
-  });
-
-  it("throws GalleryAccessError for a tampered cookie", async () => {
+describe("getGuestSession", () => {
+  it("returns the session carried by a valid cookie", async () => {
     const token = await createGuestSession();
+    cookieJar.value = token;
+    const expected = await verifyGuestSession(token);
+    const session = await getGuestSession();
+    expect(session.version).toBe(1);
+    expect(session.sessionId).toBe(expected!.sessionId);
+  });
+
+  it("mints a fresh session instead of denying when the cookie is missing", async () => {
+    cookieJar.value = undefined;
+    const session = await getGuestSession();
+    expect(session.version).toBe(1);
+    expect(session.sessionId.length).toBeGreaterThan(0);
+  });
+
+  it("does not honour a tampered cookie, but still answers", async () => {
+    const token = await createGuestSession();
+    const real = await verifyGuestSession(token);
     cookieJar.value = `${token}x`;
-    await expect(requireGalleryAccess()).rejects.toBeInstanceOf(
-      GalleryAccessError,
-    );
+    const session = await getGuestSession();
+    // The forged value is discarded: the caller gets a NEW id, never the one
+    // the tampered token names. That is what keeps favorites unstealable.
+    expect(session.sessionId).not.toBe(real!.sessionId);
+  });
+
+  it("does not let a forged cookie name someone else's session id", async () => {
+    const victim = await verifyGuestSession(await createGuestSession());
+    const forged = `v1.${Buffer.from(
+      JSON.stringify({
+        sessionId: victim!.sessionId,
+        issuedAt: Math.floor(Date.now() / 1000),
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+        version: 1,
+      }),
+    ).toString("base64url")}.not-a-real-signature`;
+    cookieJar.value = forged;
+    const session = await getGuestSession();
+    expect(session.sessionId).not.toBe(victim!.sessionId);
+  });
+
+  it("degrades to an ephemeral session when the secret is missing", async () => {
+    // Fail SOFT here and only here: an unconfigured secret costs a guest the
+    // continuity of their favorites, and must not cost everyone the site.
+    cookieJar.value = await createGuestSession();
+    vi.stubEnv("GALLERY_SESSION_SECRET", "");
+    const session = await getGuestSession();
+    expect(session.version).toBe(1);
+    expect(session.sessionId.length).toBeGreaterThan(0);
   });
 });
 
@@ -276,110 +306,34 @@ describe("sanitizeNextPath", () => {
     expect(sanitizeNextPath(null)).toBe("/");
   });
 
-  it("avoids /enter redirect loops", () => {
-    expect(sanitizeNextPath("/enter", "/photos")).toBe("/photos");
-    expect(sanitizeNextPath("/enter?next=/enter", "/photos")).toBe("/photos");
-  });
-
   it("honors the provided fallback", () => {
     expect(sanitizeNextPath("https://evil.example", "/photos")).toBe("/photos");
   });
 });
 
-describe("PUBLIC_ROUTES / isPublicRoute", () => {
-  it("keeps the public list open", () => {
-    for (const path of [
-      "/nyc",
-      "/nyc/rachel-running.jpg",
-      "/marathon",
-      "/enter",
-      "/robots.txt",
-      "/sitemap.xml",
-      "/api/access/login",
-      "/api/access/logout",
-      "/auth/callback",
-      "/brand/0719-co-outline.svg",
-      "/story/hero-sunset-a6fa78bb.jpg",
-      "/story/hero-sunset-mobile-adobe.png",
-    ]) {
-      expect(isPublicRoute(path), path).toBe(true);
-    }
-  });
-
-  it("defaults to protected for everything else", () => {
-    for (const path of [
-      "/photos",
-      "/my-weekend",
-      "/add-yours",
-      "/favorites",
-      "/submissions",
-      "/api/gallery",
-      "/api/search",
-      "/api/uploads",
-      "/api/downloads",
-      "/admin",
-      "/api/admin",
-      "/gallery-assets/full/wedding-1.jpg",
-      "/some-brand-new-route",
-    ]) {
-      expect(isPublicRoute(path), path).toBe(false);
-    }
-  });
-
-  it("closes the pages that were public before the whole-site gate", () => {
-    // 2026-07-30: the marketing pages and the four story derivatives only
-    // they rendered moved behind the guest password. The archive home is the
-    // one that matters most -- it is the URL guests were given.
-    for (const path of [
-      "/",
-      "/weekend",
-      "/playlists",
-      "/story/coast-1dc07dd8.jpg",
-      "/story/ceremony-b31285ca.jpg",
-      "/story/dinner-32b4c391.jpg",
-      "/story/dancing-57fd10e8.jpg",
-      "/story/after-party-e8e24926.jpg",
-    ]) {
-      expect(isPublicRoute(path), path).toBe(false);
-    }
-  });
-
-  it("does not leak protection through prefix-shaped names", () => {
-    // Exact entries must not act as prefixes and prefixes must respect
-    // segment boundaries.
-    expect(isPublicRoute("/enterprise")).toBe(false);
-    expect(isPublicRoute("/weekend-recap")).toBe(false);
-    expect(isPublicRoute("/brandnew")).toBe(false);
-    expect(isPublicRoute("/api/access-logs")).toBe(false);
-  });
-
-  it("exports the allowlist for the proxy and route tests", () => {
-    expect(PUBLIC_ROUTES.exact).toContain("/nyc");
-    expect(PUBLIC_ROUTES.exact).toContain("/enter");
-    // The root must never come back without a deliberate decision.
-    expect(PUBLIC_ROUTES.exact).not.toContain("/");
-    expect(PUBLIC_ROUTES.prefixes).toContain("/api/access");
-    // The cookie name is pinned by the packet.
+describe("the guest cookie", () => {
+  it("keeps its name", () => {
+    // Renaming this logs every guest out of their own favorites.
     expect(GUEST_SESSION_COOKIE).toBe("rz_gallery_session");
   });
 });
 
 describe("hashRateLimitKey", () => {
   it("is deterministic for the same inputs", async () => {
-    const a = await hashRateLimitKey("203.0.113.9", "guest_login_ip");
-    const b = await hashRateLimitKey("203.0.113.9", "guest_login_ip");
+    const a = await hashRateLimitKey("203.0.113.9", "guest_upload_batch_ip");
+    const b = await hashRateLimitKey("203.0.113.9", "guest_upload_batch_ip");
     expect(a).toBe(b);
   });
 
   it("produces lowercase hex output, never the raw identifier", async () => {
-    const hash = await hashRateLimitKey("203.0.113.9", "guest_login_ip");
+    const hash = await hashRateLimitKey("203.0.113.9", "guest_upload_batch_ip");
     expect(hash).toMatch(/^[0-9a-f]{64}$/);
     expect(hash).not.toContain("203.0.113.9");
   });
 
   it("differs by ip and by action", async () => {
-    const base = await hashRateLimitKey("203.0.113.9", "guest_login_ip");
-    expect(await hashRateLimitKey("203.0.113.10", "guest_login_ip")).not.toBe(
+    const base = await hashRateLimitKey("203.0.113.9", "guest_upload_batch_ip");
+    expect(await hashRateLimitKey("203.0.113.10", "guest_upload_batch_ip")).not.toBe(
       base,
     );
     expect(await hashRateLimitKey("203.0.113.9", "other_action")).not.toBe(
@@ -390,7 +344,7 @@ describe("hashRateLimitKey", () => {
   it("fails closed without the secret", async () => {
     vi.stubEnv("GALLERY_SESSION_SECRET", "");
     await expect(
-      hashRateLimitKey("203.0.113.9", "guest_login_ip"),
+      hashRateLimitKey("203.0.113.9", "guest_upload_batch_ip"),
     ).rejects.toBeInstanceOf(GalleryAccessConfigError);
   });
 });
@@ -398,9 +352,9 @@ describe("hashRateLimitKey", () => {
 describe("consumeRateLimit", () => {
   const input = {
     keyHash: "a".repeat(64),
-    action: LOGIN_IP_RATE_LIMIT.action,
-    attemptLimit: LOGIN_IP_RATE_LIMIT.attemptLimit,
-    windowSeconds: LOGIN_IP_RATE_LIMIT.windowSeconds,
+    action: "guest_upload_batch_ip",
+    attemptLimit: 20,
+    windowSeconds: 60 * 60,
   };
 
   function clientReturning(result: { data: unknown; error: unknown }) {
@@ -446,12 +400,12 @@ describe("consumeRateLimit", () => {
     await expect(consumeRateLimit(client, input)).resolves.toBe(false);
   });
 
-  it("pins the packet's login limits", () => {
-    expect(LOGIN_IP_RATE_LIMIT.attemptLimit).toBe(5);
-    expect(LOGIN_IP_RATE_LIMIT.windowSeconds).toBe(15 * 60);
-    expect(LOGIN_GLOBAL_RATE_LIMIT.windowSeconds).toBe(15 * 60);
-    expect(LOGIN_GLOBAL_RATE_LIMIT.attemptLimit).toBeGreaterThan(
-      LOGIN_IP_RATE_LIMIT.attemptLimit,
-    );
+  it("carries no login bucket any more", async () => {
+    // The per-IP and global login buckets went with the password gate: there
+    // is nothing left to guess. The upload and memory buckets that still
+    // bound the open write surfaces are pinned in tests/uploads/.
+    const limits = await import("@/lib/auth/rate-limit");
+    expect(Object.keys(limits)).not.toContain("LOGIN_IP_RATE_LIMIT");
+    expect(Object.keys(limits)).not.toContain("LOGIN_GLOBAL_RATE_LIMIT");
   });
 });

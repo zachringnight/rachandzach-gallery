@@ -1,8 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  GalleryAccessError,
-  requireGalleryAccess,
-} from "@/lib/auth/guest-session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   DownloadNotFoundError,
@@ -29,22 +25,6 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ photoId: string }> },
 ) {
-  try {
-    await requireGalleryAccess();
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      return NextResponse.json(
-        { error: "Sign in to download this photo." },
-        { status: 401 },
-      );
-    }
-    // Missing configuration (GalleryAccessConfigError) fails closed as a 500.
-    return NextResponse.json(
-      { error: "Downloads are unavailable right now." },
-      { status: 500 },
-    );
-  }
-
   const { photoId } = await params;
   const client = createAdminClient();
   const source = createSupabaseOriginalsDataSource(client);

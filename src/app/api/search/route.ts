@@ -5,11 +5,7 @@
  * Function. Never logs the query string.
  */
 import { NextResponse, type NextRequest } from "next/server";
-import {
-  GalleryAccessConfigError,
-  GalleryAccessError,
-  requireGalleryAccess,
-} from "@/lib/auth/guest-session";
+import { GalleryAccessConfigError } from "@/lib/auth/guest-session";
 import { consumeRateLimit, hashRateLimitKey } from "@/lib/auth/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
@@ -43,16 +39,6 @@ function clientIp(request: NextRequest): string {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    await requireGalleryAccess();
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      return NextResponse.json({ error: "Sign in to search photos." }, { status: 401 });
-    }
-    // Missing configuration (GalleryAccessConfigError) fails closed as a 500.
-    return NextResponse.json({ error: "Search is unavailable right now." }, { status: 500 });
-  }
-
   try {
     const admin = createAdminClient();
     const keyHash = await hashRateLimitKey(clientIp(request), SEARCH_RATE_LIMIT.action);

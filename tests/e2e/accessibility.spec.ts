@@ -30,13 +30,16 @@ function describeViolations(violations: Awaited<ReturnType<typeof auditViolation
 }
 
 test.describe("WCAG AA scans on real, database-free pages", () => {
+  // The four /enter states that used to lead this list went with the
+  // password gate on 2026-08-09; there is no sign-in page left to scan.
   const publicPages: Array<[string, string]> = [
     ["home", "/"],
-    ["login (enter)", "/enter"],
-    ["login, invalid-password error state", "/enter?error=invalid"],
-    ["login, rate-limited error state", "/enter?error=slow"],
-    ["login, expired-link error state", "/enter?error=link"],
-    ["404", "/definitely-not-a-real-route"],
+    // Multi-segment on purpose: a single-segment path is claimed by the
+    // /[personSlug] route, which resolves against Supabase. That used to be
+    // masked here because the proxy redirected unknown paths to /enter
+    // before they reached a route at all; with the gate gone, a one-segment
+    // 404 probe depends on a database this suite does not have.
+    ["404", "/definitely/not/a/real/route"],
   ];
 
   for (const [label, path] of publicPages) {
@@ -106,35 +109,18 @@ test.describe("keyboard access and visible focus", () => {
     expect(focused.href).toBe("#gallery-main");
   });
 
-  test("the login form is fully operable by keyboard alone", async ({
-    page,
-    browserName,
-  }) => {
-    await page.goto("/enter");
-    await page.getByLabel("Password").focus();
-    await expect(page.getByLabel("Password")).toBeFocused();
-    await page.keyboard.press("Tab");
-    if (browserName === "webkit") {
-      // Same real Safari/WebKit default as above: buttons are not always in
-      // the Tab order without "Full Keyboard Access." Confirm the button is
-      // still independently reachable/activatable (it is a real <button
-      // type="submit">, not hidden or disabled) rather than asserting a Tab
-      // order WebKit does not implement by default.
-      await expect(
-        page.getByRole("button", { name: "Come on in" }),
-      ).toBeEnabled();
-      return;
-    }
-    await expect(page.getByRole("button", { name: "Come on in" })).toBeFocused();
-  });
-
   test("focused interactive elements show a visible focus outline", async ({
+    context,
     page,
   }) => {
-    await page.goto("/enter");
-    const passwordField = page.getByLabel("Password");
-    await passwordField.focus();
-    const outline = await passwordField.evaluate((el) => {
+    // Was the login form's password field until the password gate was
+    // removed; the upload page's primary control is the nearest equivalent
+    // still standing (a real, database-free interactive element).
+    await addGuestSession(context);
+    await page.goto("/add-yours");
+    const control = page.getByRole("button", { name: "Choose photos" });
+    await control.focus();
+    const outline = await control.evaluate((el) => {
       const style = getComputedStyle(el, ":focus-visible");
       return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
     });

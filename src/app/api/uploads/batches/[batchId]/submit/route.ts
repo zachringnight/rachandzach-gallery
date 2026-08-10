@@ -17,7 +17,7 @@ import {
 } from "@/lib/uploads/create-batch";
 import { GUEST_PENDING_BUCKET } from "@/lib/uploads/contracts";
 import { magicMatchesMediaType } from "@/lib/uploads/validate-upload";
-import { requireGuest, uploadErrorResponse } from "@/lib/uploads/http";
+import { uploadErrorResponse } from "@/lib/uploads/http";
 
 export const runtime = "nodejs";
 
@@ -27,9 +27,6 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ batchId: string }> },
 ) {
-  const guard = await requireGuest();
-  if (!guard.ok) return guard.response;
-
   const { batchId } = await context.params;
 
   let body: unknown;
@@ -99,19 +96,44 @@ export async function POST(
         ok = false;
       }
       if (!ok) {
-        await db
+        const { error: rejectError } = await db
           .from("rachandzach_upload_items")
           .update({ status: "rejected", rejection_reason: "magic-byte-mismatch" })
           .eq("id", item.id);
+        if (rejectError) {
+          throw new Error(
+            `Could not reject item ${item.id}: ${rejectError.message}`,
+          );
+        }
       }
     }
 
-    await db
+    // This update is the whole point of the request: until status flips to
+    // "submitted" the batch stays a draft and never reaches /admin/review.
+    // Its error used to be discarded, so a failed write still returned 200
+    // and the guest got a receipt for photos nobody would ever see. Guarding
+    // on the current status also makes a double submit a no-op rather than a
+    // second transition.
+    const { data: submitted, error: submitError } = await db
       .from("rachandzach_upload_batches")
       .update({ status: "submitted", submitted_at: new Date().toISOString() })
-      .eq("id", batchId);
+      .eq("id", batchId)
+      .in("status", ["draft", "submitted"])
+      .select("id");
+    if (submitError) {
+      throw new Error(`Could not submit batch: ${submitError.message}`);
+    }
+    if (!submitted || submitted.length === 0) {
+      throw new Error("Could not submit batch: it is no longer submittable");
+    }
 
     const status = await getUploadStatus(batchId, receiptToken, db);
+    if (!status) {
+      // A null here means the receipt lookup found nothing, which would
+      // serialize as a 200 with a null body and leave UploadClient showing a
+      // receipt built from no data.
+      throw new Error("Batch submitted but its receipt could not be read");
+    }
     return NextResponse.json(status, { status: 200 });
   } catch (error) {
     return uploadErrorResponse(error);

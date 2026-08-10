@@ -25,8 +25,8 @@
     "savedCropAnchorCount": 26,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 1182,
-    "candidatesApproved": 996,
+    "candidatesReviewed": 1184,
+    "candidatesApproved": 997,
     "candidatesRejected": 186,
     "reviewWaves": [
       {
@@ -614,6 +614,18 @@
         "candidatesReviewed": 32,
         "candidatesApproved": 32,
         "candidatesRejected": 0
+      },
+      {
+        "wave": 18,
+        "auditFingerprint": "aa3171d3ca9425e7620c4e772100e309b1d695e813e9eb22734b9866b0ad476c",
+        "reviewType": "The two below-default Jeff Rush candidates surfaced by the post-wave-13 signature rebuild",
+        "reviewMethod": "The rebuild after wave 13 left two Jeff Rush rows under the default review floor, rendered as saved profile beside proposed face in metadata/faces/review-2026-08-05-b/sheet-001.jpg. Zach reviewed the sheet on 2026-08-07 and confirmed the after-party face (12 After Party/rachelzach-1113.jpg, similarity 0.483, the man in the blue suit at face index 0). The cocktail-hour face (07 Cocktail Hour/rachelzach-614.jpg, similarity 0.615) is behind sunglasses and Zach could not make a confident call, so it stays undecided and unapplied: neither approved nor denied. Wedding originals were opened read-only for rendering and were not changed.",
+        "minSimilarity": 0.48,
+        "minMargin": 0.08,
+        "candidatesReviewed": 2,
+        "candidatesApproved": 1,
+        "candidatesRejected": 0,
+        "humanConfirmation": true
       }
     ]
   },
@@ -11621,6 +11633,17 @@
       "reviewWave": 17,
       "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
       "contextEvidence": "Rachel identified this face as Allison Vega while looking at 07 Cocktail Hour/rachelzach-632.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "457c7e364083bf9a3d7360fa67f03b34",
+      "path": "12 After Party/rachelzach-1113.jpg",
+      "personSlug": "jeff-rush",
+      "displayName": "Jeff Rush",
+      "faceIndex": 0,
+      "similarity": 0.483,
+      "margin": 0.355,
+      "profileSource": "learned",
+      "reviewWave": 18
     }
   ]
 }

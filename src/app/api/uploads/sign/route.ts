@@ -15,16 +15,12 @@ import type { UploadMediaType } from "@/lib/uploads/contracts";
 import {
   UPLOAD_SIGN_RATE_LIMIT,
   enforceUploadRateLimit,
-  requireGuest,
   uploadErrorResponse,
 } from "@/lib/uploads/http";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const guard = await requireGuest();
-  if (!guard.ok) return guard.response;
-
   const limited = await enforceUploadRateLimit(request, UPLOAD_SIGN_RATE_LIMIT);
   if (limited) return limited;
 

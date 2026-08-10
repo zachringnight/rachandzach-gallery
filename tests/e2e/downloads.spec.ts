@@ -29,19 +29,31 @@ import { addGuestSession } from "./support/session";
  * browser suite; that script is a different workstream's deliverable.
  */
 
-test.describe("unauthenticated requests are rejected", () => {
-  test("GET /api/downloads/photo/:id returns 401", async ({ request }) => {
+test.describe("requests without a session are no longer rejected", () => {
+  // Both of these asserted 401 until the password gate was removed on
+  // 2026-08-09. Downloads are open now, so what is asserted instead is that
+  // an unknown id is answered the same way for everyone -- a 401 would have
+  // been the one response that distinguished "no session" from "no photo",
+  // and there is nothing left for it to mean.
+  test("GET /api/downloads/photo/:id does not demand a session", async ({
+    request,
+  }) => {
     const response = await request.get(
       "/api/downloads/photo/00000000-0000-0000-0000-000000000000",
+      { maxRedirects: 0 },
     );
-    expect(response.status()).toBe(401);
+    expect(response.status()).not.toBe(401);
+    expect(response.status()).toBe(404);
   });
 
-  test("POST /api/downloads/selection returns 401", async ({ request }) => {
+  test("POST /api/downloads/selection does not demand a session", async ({
+    request,
+  }) => {
     const response = await request.post("/api/downloads/selection", {
       data: { photoIds: ["00000000-0000-0000-0000-000000000000"] },
     });
-    expect(response.status()).toBe(401);
+    expect(response.status()).not.toBe(401);
+    expect(response.status()).toBe(200);
   });
 });
 

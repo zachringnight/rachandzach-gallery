@@ -16,7 +16,7 @@
     "e2e": "playwright test",
     "verify": "npm run verify:vercel && npm run typecheck && npm run lint && npm run test && npm run verify:build && npx playwright test tests/e2e --project=chromium",
     "verify:vercel": "node scripts/validate-vercel-json.mjs",
-    "verify:build": "GALLERY_PASSWORD_HASH='$argon2id$v=19$m=19456,t=2,p=1$ZlWMad6EStM4sNnxWDeu9g$c507JzlRlyB6y87+8nP8dTo2+VGZuU5IQvTyjnOvc1g' GALLERY_SESSION_SECRET=2f5d4b704e008d71d178b75581ea1c1d6ef4e4ca604f46940bdaddb4301c0d06 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54329 NEXT_PUBLIC_SUPABASE_ANON_KEY=synthetic-anon-key-e2e-only SUPABASE_URL=http://127.0.0.1:54329 SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key-e2e-only npm run build",
+    "verify:build": "GALLERY_SESSION_SECRET=2f5d4b704e008d71d178b75581ea1c1d6ef4e4ca604f46940bdaddb4301c0d06 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54329 NEXT_PUBLIC_SUPABASE_ANON_KEY=synthetic-anon-key-e2e-only SUPABASE_URL=http://127.0.0.1:54329 SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key-e2e-only npm run build",
     "verify:catalog": "node scripts/verify-gallery-catalog.mjs",
     "verify:originals": "node scripts/verify-original-integrity.mjs",
     "verify:egress": "node scripts/estimate-storage-egress.mjs",
@@ -38,7 +38,6 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
-    "@node-rs/argon2": "^2.0.2",
     "@react-email/components": "^1.0.12",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.8",

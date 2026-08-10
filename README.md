@@ -1,10 +1,21 @@
 # 0719 + co. -- Rachel & Zach's private photo archive
 
-A private, password-gated wedding photo archive: browse the full catalog, find
-yourself by event or person, search moments in plain language, keep favorites,
-save original photographs to your own cloud account, and contribute new photos
-for approval. Built with Next.js and Supabase. Guests and admin both
-authenticate; nothing here is public except the marketing pages.
+An unlisted wedding photo archive: browse the full catalog, find yourself by
+event or person, search moments in plain language, keep favorites, save
+original photographs to your own cloud account, and contribute new photos for
+approval. Built with Next.js and Supabase.
+
+**The shared guest password was removed on 2026-08-09.** Every page and API of
+this site now answers an anonymous request; there is no `/enter` door and no
+allowlist of public routes, because everything is public. What still protects
+the archive is that its URLs are not published: `robots.txt` continues to
+disallow everything but the fundraiser, so it stays out of search indexes.
+Unlisted is not private -- anyone handed a link is in.
+
+`/admin` is the exception and is still authenticated (Supabase magic link,
+allowlisted to one address). Guest sessions remain, but only as an identity:
+the `rz_gallery_session` cookie is the key favorites and upload batches are
+filed under, and holding one authorizes nothing.
 
 **Status: LIVE.** The premium gallery is deployed on Vercel at
 [rachandzach.com](https://rachandzach.com), backed by this private GitHub
@@ -30,15 +41,14 @@ npm run dev                  # http://localhost:3000
 
 ### Environment variables
 
-Copy `.env.example` to `.env.local` and fill in real values for local development. Every value in `.env.example` is a placeholder; production credentials are never committed and fail closed if missing (no fallback passwords or session secrets, by design -- see `docs/0719_Privacy_Operations_v1.md`).
+Copy `.env.example` to `.env.local` and fill in real values for local development. Every value in `.env.example` is a placeholder; production credentials are never committed and nothing falls back to a default secret (see `docs/0719_Privacy_Operations_v1.md`). `GALLERY_PASSWORD_HASH` was retired with the password gate on 2026-08-09 and can be deleted from every Vercel scope.
 
 | Variable | Purpose |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser-side Supabase client |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Server-only admin client; never sent to the browser |
 | `SUPABASE_DB_URL` | Optional direct Postgres access for local tooling |
-| `GALLERY_PASSWORD_HASH` | Argon2id hash of the shared guest password. Generate with `node -e "require('@node-rs/argon2').hash('the-password').then(console.log)"` -- never store the plaintext |
-| `GALLERY_SESSION_SECRET` | At least 32 random bytes: `openssl rand -hex 32` |
+| `GALLERY_SESSION_SECRET` | At least 32 random bytes: `openssl rand -hex 32`. Signs the per-browser guest identity cookie. Nothing is gated by it, so a missing value costs guests their favorites rather than taking the site down -- but it also derives the rate limiter's hashing key, and that still fails closed |
 | `SOURCE_PHOTO_DIR` | Read-only path to the wedding master catalog source, used only by import scripts |
 | `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` | Optional public Google Web OAuth client ID; enables Google Drive save |
 | `NEXT_PUBLIC_DROPBOX_APP_KEY` | Optional public Dropbox Saver app key; enables Dropbox save |
@@ -47,7 +57,7 @@ Both public provider identifiers are configured in Vercel Production and
 Preview. They remain optional for local development, and their values must not
 be copied into source control or printed in logs.
 
-Real production values (guest password, Supabase project keys) are staged in `.env.cloud` at the repo root, which is gitignored and never auto-loaded by Next -- see `docs/0719_Content_Needed_v1.md` for what's decided and `docs/0719_Launch_Checklist_v1.md` for how they get into Vercel.
+Real production values (Supabase project keys, the session secret) are staged in `.env.cloud` at the repo root, which is gitignored and never auto-loaded by Next -- see `docs/0719_Content_Needed_v1.md` for what's decided and `docs/0719_Launch_Checklist_v1.md` for how they get into Vercel.
 
 ## Scripts
 
@@ -83,12 +93,13 @@ See each script's own `--help` for its full flag set.
 - End-to-end: `npm run e2e` for the full cross-browser/viewport matrix, or `npx playwright test tests/e2e --project=chromium` for the bounded suite `npm run verify` runs. The e2e suite is designed to run without a live database: most specs assert on documented fail-closed behavior against an unreachable synthetic Supabase endpoint (see `tests/e2e/support/env.ts`); a smaller set of specs are explicitly out of scope until a live database exists.
 - A local Supabase stack (`supabase start && supabase db reset`) requires Docker, not available on this development machine as of this writing; the schema test layer degrades to static SQL assertions without it and says so loudly when run.
 
-Current test health: fully green at the premium archive release head.
-`npm run verify` exits 0: typecheck passes; lint reports 0 errors and 14
-existing warnings; Vitest passes 947 tests with 11 intentional live-database
-skips; the production build passes; and the bounded Chromium e2e suite passes
-80 tests with 28 documented skips and 0 failures. Current release evidence is in
-`docs/ONLINE_HANDOFF.md`.
+Current test health: fully green on `main`. `npm run verify` exits 0:
+typecheck passes; lint reports 0 errors and 16 existing warnings; Vitest passes
+1,148 tests with 17 intentional live-database skips; the production build
+passes; and the bounded Chromium e2e suite passes 84 tests with 28 documented
+skips and 0 failures. These counts move every release, so treat
+`docs/ONLINE_HANDOFF.md` as the current evidence and re-run the gate rather
+than trusting the numbers here.
 
 ## Project structure
 
@@ -124,7 +135,7 @@ docs/plans/2026-07-22-0719-digital-wedding-home/   The build plan: manifest, per
 This project follows a few hard rules throughout its build, enforced by convention and by the docs above, not by this README:
 
 - No deploy, publish, email send, or cloud-resource creation without Zach's explicit, separate approval -- see the Launch Checklist's gate sequence.
-- The wedding photo source master is read-only; nothing in this repo ever writes to it.
+- The wedding photo source master's PIXELS are immutable: nothing here recompresses, resizes, renames, moves, or deletes a source original, ever. Its embedded metadata IS written, deliberately, by `write-additions-to-master.py`, `normalize-clean-master-metadata.py` and `rename-person-in-master.py`, so guest names travel with the photographs into Apple Photos or Lightroom long after this site is gone. See the metadata clause in `AGENTS.md`, which gates that on Zach keeping independent backups. Those scripts are dry-run by default; `--write` is always explicit.
 - Original photo downloads must reproduce their source file byte for byte (`npm run verify:originals`).
 - Production credentials fail closed: there is no fallback password or session secret.
 - Private storage buckets are never public; every access goes through a short-lived, server-issued signed URL.

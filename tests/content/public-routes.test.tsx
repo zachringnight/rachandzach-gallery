@@ -168,9 +168,12 @@ describe("robots and sitemap", () => {
     }
   });
 
-  it("closes the archive home and the retired public pages too", () => {
-    // These were crawlable until the site went fully private on 2026-07-30.
-    for (const route of ["/", "/weekend", "/playlists", "/api", "/enter"]) {
+  it("keeps the archive out of the index even though it is now reachable", () => {
+    // The password came off on 2026-08-09; robots.txt did not change with it.
+    // Unlisted and private are different properties, and only one was given
+    // up -- a wedding archive that surfaces in a search for a guest's name is
+    // a separate decision from one that opens to a shared link.
+    for (const route of ["/", "/weekend", "/playlists", "/api", "/photos"]) {
       expect(isCrawlable(route), `robots must disallow ${route}`).toBe(false);
     }
   });
@@ -184,8 +187,8 @@ describe("robots and sitemap", () => {
   it("lists only public routes in the sitemap", () => {
     const entries = sitemap();
     const paths = entries.map((entry) => new URL(entry.url).pathname);
-    // The archive home was dropped when it went behind the password gate: a
-    // sitemap entry a crawler is redirected away from is a broken promise.
+    // The archive home stays out: robots.txt disallows it, and listing a
+    // disallowed URL in the sitemap is two contradicting signals.
     expect(paths).not.toContain("/");
     expect(paths).toContain("/nyc");
     expect(paths).not.toContain("/weekend");

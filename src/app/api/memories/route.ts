@@ -10,7 +10,7 @@
  * POST body { photoId, body, displayName?, person? } -> 201 { id, status:
  *        "pending" }. Rate-limited per hashed IP (fail closed), owner key
  *        derived strictly server-side: the session id comes from the
- *        verified guest-session cookie (requireGalleryAccess; a
+ *        verified guest-session cookie (getGuestSession; a
  *        client-supplied session id is never read), and person counts only
  *        if it matches a real rachandzach_people slug (see
  *        resolveMemoryOwner).
@@ -18,8 +18,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   GalleryAccessConfigError,
-  GalleryAccessError,
-  requireGalleryAccess,
+  getGuestSession,
 } from "@/lib/auth/guest-session";
 import { consumeRateLimit, hashRateLimitKey } from "@/lib/auth/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -53,31 +52,6 @@ function createMemoriesDb(): {
   return { admin, db: admin as unknown as MemoriesDbClient };
 }
 
-async function requireSession(): Promise<
-  { ok: true; sessionId: string } | { ok: false; response: NextResponse }
-> {
-  try {
-    const session = await requireGalleryAccess();
-    return { ok: true, sessionId: session.sessionId };
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { error: "Sign in to see memories." },
-          { status: 401 },
-        ),
-      };
-    }
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: "Memories are unavailable right now." },
-        { status: 500 },
-      ),
-    };
-  }
-}
 
 function clientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -109,9 +83,6 @@ function errorResponse(error: unknown): NextResponse {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await requireSession();
-  if (!auth.ok) return auth.response;
-
   try {
     const photoId = normalizePhotoId(request.nextUrl.searchParams.get("photoId"));
     const { db } = createMemoriesDb();
@@ -123,8 +94,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireSession();
-  if (!auth.ok) return auth.response;
+  const { sessionId } = await getGuestSession();
 
   let body: unknown;
   try {
@@ -164,7 +134,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const owner = await resolveMemoryOwner(db, auth.sessionId, rawBody.person);
+    const owner = await resolveMemoryOwner(db, sessionId, rawBody.person);
     const id = await createMemory(db, owner, {
       photoId,
       body: noteBody,

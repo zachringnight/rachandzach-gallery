@@ -1,8 +1,30 @@
 #!/usr/bin/env python3
-"""Normalize clean-master people arrays and verify every retained JPEG."""
+"""Normalize clean-master people arrays and verify every retained JPEG.
+
+This REPLACES PersonInImage/Subject/Keywords with the manifest's
+`final_people` column rather than adding to them, which is what "normalize"
+means here and is correct for the import it was written for. It is dangerous
+to re-run casually, so two guards were added after an audit:
+
+  * --write is required. The default is a preview, because a bare
+    `python3 scripts/normalize-clean-master-metadata.py` used to rewrite
+    embedded metadata across the whole 13 GB master on four threads with no
+    confirmation (AGENTS.md: "Sync commands are dry-run by default").
+
+  * Names already in a photograph that the manifest does not know about abort
+    the run. photo-manifest.csv is not the only writer any more:
+    write-additions-to-master.py has since embedded 858 reviewed face-tag
+    names that were never added to `final_people`. Replacing from the
+    manifest alone would silently delete every one of them from the
+    originals, and the manifest would then verify clean because it is also
+    what the expectation is checked against.
+
+Neither guard changes what a legitimate run does.
+"""
 
 from __future__ import annotations
 
+import argparse
 import concurrent.futures
 import csv
 import json
@@ -136,6 +158,16 @@ def write_exact(path: Path, people: list[str], keywords: list[str]) -> tuple[Pat
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="actually rewrite the master's embedded metadata (default: preview)",
+    )
+    args = parser.parse_args()
+    if not args.write:
+        print("DRY RUN -- nothing will be written. Re-run with --write to apply.\n")
+
     fields, manifest = read_csv(METADATA / "photo-manifest.csv")
     files = [ROOT / row["output_path"] for row in manifest]
     by_path = {str((ROOT / row["output_path"]).resolve()): row for row in manifest}
@@ -153,10 +185,46 @@ def main() -> int:
     known_people.update({"rach", "zach"})
 
     print(f"Reading current keyword arrays for {len(files)} JPEGs", flush=True)
-    current_records = exiftool_json(files, ["-XMP-dc:Subject", "-IPTC:Keywords"])
+    current_records = exiftool_json(
+        files, ["-XMP-iptcExt:PersonInImage", "-XMP-dc:Subject", "-IPTC:Keywords"]
+    )
     current_by_path = {
         str(Path(record["SourceFile"]).resolve()): record for record in current_records
     }
+
+    # Refuse to delete a name this manifest cannot see. PersonInImage is read
+    # here for exactly one reason: to compare it against what we are about to
+    # write over it. write-additions-to-master.py embeds reviewed face-tag
+    # names without touching photo-manifest.csv, so any of those names would
+    # otherwise be replaced away silently -- and the verification pass below
+    # would call the result correct, because it checks the written values
+    # against the same manifest that lost them.
+    unknown_names: dict[str, list[str]] = {}
+    for file in files:
+        row = by_path[str(file.resolve())]
+        record = current_by_path[str(file.resolve())]
+        planned = {name.casefold() for name in split(row["final_people"])}
+        existing = list_value(record, "PersonInImage")
+        missing = [name for name in existing if name.casefold() not in planned]
+        if missing:
+            unknown_names[row["output_path"]] = missing
+    if unknown_names:
+        total = sum(len(names) for names in unknown_names.values())
+        print(
+            f"\nABORT: {total} name(s) across {len(unknown_names)} photo(s) are in the "
+            "originals but not in this manifest's final_people. Normalizing would "
+            "delete them.\n"
+        )
+        for path, names in list(sorted(unknown_names.items()))[:10]:
+            print(f"  {path}: {', '.join(sorted(names))}")
+        if len(unknown_names) > 10:
+            print(f"  ... and {len(unknown_names) - 10} more photo(s)")
+        print(
+            "\nAdd these names to photo-manifest.csv's final_people column (or accept "
+            "that this manifest is no longer the whole truth and do not run this "
+            "script) before retrying."
+        )
+        return 1
 
     plans: list[dict] = []
     for file in files:
@@ -176,6 +244,20 @@ def main() -> int:
                 "keywords": final_keywords,
             }
         )
+
+    if not args.write:
+        changing = [
+            plan
+            for plan in plans
+            if [n.casefold() for n in plan["people"]]
+            != [n.casefold() for n in list_value(
+                current_by_path[str(plan["file"].resolve())], "PersonInImage"
+            )]
+        ]
+        print(f"\nwould normalize {len(plans)} photo(s); "
+              f"{len(changing)} would have their PersonInImage set changed")
+        print("Re-run with --write to apply.")
+        return 0
 
     print("Normalizing people and keyword arrays", flush=True)
     write_failures: list[dict] = []
@@ -252,7 +334,19 @@ def main() -> int:
                 {"path": row["output_path"], "reasons": unique(reasons)}
             )
 
-    write_csv(METADATA / "photo-manifest.csv", fields, manifest)
+    # Only record the new sizes if everything verified. output_file_size is
+    # what the manifest's size_mismatch check compares against, so writing it
+    # for a photo that just failed verification would file the corrupted size
+    # as the expected one and destroy the evidence. sync-manifest-after-write.py
+    # fails closed the same way.
+    if verification_failures:
+        print(
+            f"\n{len(verification_failures)} photo(s) failed verification; "
+            "photo-manifest.csv left unchanged so the size check keeps its "
+            "original expectations."
+        )
+    else:
+        write_csv(METADATA / "photo-manifest.csv", fields, manifest)
     report = {
         "photos_normalized": len(plans),
         "metadata_write_failures": write_failures,

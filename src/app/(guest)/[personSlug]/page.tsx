@@ -24,6 +24,14 @@ export const dynamic = "force-dynamic";
  * second indexed column.
  */
 const confirmedPerson = cache(async (personSlug: string) => {
+  // A filename is not a person. Every catalog slug is [a-z0-9-]+, so anything
+  // carrying a dot cannot match one, and this segment catches every unclaimed
+  // path in the guest tree -- including /favicon.ico, which browsers request
+  // on their own on essentially every navigation. Without this the request
+  // paid for an exact lookup, a speculative override lookup and a full
+  // 189-row scan before 404ing, over and over.
+  if (personSlug.includes(".")) return null;
+
   const client = createAdminClient();
   const overrideFor = (slug: string) =>
     client

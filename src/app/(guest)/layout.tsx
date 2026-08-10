@@ -1,21 +1,16 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import {
-  GalleryAccessError,
-  requireGalleryAccess,
-} from "@/lib/auth/guest-session";
 import { ScrollProgress } from "@/components/site/ScrollProgress";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteHeader } from "@/components/site/SiteHeader";
 
 /**
- * Shared shell for every guest-only route (photos, my-weekend, add-yours).
+ * Shared shell for the archive routes (photos, my-weekend, add-yours).
  *
- * Fails closed: the proxy already gates navigation, but this re-checks the
- * guest session server-side (the platform spike warns proxy matchers can
- * silently skip server functions). A missing/expired session redirects to the
- * access screen; a missing SECRET (GalleryAccessConfigError) propagates as a
- * 500 rather than opening the door.
+ * These were the guest-only routes until the password gate was removed
+ * (2026-08-09); they are now open to anyone with the URL, and this layout no
+ * longer checks anything. `robots: index: false` below stays deliberately:
+ * open to a visitor who has the link is not the same as listed in a search
+ * index, and the archive is still not meant to be findable.
  *
  * Packet 08 (Add Yours) renders inside this shell and must not recreate it.
  */
@@ -30,19 +25,6 @@ export default async function GuestLayout({
 }: {
   children: React.ReactNode;
 }) {
-  try {
-    await requireGalleryAccess();
-  } catch (error) {
-    if (error instanceof GalleryAccessError) {
-      // Fallback only: src/proxy.ts normally intercepts unauthenticated page
-      // requests first with a per-path next= redirect. A layout cannot know
-      // the requested path server-side, so never guess one here; a neutral
-      // /enter lands the guest on the public home after sign-in.
-      redirect("/enter");
-    }
-    throw error;
-  }
-
   return (
     <div className="atlas-shell min-h-screen bg-cream font-body text-ink">
       <a

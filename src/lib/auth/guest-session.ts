@@ -1,18 +1,29 @@
 /**
- * Guest session layer for the gallery (packet 04).
+ * Guest session layer for the gallery.
  *
- * Signed, versioned guest sessions carried in the rz_gallery_session cookie.
- * Everything here fails closed: GALLERY_SESSION_SECRET must be set (at least
- * 32 random bytes) before any token can be minted or verified. There is no
- * fallback secret, no default password, and no dev bypass. Missing
- * configuration throws GalleryAccessConfigError at runtime; the build never
- * needs the secret because it is read lazily inside each call.
+ * THE PASSWORD GATE IS GONE (2026-08-09). Every page and API of this site is
+ * now readable by anyone who has the URL; there is no shared password, no
+ * /enter door, and no default-deny allowlist. What survives here is the part
+ * that was never about access control: a signed, per-browser session id.
+ *
+ * That id is an identity, not a permission. It is the owner key for a guest's
+ * favorites (src/lib/favorites/server.ts) and the key their upload batches are
+ * filed under (src/lib/uploads/create-batch.ts), so hearts and submissions
+ * still follow one browser across visits. Nothing is authorized by holding
+ * one -- an anonymous caller gets a fresh session instead of a 401.
+ *
+ * Because of that, configuration now fails SOFT here and only here: a missing
+ * GALLERY_SESSION_SECRET costs a guest the continuity of their favorites, and
+ * it must not cost everyone the site. src/proxy.ts mints and sets the cookie
+ * when it can and shrugs when it cannot; getGuestSession() hands back an
+ * ephemeral session in that case. (Other consumers of the secret, notably the
+ * rate limiter, still fail closed -- that is their call to make, not this
+ * module's.) Admin authentication is entirely separate and still real: see
+ * src/lib/auth/admin-session.ts.
  *
  * Signing uses Web Crypto (crypto.subtle HMAC-SHA256), which is available in
  * the Node runtime that proxy.ts and every route handler run on.
  */
-
-import { isOpenAccess } from "@/lib/auth/open-access";
 
 export interface GallerySession {
   sessionId: string;
@@ -31,7 +42,11 @@ export const GUEST_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const CLOCK_SKEW_SECONDS = 60;
 const MIN_SECRET_BYTES = 32;
 
-/** Configuration is missing or unusable. Surfaced loudly, never papered over. */
+/**
+ * GALLERY_SESSION_SECRET is missing or unusable. Callers that only need a
+ * guest identity treat this as "no continuity this request" and carry on; see
+ * the module header for why that is the right trade now that nothing is gated.
+ */
 export class GalleryAccessConfigError extends Error {
   constructor(message: string) {
     super(message);
@@ -39,92 +54,11 @@ export class GalleryAccessConfigError extends Error {
   }
 }
 
-/** The caller has no valid guest session. Route handlers map this to 401. */
-export class GalleryAccessError extends Error {
-  readonly status = 401;
-
-  constructor(message = "Gallery access requires a valid guest session.") {
-    super(message);
-    this.name = "GalleryAccessError";
-  }
-}
-
-/**
- * Default-deny allowlist. proxy.ts and the route tests consume this: any
- * route NOT matched here requires a valid guest session (admin routes are
- * carved out separately and require Supabase admin auth instead). Add a route
- * here only when it is deliberately public.
- *
- * WHOLE-SITE GATE (2026-07-30). This list used to carry the marketing pages
- * too: "/", "/weekend" and "/playlists" were all readable by anyone. Zach
- * asked for the whole site behind the password, with the fundraiser as the
- * single deliberate exception, so those three moved behind the gate along
- * with the four story derivatives only they rendered. What remains here is
- * exactly three things: the fundraiser, the door, and the files a browser or
- * crawler must fetch anonymously before it can reach the door.
- */
-export const PUBLIC_ROUTES = {
-  /** Exact-match public paths. */
-  exact: [
-    // THE EXCEPTION. /nyc is a fundraiser with a deadline and its whole job
-    // is to be findable and shareable; a password on it raises nothing.
-    // Kept public knowingly, on the owner's call. /marathon is its 308 alias
-    // (see legacyRedirects) and is listed so the redirect resolves without a
-    // detour through /enter.
-    "/nyc",
-    "/marathon",
-    // Public collateral for /nyc (see src/content/nyc.ts). These are the only
-    // files in public/nyc/, and every one of them is deliberately servable
-    // without a guest session: the hero photo, the 1200x630 link-preview card
-    // that social apps fetch anonymously, and the optional saved still of
-    // Rachel's Instagram post. A new asset under public/nyc/ that is not
-    // listed here 404s behind the password gate.
-    "/nyc/rachel-running.jpg",
-    "/nyc/nyc-share.jpg",
-    "/nyc/instagram-post.jpg",
-    // The door, and the two crawler files that are worthless if they answer
-    // an anonymous request with a redirect to the door.
-    "/enter",
-    "/robots.txt",
-    "/sitemap.xml",
-    "/favicon.ico",
-    // The hero derivative /enter renders beside its password form, in both
-    // its desktop and mobile sources (src/app/(access)/enter/page.tsx). Named
-    // files, not the old "/story" prefix: the other four picks are only used
-    // by the now-gated home page, and naming them one by one means a new
-    // derivative dropped into public/story/ is private by default instead of
-    // public by accident. story-photos.ts stamps each filename with the first
-    // 8 chars of its image hash, so re-exporting the hero changes this path --
-    // tests/auth/route-protection.test.ts asserts these against the live
-    // storyPhotos value so that drift fails CI instead of 404ing on /enter.
-    "/story/hero-sunset-a6fa78bb.jpg",
-    "/story/hero-sunset-mobile-adobe.png",
-  ],
-  /** Prefix-match public paths (the prefix itself or prefix + "/..."). */
-  prefixes: [
-    "/api/access",
-    "/auth/callback",
-    // The 0719 + co. mark, rendered by /enter's own header and by /nyc.
-    // public/brand/ holds one outline SVG and no photography.
-    "/brand",
-    "/_next/static",
-    "/_next/image",
-  ],
-} as const;
-
-export function isPublicRoute(pathname: string): boolean {
-  if ((PUBLIC_ROUTES.exact as readonly string[]).includes(pathname)) {
-    return true;
-  }
-  return PUBLIC_ROUTES.prefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-}
-
 /**
  * Redirect convention: next=/relative/path only. Absolute URLs,
- * protocol-relative URLs, backslashes, control characters, and /enter loops
- * all collapse to the fallback.
+ * protocol-relative URLs, backslashes, and control characters all collapse to
+ * the fallback. Used by the admin magic-link callback, which is the only
+ * remaining route that takes a caller-supplied destination.
  */
 export function sanitizeNextPath(
   raw: string | null | undefined,
@@ -135,13 +69,10 @@ export function sanitizeNextPath(
   if (raw.startsWith("//")) return fallback;
   if (raw.includes("\\")) return fallback;
   if (/[\r\n\u0000]/.test(raw)) return fallback;
-  if (raw === "/enter" || raw.startsWith("/enter/") || raw.startsWith("/enter?")) {
-    return fallback;
-  }
   return raw;
 }
 
-/** Cookie attributes pinned by the packet. */
+/** Cookie attributes for the guest identity cookie. */
 export function guestSessionCookieOptions() {
   return {
     httpOnly: true,
@@ -152,7 +83,7 @@ export function guestSessionCookieOptions() {
   };
 }
 
-// --- Secret handling (server-only, read lazily, fail closed) ---------------
+// --- Secret handling (server-only, read lazily) ----------------------------
 
 /**
  * Reads and validates GALLERY_SESSION_SECRET. Exported for the rate-limit
@@ -163,7 +94,7 @@ export function readSessionSecretBytes(): Uint8Array {
   const raw = process.env.GALLERY_SESSION_SECRET;
   if (!raw || raw.trim().length === 0) {
     throw new GalleryAccessConfigError(
-      "GALLERY_SESSION_SECRET is not set. Guest sessions fail closed by design: " +
+      "GALLERY_SESSION_SECRET is not set. Guest sessions cannot be signed: " +
         "configure a random secret of at least 32 bytes. There is no fallback secret.",
     );
   }
@@ -203,6 +134,17 @@ function fromBase64Url(text: string): Uint8Array | null {
 
 // --- Token mint / verify ---------------------------------------------------
 
+/** A session object with a fresh id, not backed by any cookie. */
+function newSession(): GallerySession {
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    sessionId: crypto.randomUUID(),
+    issuedAt: now,
+    expiresAt: now + GUEST_SESSION_MAX_AGE_SECONDS,
+    version: SESSION_TOKEN_VERSION,
+  };
+}
+
 /**
  * Mints a signed guest session token: `v1.<base64url payload>.<base64url
  * HMAC-SHA256 signature>`. Throws GalleryAccessConfigError when the secret
@@ -210,13 +152,7 @@ function fromBase64Url(text: string): Uint8Array | null {
  */
 export async function createGuestSession(): Promise<string> {
   const key = await importSessionKey(["sign"]);
-  const now = Math.floor(Date.now() / 1000);
-  const session: GallerySession = {
-    sessionId: crypto.randomUUID(),
-    issuedAt: now,
-    expiresAt: now + GUEST_SESSION_MAX_AGE_SECONDS,
-    version: SESSION_TOKEN_VERSION,
-  };
+  const session = newSession();
   const payload = toBase64Url(new TextEncoder().encode(JSON.stringify(session)));
   const signingInput = `${TOKEN_PREFIX}.${payload}`;
   const signature = await crypto.subtle.sign(
@@ -253,9 +189,9 @@ function parseGallerySession(value: unknown): GallerySession | null {
  * null for missing, malformed, tampered, wrong-version, or expired tokens.
  *
  * Structural checks run before the secret is read, so requests without a
- * usable cookie never require configuration. Once a structurally plausible
- * token must actually be verified, a missing secret throws
- * GalleryAccessConfigError (fail closed, never fail open).
+ * usable cookie never require configuration. A forged cookie is still
+ * rejected: nothing here is a permission, but one guest must not be able to
+ * hand themselves another guest's favorites by editing a cookie value.
  */
 export async function verifyGuestSession(
   token: string | null | undefined,
@@ -298,34 +234,26 @@ export async function verifyGuestSession(
 }
 
 /**
- * Server-side guard for Server Components, Route Handlers, and Server
- * Actions. The proxy already gates page navigation, but per the platform
- * spike, proxy matchers can silently exclude server functions, so every
- * data-touching code path must call this again. Throws GalleryAccessError
- * (401) when no valid session exists; configuration problems propagate as
- * GalleryAccessConfigError.
+ * The guest identity for the current request, for Server Components, Route
+ * Handlers, and Server Actions. Never throws and never denies: a caller with
+ * no cookie, a stale cookie, a forged cookie, or an unconfigured secret gets
+ * a fresh ephemeral session instead.
+ *
+ * src/proxy.ts sets the cookie on the way in, so in practice the ephemeral
+ * branch is only reached by a request that never passed through it. The cost
+ * of landing there is continuity, not access: favorites written against an
+ * ephemeral id are not findable on the next request.
  */
-export async function requireGalleryAccess(): Promise<GallerySession> {
-  // Open-access mode: see src/lib/auth/open-access.ts. The proxy is only the
-  // first gate -- every guest page and API also calls this, by design -- so
-  // the check has to live in both places or the archive stays locked.
-  if (isOpenAccess()) {
-    const now = Math.floor(Date.now() / 1000);
-    return {
-      sessionId: "open-access",
-      issuedAt: now,
-      expiresAt: now + 3600,
-      version: SESSION_TOKEN_VERSION,
-    };
-  }
-
+export async function getGuestSession(): Promise<GallerySession> {
   // Dynamic import keeps next/headers out of proxy.ts's module graph
   // (request-scoped APIs are not available in the proxy runtime).
   const { cookies } = await import("next/headers");
   const token = (await cookies()).get(GUEST_SESSION_COOKIE)?.value;
-  const session = await verifyGuestSession(token);
-  if (!session) {
-    throw new GalleryAccessError();
+  try {
+    const session = await verifyGuestSession(token);
+    if (session) return session;
+  } catch (error) {
+    if (!(error instanceof GalleryAccessConfigError)) throw error;
   }
-  return session;
+  return newSession();
 }

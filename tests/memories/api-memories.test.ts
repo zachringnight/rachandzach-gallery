@@ -2,29 +2,26 @@
  * /api/memories route tests (Memories wall, Round Two): auth requirement,
  * approved-only reads (pending and rejected are invisible to every guest,
  * including their author), server-side owner-key derivation, validation
- * bounds, and the fail-closed rate limit. requireGalleryAccess and
+ * bounds, and the fail-closed rate limit. getGuestSession and
  * createAdminClient are mocked (vi.mock, same pattern as
  * tests/favorites/api-favorites.test.ts); the database is the shared
  * in-memory fake in fake-memories-db.ts.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import {
-  GalleryAccessConfigError,
-  GalleryAccessError,
-} from "@/lib/auth/guest-session";
+import { GalleryAccessConfigError } from "@/lib/auth/guest-session";
 import { GET, POST } from "@/app/api/memories/route";
 import { createFakeMemoriesDb, type FakeMemoriesDb } from "./fake-memories-db";
 
-const { requireGalleryAccessMock, createAdminClientMock } = vi.hoisted(() => ({
-  requireGalleryAccessMock: vi.fn(),
+const { getGuestSessionMock, createAdminClientMock } = vi.hoisted(() => ({
+  getGuestSessionMock: vi.fn(),
   createAdminClientMock: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/guest-session", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/lib/auth/guest-session")>();
-  return { ...actual, requireGalleryAccess: requireGalleryAccessMock };
+  return { ...actual, getGuestSession: getGuestSessionMock };
 });
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -37,7 +34,7 @@ const HIDDEN = "22222222-2222-4222-8222-222222222222";
 const UNKNOWN = "99999999-9999-4999-8999-999999999999";
 
 function grantSession(sessionId = SESSION_ID): void {
-  requireGalleryAccessMock.mockResolvedValue({
+  getGuestSessionMock.mockResolvedValue({
     sessionId,
     issuedAt: 0,
     expiresAt: 9999999999,
@@ -77,7 +74,7 @@ function seedDb(): FakeMemoriesDb {
 }
 
 beforeEach(() => {
-  requireGalleryAccessMock.mockReset();
+  getGuestSessionMock.mockReset();
   createAdminClientMock.mockReset();
   // hashRateLimitKey derives from the session secret; POST needs it set.
   vi.stubEnv("GALLERY_SESSION_SECRET", "s".repeat(48));
@@ -88,17 +85,19 @@ afterEach(() => {
 });
 
 describe("GET /api/memories", () => {
-  it("requires a guest session", async () => {
-    requireGalleryAccessMock.mockRejectedValue(new GalleryAccessError());
+  it("reads a photo's approved wall for an anonymous caller", async () => {
+    // Reading needs no identity at all now: the password gate is gone, and
+    // this route never keyed anything to the session. Approval is still what
+    // decides what comes back -- see the pending/rejected cases below.
+    seedDb();
     const response = await GET(getRequest(PUBLISHED));
-    expect(response.status).toBe(401);
-    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
   });
 
-  it("maps configuration failures to 500, not 401", async () => {
-    requireGalleryAccessMock.mockRejectedValue(
-      new GalleryAccessConfigError("secret missing"),
-    );
+  it("maps configuration failures to 500", async () => {
+    createAdminClientMock.mockImplementation(() => {
+      throw new GalleryAccessConfigError("secret missing");
+    });
     const response = await GET(getRequest(PUBLISHED));
     expect(response.status).toBe(500);
   });
@@ -154,13 +153,6 @@ describe("GET /api/memories", () => {
 });
 
 describe("POST /api/memories", () => {
-  it("requires a guest session", async () => {
-    requireGalleryAccessMock.mockRejectedValue(new GalleryAccessError());
-    const response = await POST(postRequest({ photoId: PUBLISHED, body: "hi" }));
-    expect(response.status).toBe(401);
-    expect(createAdminClientMock).not.toHaveBeenCalled();
-  });
-
   it("rejects malformed JSON and bad fields before consuming rate limit", async () => {
     grantSession();
     const db = seedDb();

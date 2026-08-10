@@ -51,8 +51,19 @@ const PAGE_LIMIT = 60;
 /** Larger pages while the Light Bar races toward a far scrub target. */
 const JUMP_PAGE_LIMIT = 100;
 const RENEW_LEAD_MS = 60_000;
+/**
+ * Backoff for a renewal that failed. Without one, a single failed renewal was
+ * terminal: the function returned without applying anything, so no state
+ * changed, so the effect that scheduled it never re-ran. One 500 or one
+ * moment of bad phone signal and every tile went blank when the TTL lapsed,
+ * with no retry and nothing on screen to say so. Doubles to the cap and then
+ * keeps trying at the cap, because a gallery with no images is not a state to
+ * give up in.
+ */
+const RENEW_RETRY_BASE_MS = 15_000;
+const RENEW_RETRY_MAX_MS = 300_000;
 
-type LoadState = "idle" | "loading" | "error-session" | "error-network";
+type LoadState = "idle" | "loading" | "error-network";
 
 type PageFetchResult =
   | { status: "appended"; photos: ClientPhoto[] }
@@ -137,6 +148,8 @@ export function GalleryShell({
   const [expiresAt, setExpiresAt] = useState<string>(
     initialPage.signedUrlExpiresAt,
   );
+  /** 0 while renewals are healthy; each failure bumps it to back off a retry. */
+  const [renewAttempt, setRenewAttempt] = useState(0);
   const [state, setState] = useState<LoadState>("idle");
   const [activePhotoId, setActivePhotoId] = useState<string | null>(
     initialPhotoId,
@@ -181,13 +194,10 @@ export function GalleryShell({
       setState("loading");
       try {
         const res = await fetchWithRetry(apiUrl(next), { cache: "no-store" });
-        if (res.status === 401) {
-          if (seq === requestSeq.current) {
-            requestBusyRef.current = false;
-            setState("error-session");
-          }
-          return;
-        }
+        // A 401 used to mean "your guest session expired, go sign in again".
+        // /api/gallery cannot answer 401 since the password gate was removed
+        // (2026-08-09), so it is no longer special-cased: any non-ok status
+        // is a load failure the guest retries.
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: ClientGalleryPage = await res.json();
         if (seq !== requestSeq.current) return;
@@ -232,13 +242,6 @@ export function GalleryShell({
           apiUrl(filtersRef.current, { cursor: nextCursor, limit }),
           { cache: "no-store" },
         );
-        if (res.status === 401) {
-          if (seq === requestSeq.current) {
-            requestBusyRef.current = false;
-            setState("error-session");
-          }
-          return { status: "stale" };
-        }
         if (!res.ok) throw new Error(`status ${res.status}`);
         const body: ClientGalleryPage = await res.json();
         if (seq !== requestSeq.current) return { status: "stale" }; // filters changed
@@ -454,9 +457,17 @@ export function GalleryShell({
   }, [runQuery]);
 
   // Renew signed URLs shortly before they expire, in place (no scroll reset).
+  // A failed attempt bumps renewAttempt, which re-runs this effect and
+  // schedules a backed-off retry; a success resets it to 0.
   useEffect(() => {
     if (photos.length === 0) return;
-    const due = new Date(expiresAt).getTime() - Date.now() - RENEW_LEAD_MS;
+    const due =
+      renewAttempt === 0
+        ? new Date(expiresAt).getTime() - Date.now() - RENEW_LEAD_MS
+        : Math.min(
+            RENEW_RETRY_BASE_MS * 2 ** (renewAttempt - 1),
+            RENEW_RETRY_MAX_MS,
+          );
     const timer = setTimeout(
       () => {
         void renewSignedUrls(filters, photos, (fresh, freshExpiry) => {
@@ -466,12 +477,15 @@ export function GalleryShell({
             ),
           );
           setExpiresAt(freshExpiry);
+          setRenewAttempt(0);
+        }).then((renewed) => {
+          if (!renewed) setRenewAttempt((n) => n + 1);
         });
       },
       Math.max(0, due),
     );
     return () => clearTimeout(timer);
-  }, [expiresAt, photos, filters]);
+  }, [expiresAt, photos, filters, renewAttempt]);
 
   const activeIndex = activePhotoId
     ? photos.findIndex((p) => p.id === activePhotoId)
@@ -535,16 +549,7 @@ export function GalleryShell({
           <div className="atlas-gallery-toolbar">{toolbarSlot}</div>
         ) : null}
 
-        {state === "error-session" ? (
-          <ErrorState
-            title="Your session expired"
-            body="Enter the password from your invite to keep browsing."
-            actionLabel="Enter the password"
-            onAction={() => {
-              window.location.href = "/enter?next=/photos";
-            }}
-          />
-        ) : state === "error-network" ? (
+        {state === "error-network" ? (
           <ErrorState
             title="We could not load photos"
             body="This looks like a connection hiccup, not an empty gallery."
@@ -717,6 +722,7 @@ function ErrorState({
   );
 }
 
+/** Resolves true when fresh URLs were applied, false when the attempt failed. */
 async function renewSignedUrls(
   filters: GalleryFilterState,
   photos: ClientPhoto[],
@@ -724,7 +730,7 @@ async function renewSignedUrls(
     fresh: Map<string, ClientPhoto["previews"]>,
     expiresAt: string,
   ) => void,
-): Promise<void> {
+): Promise<boolean> {
   const ids = photos.map((p) => p.id);
   const fresh = new Map<string, ClientPhoto["previews"]>();
   let latestExpiry = new Date().toISOString();
@@ -734,13 +740,15 @@ async function renewSignedUrls(
       const res = await fetchWithRetry(apiUrl(filters, { ids: chunk }), {
         cache: "no-store",
       });
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const body: ClientGalleryPage = await res.json();
       for (const photo of body.photos) fresh.set(photo.id, photo.previews);
       latestExpiry = body.signedUrlExpiresAt;
     } catch {
-      return;
+      return false;
     }
   }
-  if (fresh.size > 0) apply(fresh, latestExpiry);
+  if (fresh.size === 0) return false;
+  apply(fresh, latestExpiry);
+  return true;
 }

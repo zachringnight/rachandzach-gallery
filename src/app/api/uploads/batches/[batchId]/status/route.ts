@@ -7,7 +7,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { getUploadStatus } from "@/lib/uploads/create-batch";
-import { requireGuest, uploadErrorResponse } from "@/lib/uploads/http";
+import { uploadErrorResponse } from "@/lib/uploads/http";
 
 export const runtime = "nodejs";
 
@@ -15,9 +15,6 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ batchId: string }> },
 ) {
-  const guard = await requireGuest();
-  if (!guard.ok) return guard.response;
-
   const { batchId } = await context.params;
   const receiptToken =
     request.nextUrl.searchParams.get("receipt") ??

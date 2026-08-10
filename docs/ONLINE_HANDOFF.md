@@ -19,7 +19,7 @@ the pre-launch history and are not operational instructions.
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to target `production`; current status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `b7d5b6f` -- face waves 12+13, Brenda Wasserman name chain, green visual gate ([#13](https://github.com/zachringnight/rachandzach-gallery/pull/13), merged 2026-08-05) |
+| Latest release | `d11f05a` -- renewal recovery + open-access tests ([#19](https://github.com/zachringnight/rachandzach-gallery/pull/19), merged 2026-08-08). Preceding: [#18](https://github.com/zachringnight/rachandzach-gallery/pull/18) audit fixes, [#17](https://github.com/zachringnight/rachandzach-gallery/pull/17) CI on pull requests, [#16](https://github.com/zachringnight/rachandzach-gallery/pull/16) name-layering fix, [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15) AVIF fallback + field instrumentation, [#14](https://github.com/zachringnight/rachandzach-gallery/pull/14) mobile pass |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | `codex/naming-session-and-no-tag-sweep`; 996 reviewed tags locally, not deployed or live-synced in this pass |
@@ -95,11 +95,11 @@ Production smoke results from 2026-07-25:
 | Request | Expected and observed |
 |---|---|
 | `/` | `200` |
-| `/enter` | `200` |
+| `/enter` | `200` -- the sign-in page, removed 2026-08-09; this row is history |
 | `/nyc` | `200` |
 | `/marathon` | `308` to `/nyc` |
-| `/photos?gallery_q=weekend` | `307` to the password gate with the full filtered URL preserved in `next` |
-| `/api/gallery` without a guest session | `401` JSON |
+| `/photos?gallery_q=weekend` | `307` to the password gate with the full filtered URL preserved in `next` -- now a plain `200`, gate removed |
+| `/api/gallery` without a guest session | `401` JSON -- now `200`, gate removed |
 
 Supabase migrations added by this release are checked in and applied:
 
@@ -315,11 +315,12 @@ which is the guard doing its job, not lost data.
 
 The remaining work is now shaped for one sitting rather than 329 separate
 decisions. `npm run faces:recurring -- --report
-metadata/faces/unresolved-cluster-review.json` offers **93 same-face clusters
-covering 388 faces across 247 photographs**, largest 20 faces, where one name
+metadata/faces/unresolved-cluster-review.json` offers **91 same-face clusters
+covering 381 faces across 244 photographs**, largest 20 faces, where one name
 applies to the whole cluster. The report deliberately drops 29 clusters as too
 small or too soft to judge and 3 that hold two faces from one photograph and
-therefore are not one person.
+therefore are not one person. (These are the generated report's own summary
+numbers; an earlier revision of this section overstated them.)
 
 One person could not be reached by that queue. The woman whose face trained
 the `mike-caron` signature appeared in 5 photographs, and because the pipeline
@@ -336,7 +337,9 @@ of 153 tagged people.
 
 That rebuild surfaced two below-default Jeff Rush candidates
 (`metadata/faces/review-2026-08-05-b/sheet-001.jpg`, sims 0.615 and 0.483).
-They await Zach's eyes; nothing is applied.
+Zach reviewed them 2026-08-07: the after-party face (0.483) is confirmed and
+applied as wave 14; the cocktail-hour face (0.615, behind sunglasses) he could
+not call, so it stays undecided and unapplied.
 
 ### Visual baselines regenerated (2026-08-05)
 
@@ -510,10 +513,12 @@ to the live database.**
 Two changes, both deliberate and both Zach's call, made to get the guest
 manager usable while magic-link sign-in is broken:
 
-1. `OPEN_ACCESS=1` is set on the Vercel **Preview** environment. It bypasses
-   the guest password (`src/proxy.ts`, `requireGalleryAccess`) and returns a
+1. `OPEN_ACCESS=1` is set on the Vercel **Preview** environment. It returns a
    synthetic administrator from `requireAdmin()`. See
-   `src/lib/auth/open-access.ts`.
+   `src/lib/auth/open-access.ts`. (It also used to bypass the guest password;
+   that half became a no-op on 2026-08-09 when the password was removed from
+   every environment. The admin bypass is the whole of it now, which makes
+   this flag MORE dangerous than it was, not less.)
 2. Vercel **Deployment Protection (`ssoProtection`) was disabled** for the
    project so Rachel could open the preview without a Vercel account.
 
@@ -545,11 +550,12 @@ That is enforced in code, not by convention.
 | DONE | Zach + Codex | 2026-08-10 | Applied and verified the 27 live reviewed joins, then safely merged Joan Soskin into Joan AuWerter. The final read-only plans report 996/996 tags present and zero pending joins or merges. |
 | P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 46 real names and their messages. Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
 | DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
-| P1 | Zach | Two rows | Confirm or deny the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`. Nothing is applied. |
+| DONE (half) | Zach | 2026-08-07 | Of the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`, Zach confirmed the after-party face (sim 0.483). Applied as wave 14 to all four layers: additions manifest, catalog, the original's embedded metadata, and the live database (single-row upsert with pre-state backup, because the full sync is blocked; see the P1 name-drift row). The cocktail-hour face (sim 0.615, behind sunglasses) stays undecided and unapplied. |
+| DONE | Codex | 2026-08-08 | The six "live-name drifts" turned out to be the opposite of a drift: those names are `/admin/faces` corrections, which belong only in `rachandzach_person_overrides` and are applied over the catalog name at the data-source boundary. Something had copied them down into `rachandzach_people.display_name` between 2026-08-05T22:32Z and 2026-08-06T02:43Z, collapsing the two layers and tripping the sync guard. Restored the six base names to canonical (backup in `metadata/faces/sync-backups/`); no guest-visible name changed, since every override was verified present first. `write-additions-to-master.py` now resolves names through `person-overrides.json`, so it stopped wanting to put a second name for the same person into 29 originals; the one genuine pending write (a Joan Soskin tag) was applied and manifest-reconciled. The junk `"pa"` entry and the stale `By Person/pa` symlink folder are gone. Both guards pass; live sits at 5,100 tag rows. See `docs/BACKLOG.md` "Resolved 2026-08-08". |
 | DONE | Codex | 2026-08-05 | Shipped the whole `docs/BACKLOG.md` "Mobile and touch" and "Guest journey" sections in one pass: filter panel closes on selection, mobile filter chips, 44px touch targets, guest-scoped 404, scroll-away mobile chrome, sign-in lands on Find me, one download button, keyword chips deep-link that works, PersonPicker announces its real purpose. |
 | P1 | Zach | After this deploys | Flip through `/photos` on a phone: filter a person, watch the chip row, scroll down and back up (chapter tab and Light Bar should step aside and return), favorite from a card, download from the viewer. The grid only renders against the live database, so this pass shipped on unit tests plus the data-free visual suite; this is the eyeball check that closes it. |
 | P2 | Rachel | Any time | Replace two correct-but-unflattering face crops in `/admin/faces`: `charlie-weisman`, `dee-burton`. Admin picks outrank the script. |
-| P2 | Engineer | Before wide sharing | No AVIF fallback: the client is AVIF-only by design, so a browser without support gets broken images. See `docs/BACKLOG.md` "Technical debt"; needs a `<picture>` element and a matching serialization change, together. |
+| DONE | Codex | 2026-08-05 | AVIF fallback shipped in [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15): `preview-format.ts` orders previews most-compatible-first, `serialize.ts` signs a decodable companion per AVIF width, and `PhotoImage` renders `<picture>` so browsers negotiate natively. This row previously still read as open work and would have sent an engineer to rebuild it. |
 | DONE | Zach | 2026-07-26 | Created the Google Web OAuth client ID and Dropbox Saver app key; only the public identifiers were supplied to deployment configuration. |
 | DONE | Codex | 2026-07-26 | Confirmed `NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID` and `NEXT_PUBLIC_DROPBOX_APP_KEY` in Vercel Production and Preview, deployed `main`, and verified the production deployment is `READY`. |
 | P0 | Zach/admin | Before announcing cloud save | Complete the two consent-dependent file-transfer rows in the authenticated acceptance pass below using a personal Google Drive and Dropbox account. |
@@ -609,7 +615,8 @@ deployments do not receive new build-time `NEXT_PUBLIC_*` values.
 
 Run these checks on `https://rachandzach.com`:
 
-- [ ] Enter through the guest password gate and open `/photos`
+- [ ] Open `/photos` directly (no password since 2026-08-09) and confirm it
+      renders for a browser with no cookies at all
 - [ ] Apply text plus event/person filters, choose **Copy current view**, paste
       the URL in a new tab, and confirm the same filtered result survives
 - [ ] Run a semantic Moment Search and confirm its query does not overwrite
