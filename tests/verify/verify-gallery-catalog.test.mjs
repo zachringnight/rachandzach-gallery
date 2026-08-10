@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   parseArgs,
   isLoopbackHost,
+  shouldApplyTrackedOverlays,
   diffImageHashes,
   reconcileCountMaps,
   buildDbUnblockNotice,
@@ -56,6 +57,13 @@ describe("isLoopbackHost", () => {
 
   it("returns false for an unparseable URL instead of throwing", () => {
     expect(isLoopbackHost("not a url")).toBe(false);
+  });
+});
+
+describe("shouldApplyTrackedOverlays", () => {
+  it("uses tracked identity decisions only for the canonical generated catalog", () => {
+    expect(shouldApplyTrackedOverlays(parseArgs([]).catalogPath)).toBe(true);
+    expect(shouldApplyTrackedOverlays("/tmp/fixture-gallery-v2.json")).toBe(false);
   });
 });
 

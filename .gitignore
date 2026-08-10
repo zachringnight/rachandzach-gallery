@@ -26,12 +26,12 @@ metadata/verify/
 metadata/audit/review-sheets/
 metadata/identity-review/*
 !metadata/identity-review/*.csv
-# The naming session's ledger is human judgement, not derived state: it is
-# where "not a guest" and "not sure" answers live, and nothing else records
-# them (confirmed names go to metadata/reviewed-face-tag-additions.json). It
-# is also what lets a session resume. Losing it means re-asking someone about
-# hundreds of faces they already ruled on, so it is tracked deliberately.
+# The naming session's ledgers are human judgement, not derived state. They
+# preserve settled face decisions and candidate-specific rejections; confirmed
+# names go to metadata/reviewed-face-tag-additions.json. Losing these records
+# means re-asking people questions they already answered, so both are tracked.
 !metadata/identity-review/naming-decisions.json
+!metadata/identity-review/stack-candidate-rejections.json
 # Claude Design session artifacts (external design session drops these in
 # the worktree; generated bundles, not source).
 ds-bundle/

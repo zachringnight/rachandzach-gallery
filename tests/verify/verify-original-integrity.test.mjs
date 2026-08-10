@@ -4,6 +4,7 @@
 // Master Clean, src/generated/gallery-v2.json, or any network. Remote checks
 // are exercised purely via injected fake clients (deps.remoteClientFactory).
 import { promises as fs } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   parseArgs,
@@ -108,8 +109,12 @@ describe("verifyLocalPhoto", () => {
     await fixture.cleanup();
   });
 
-  it("matches when the on-disk bytes reproduce the recorded sha256 and size", async () => {
-    const result = await verifyLocalPhoto(fixture.photos[0], fixture.masterRoot);
+  it("matches when the recomputed image-data identity and dimensions agree", async () => {
+    const result = await verifyLocalPhoto(
+      fixture.photos[0],
+      fixture.masterRoot,
+      identityFor(fixture.photos[0]),
+    );
     expect(result).toEqual({
       imageDataHash: fixture.hashA,
       path: "01 Ceremony/ceremony-1.jpg",
@@ -117,23 +122,47 @@ describe("verifyLocalPhoto", () => {
     });
   });
 
-  it("reports sha256_mismatch when the recorded hash is wrong", async () => {
-    const tampered = { ...fixture.photos[0], fileSha256: "0".repeat(64) };
-    const result = await verifyLocalPhoto(tampered, fixture.masterRoot);
+  it("reports image_data_hash_mismatch when the visual identity moves", async () => {
+    const result = await verifyLocalPhoto(fixture.photos[0], fixture.masterRoot, {
+      ...identityFor(fixture.photos[0]),
+      imageDataHash: "0".repeat(32),
+    });
     expect(result.ok).toBe(false);
-    expect(result.reason).toMatch(/^sha256_mismatch/);
+    expect(result.reason).toMatch(/^image_data_hash_mismatch/);
   });
 
-  it("reports size_mismatch when the recorded byte count is wrong", async () => {
-    const tampered = { ...fixture.photos[0], originalBytes: fixture.photos[0].originalBytes + 1 };
-    const result = await verifyLocalPhoto(tampered, fixture.masterRoot);
+  it("reports dimension_mismatch when the decoded dimensions move", async () => {
+    const result = await verifyLocalPhoto(fixture.photos[0], fixture.masterRoot, {
+      ...identityFor(fixture.photos[0]),
+      width: fixture.photos[0].width + 1,
+    });
     expect(result.ok).toBe(false);
-    expect(result.reason).toMatch(/^size_mismatch/);
+    expect(result.reason).toMatch(/^dimension_mismatch/);
+  });
+
+  it("accepts metadata-only container byte drift when visual identity is stable", async () => {
+    const metadataEdited = {
+      ...fixture.photos[0],
+      originalBytes: fixture.photos[0].originalBytes + 99,
+      fileSha256: "0".repeat(64),
+    };
+
+    const result = await verifyLocalPhoto(
+      metadataEdited,
+      fixture.masterRoot,
+      identityFor(fixture.photos[0]),
+    );
+
+    expect(result.ok).toBe(true);
   });
 
   it("reports missing_file when the source path does not exist", async () => {
     const tampered = { ...fixture.photos[0], originalRelativePath: "01 Ceremony/nope.jpg" };
-    const result = await verifyLocalPhoto(tampered, fixture.masterRoot);
+    const result = await verifyLocalPhoto(
+      tampered,
+      fixture.masterRoot,
+      identityFor(tampered),
+    );
     expect(result.ok).toBe(false);
     expect(result.reason).toMatch(/^missing_file/);
   });
@@ -219,11 +248,15 @@ describe("verifyOriginalIntegrity (integration)", () => {
     await fixture.cleanup();
   });
 
+  const localIdentityDeps = {
+    readLocalImageIdentities: fakeIdentityReader,
+  };
+
   it("passes locally and reports the remote section as skipped when --remote is not given", async () => {
     const catalogPath = await fixture.writeCatalogFile();
     const { exitCode, report } = await verifyOriginalIntegrity(
       ["--catalog", catalogPath, "--source", fixture.masterRoot, "--full"],
-      { log: silentLog },
+      { log: silentLog, ...localIdentityDeps },
     );
     expect(exitCode).toBe(0);
     expect(report.ok).toBe(true);
@@ -231,18 +264,30 @@ describe("verifyOriginalIntegrity (integration)", () => {
     expect(report.remote.attempted).toBe(false);
   });
 
-  it("fails when a sampled original's bytes no longer match its recorded sha256", async () => {
+  it("fails when a sampled original's recomputed image identity changes", async () => {
     const catalogPath = await fixture.writeCatalogFile();
-    // Tamper the source file after the catalog (and its fileSha256) was fixed.
-    await fs.appendFile(fixture.pathA, Buffer.from("tampered"));
 
     const { exitCode, report } = await verifyOriginalIntegrity(
       ["--catalog", catalogPath, "--source", fixture.masterRoot, "--full"],
-      { log: silentLog },
+      {
+        log: silentLog,
+        readLocalImageIdentities: async (photos, sourceRoot) => {
+          const identities = await fakeIdentityReader(photos, sourceRoot);
+          identities.set(resolve(fixture.pathA), {
+            ...identityFor(fixture.photos[0]),
+            imageDataHash: "0".repeat(32),
+          });
+          return identities;
+        },
+      },
     );
     expect(exitCode).toBe(1);
     expect(report.local.ok).toBe(false);
-    expect(report.local.mismatches.some((m) => m.reason.startsWith("size_mismatch"))).toBe(true);
+    expect(
+      report.local.mismatches.some((m) =>
+        m.reason.startsWith("image_data_hash_mismatch"),
+      ),
+    ).toBe(true);
   });
 
   it("fails when a sampled original is missing from disk", async () => {
@@ -251,7 +296,7 @@ describe("verifyOriginalIntegrity (integration)", () => {
 
     const { exitCode, report } = await verifyOriginalIntegrity(
       ["--catalog", catalogPath, "--source", fixture.masterRoot, "--full"],
-      { log: silentLog },
+      { log: silentLog, ...localIdentityDeps },
     );
     expect(exitCode).toBe(1);
     expect(report.local.mismatches.some((m) => m.reason.startsWith("missing_file"))).toBe(true);
@@ -261,7 +306,7 @@ describe("verifyOriginalIntegrity (integration)", () => {
     const catalogPath = await fixture.writeCatalogFile();
     const { report } = await verifyOriginalIntegrity(
       ["--catalog", catalogPath, "--source", fixture.masterRoot, "--full", "--remote"],
-      { log: silentLog },
+      { log: silentLog, ...localIdentityDeps },
     );
     expect(report.remote.attempted).toBe(false);
     expect(report.remote.reason).toMatch(/--env-file/);
@@ -291,6 +336,7 @@ describe("verifyOriginalIntegrity (integration)", () => {
       ],
       {
         log: silentLog,
+        ...localIdentityDeps,
         remoteClientFactory: async () => {
           called = true;
           throw new Error("must never be called for a cloud host");
@@ -340,6 +386,7 @@ describe("verifyOriginalIntegrity (integration)", () => {
       ],
       {
         log: silentLog,
+        ...localIdentityDeps,
         remoteClientFactory: async () => makeFakeRemoteClient({ dbRows, storageInfo }),
       },
     );
@@ -371,6 +418,7 @@ describe("verifyOriginalIntegrity (integration)", () => {
       ],
       {
         log: silentLog,
+        ...localIdentityDeps,
         // Empty remote: every sampled photo is "not found" remotely.
         remoteClientFactory: async () => makeFakeRemoteClient({ dbRows: {}, storageInfo: {} }),
       },
@@ -379,6 +427,23 @@ describe("verifyOriginalIntegrity (integration)", () => {
     expect(exitCode).toBe(1);
   });
 });
+
+function identityFor(photo) {
+  return {
+    imageDataHash: photo.imageDataHash,
+    width: photo.width,
+    height: photo.height,
+  };
+}
+
+async function fakeIdentityReader(photos, sourceRoot) {
+  return new Map(
+    photos.map((photo) => [
+      resolve(sourceRoot, photo.originalRelativePath),
+      identityFor(photo),
+    ]),
+  );
+}
 
 /** Minimal fake supabase-js client: only the calls verifyRemotePhoto() makes. */
 function makeFakeRemoteClient({ dbRows, storageInfo }) {

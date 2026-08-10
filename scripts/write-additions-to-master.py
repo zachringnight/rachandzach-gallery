@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write the 831 reviewed face-tag additions into the master's embedded
+"""Write reviewed face-tag additions into the master's embedded
 metadata (PersonInImage, Subject, Keywords), so the original JPEGs carry the
 same names the gallery shows.
 
@@ -178,6 +178,10 @@ def main() -> int:
           f"(of {len(targets)} photos)")
     if dry_run and changed:
         print("Re-run with --write to apply.")
+    elif not dry_run and not failed:
+        print("Next, reconcile metadata-only file-size changes in the manifest:")
+        print("  python3 scripts/sync-manifest-after-write.py")
+        print("  python3 scripts/sync-manifest-after-write.py --write")
     return 1 if failed else 0
 
 

@@ -5,6 +5,8 @@ const PERSON_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const ATTENDANCE_PATH = join("metadata", "wedding-attendees.json");
 const FACE_TAGS_PATH = join("metadata", "reviewed-face-tag-additions.json");
 const FACE_TAG_REMOVALS_PATH = join("metadata", "reviewed-face-tag-removals.json");
+const PERSON_MERGES_PATH = join("metadata", "person-merges.json");
+const PERSON_OVERRIDES_PATH = join("src", "generated", "person-overrides.json");
 
 function invariant(condition, message) {
   if (!condition) throw new Error(`Catalog overlay invalid: ${message}`);
@@ -177,6 +179,136 @@ function validateFaceTagRemovals(manifest, additions) {
   }
 }
 
+export function applyPersonMerges(catalog, manifest) {
+  invariant(Array.isArray(catalog?.people), "catalog people must be an array");
+  invariant(Array.isArray(catalog?.photos), "catalog photos must be an array");
+  invariant(manifest?.schemaVersion === 1, "person-merge schemaVersion must be 1");
+  invariant(Array.isArray(manifest.merges), "person-merge merges must be an array");
+
+  const fromSlugs = new Set();
+  for (const merge of manifest.merges) {
+    invariant(
+      PERSON_SLUG_PATTERN.test(merge.fromSlug),
+      `person merge has invalid source slug ${merge.fromSlug}`,
+    );
+    invariant(
+      PERSON_SLUG_PATTERN.test(merge.intoSlug),
+      `person merge has invalid target slug ${merge.intoSlug}`,
+    );
+    invariant(merge.fromSlug !== merge.intoSlug, `person merge ${merge.fromSlug} targets itself`);
+    invariant(
+      typeof merge.fromName === "string" && merge.fromName.length > 0,
+      `person merge ${merge.fromSlug} has no source name`,
+    );
+    invariant(
+      typeof merge.intoName === "string" && merge.intoName.length > 0,
+      `person merge ${merge.fromSlug} has no target name`,
+    );
+    invariant(
+      typeof merge.reason === "string" && merge.reason.length >= 20,
+      `person merge ${merge.fromSlug} needs a reviewed reason`,
+    );
+    invariant(!fromSlugs.has(merge.fromSlug), `duplicate person merge source ${merge.fromSlug}`);
+    fromSlugs.add(merge.fromSlug);
+  }
+  for (const merge of manifest.merges) {
+    invariant(
+      !fromSlugs.has(merge.intoSlug),
+      `person merge chains are not supported (${merge.fromSlug} -> ${merge.intoSlug})`,
+    );
+  }
+
+  const peopleBySlug = new Map(catalog.people.map((person) => [person.slug, person]));
+  let personMergesApplied = 0;
+  let personMergesAlreadyApplied = 0;
+  let personMergeTargetsAdded = 0;
+  let personMergePhotosReattributed = 0;
+
+  for (const merge of manifest.merges) {
+    const source = peopleBySlug.get(merge.fromSlug);
+    let target = peopleBySlug.get(merge.intoSlug);
+    if (!source) {
+      invariant(target, `person merge references missing identities ${merge.fromSlug} and ${merge.intoSlug}`);
+      invariant(
+        target.name === merge.intoName,
+        `${merge.intoSlug} name is ${target.name}, expected ${merge.intoName}`,
+      );
+      personMergesAlreadyApplied += 1;
+      continue;
+    }
+    invariant(
+      source.name === merge.fromName,
+      `${merge.fromSlug} name is ${source.name}, expected ${merge.fromName}`,
+    );
+    if (target) {
+      invariant(
+        target.name === merge.intoName,
+        `${merge.intoSlug} name is ${target.name}, expected ${merge.intoName}`,
+      );
+    } else {
+      target = { slug: merge.intoSlug, name: merge.intoName, photoCount: 0 };
+      catalog.people.push(target);
+      peopleBySlug.set(target.slug, target);
+      personMergeTargetsAdded += 1;
+    }
+
+    for (const photo of catalog.photos) {
+      if (!photo.peopleSlugs.includes(merge.fromSlug)) continue;
+      photo.peopleSlugs = [
+        ...new Set(
+          photo.peopleSlugs.map((slug) =>
+            slug === merge.fromSlug ? merge.intoSlug : slug,
+          ),
+        ),
+      ].sort();
+      personMergePhotosReattributed += 1;
+    }
+    catalog.people = catalog.people.filter((person) => person.slug !== merge.fromSlug);
+    peopleBySlug.delete(merge.fromSlug);
+    personMergesApplied += 1;
+  }
+
+  return {
+    reviewedPersonMerges: manifest.merges.length,
+    personMergesApplied,
+    personMergesAlreadyApplied,
+    personMergeTargetsAdded,
+    personMergePhotosReattributed,
+  };
+}
+
+export function applyDisplayNameOverrides(catalog, overrides) {
+  invariant(Array.isArray(catalog?.people), "catalog people must be an array");
+  invariant(
+    overrides?.names && typeof overrides.names === "object" && !Array.isArray(overrides.names),
+    "person overrides names must be an object",
+  );
+
+  const peopleBySlug = new Map(catalog.people.map((person) => [person.slug, person]));
+  let displayNamesUpdated = 0;
+  let displayNamesAlreadyCurrent = 0;
+  for (const [slug, name] of Object.entries(overrides.names)) {
+    invariant(PERSON_SLUG_PATTERN.test(slug), `person override has invalid slug ${slug}`);
+    invariant(
+      typeof name === "string" && name.length > 0,
+      `person override ${slug} has no display name`,
+    );
+    const person = peopleBySlug.get(slug);
+    invariant(person, `person override references missing person ${slug}`);
+    if (person.name === name) {
+      displayNamesAlreadyCurrent += 1;
+      continue;
+    }
+    person.name = name;
+    displayNamesUpdated += 1;
+  }
+  return {
+    reviewedDisplayNameOverrides: Object.keys(overrides.names).length,
+    displayNamesUpdated,
+    displayNamesAlreadyCurrent,
+  };
+}
+
 export function applyCatalogOverlays(catalog, attendance, faceTags, faceTagRemovals) {
   validateAttendance(attendance);
   validateFaceTags(faceTags);
@@ -292,12 +424,18 @@ export function applyCatalogOverlays(catalog, attendance, faceTags, faceTagRemov
 }
 
 export async function applyTrackedCatalogOverlays(catalog, repoRoot) {
-  const [attendance, faceTags] = await Promise.all([
+  const [attendance, faceTags, personMerges, personOverrides] = await Promise.all([
     fs
       .readFile(join(repoRoot, ATTENDANCE_PATH), "utf8")
       .then((value) => JSON.parse(value)),
     fs
       .readFile(join(repoRoot, FACE_TAGS_PATH), "utf8")
+      .then((value) => JSON.parse(value)),
+    fs
+      .readFile(join(repoRoot, PERSON_MERGES_PATH), "utf8")
+      .then((value) => JSON.parse(value)),
+    fs
+      .readFile(join(repoRoot, PERSON_OVERRIDES_PATH), "utf8")
       .then((value) => JSON.parse(value)),
   ]);
   // Optional: no removals file means no removals, which is how this repo
@@ -309,5 +447,17 @@ export async function applyTrackedCatalogOverlays(catalog, repoRoot) {
       if (error.code === "ENOENT") return null;
       throw error;
     });
-  return applyCatalogOverlays(catalog, attendance, faceTags, faceTagRemovals);
+  const personMergeSummary = applyPersonMerges(catalog, personMerges);
+  const displayNameSummary = applyDisplayNameOverrides(catalog, personOverrides);
+  const catalogOverlaySummary = applyCatalogOverlays(
+    catalog,
+    attendance,
+    faceTags,
+    faceTagRemovals,
+  );
+  return {
+    ...personMergeSummary,
+    ...displayNameSummary,
+    ...catalogOverlaySummary,
+  };
 }

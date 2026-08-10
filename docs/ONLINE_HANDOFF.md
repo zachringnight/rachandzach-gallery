@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-08-05 (PDT).
+Updated 2026-08-10 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -22,6 +22,7 @@ the pre-launch history and are not operational instructions.
 | Latest release | `d11f05a` -- renewal recovery + open-access tests ([#19](https://github.com/zachringnight/rachandzach-gallery/pull/19), merged 2026-08-08). Preceding: [#18](https://github.com/zachringnight/rachandzach-gallery/pull/18) audit fixes, [#17](https://github.com/zachringnight/rachandzach-gallery/pull/17) CI on pull requests, [#16](https://github.com/zachringnight/rachandzach-gallery/pull/16) name-layering fix, [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15) AVIF fallback + field instrumentation, [#14](https://github.com/zachringnight/rachandzach-gallery/pull/14) mobile pass |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
+| Current unmerged face work | `codex/naming-session-and-no-tag-sweep`; 996 reviewed tags locally, not deployed or live-synced in this pass |
 
 Production aliases are active for:
 
@@ -355,6 +356,65 @@ the password-gate release. One caveat worth keeping: with the whole site
 gated, `home`, `enter`, `enter-error` and `404` all render essentially the
 same screen, so four of the six visual baselines now cover one page.
 
+### The naming evening (2026-08-05)
+
+The browser tagger was the wrong instrument and was replaced mid-session. It
+asks one face at a time; an evening of it produced 107 single-face decisions.
+Rendering the same queue as numbered contact sheets, answered in batches as
+plain text, produced **90 stacks and 264 faces** in about the same time. The
+sheets are now the documented first choice (`docs/FACE_TAGGING_TOOL.md`); the
+tagger remains for faces that need their surrounding photograph to answer.
+
+What made the sheets work is not the format but what they print beside each
+face: **who is already tagged in that stack's photographs**. Unresolved stacks
+exist precisely because no saved profile matched, so the model has no
+suggestion to offer, but "standing beside two Myerses" is usually enough for a
+human. The sheets now show only stacks nobody has named, and carry the list of
+seated guests who appear in no photograph, because those two sets are largely
+the same people. Chris Bishop, Lauren Wasmuth's husband, moved from the second
+list to the first that way, gaining 5 photographs and his first face profile.
+
+Ambiguity is resolved by measurement before it is ever handed back. A first
+name matching several guests is settled by scoring the stack against each
+candidate's saved profile and by co-occurrence, which decided 7 of 11 outright
+(Emily Myers at 0.93, Alex Kamins at 0.91 while Alex Dubov sat in the same
+frame at 0.06). Only genuinely undecidable ones go back to a person.
+
+`scripts/face/deduce-unmatched-tags.mjs` came out of this session: it reads
+names a human already put on a photograph and asks which face they belong to.
+Where exactly one name and one face are unmatched, the face is that person by
+elimination, no model similarity involved. It found **87 such photographs** and
+is the only route to a first face for three guests the recognition side cannot
+find at all. It writes nothing; the candidates await review.
+
+Also corrected: six display names that existed only in `/admin/faces` and had
+never reached the local catalog, the tagger roster, or the photographs' own
+embedded metadata (Elizabeth Adame, Emily Cronin-Stillman, Maddie Lurie, Maura
+Keith-Gutierrez, Pat Burton, Ron Harris). Guests already saw the right names,
+because the overrides table wins at render time; everything underneath
+disagreed, including the metadata that outlives this site. The live base rows
+still retain their legacy names, while the saved overrides are the approved
+guest-facing names. `sync-catalog-overlays.mjs` now validates that effective
+name instead of incorrectly rejecting a correct override.
+
+**One incident worth recording.** The first version of
+`scripts/face/merge-person.mjs` wrote a column that does not exist (`status`
+instead of `confidence`), ignored the resulting error, and deleted the old
+rows anyway, destroying three live tags. It was caught by the script's own
+verification step (`joan-auwerter now has 0 rows`) and all three were
+restored within minutes; the table is back to its expected count. The lesson
+is in the code now: ordering the insert before the delete was never the
+protection, checking that the insert landed is, and the merge refuses to
+delete anything until it has confirmed the replacement row exists.
+
+The production-safe continuation is now a separate dry-run-first command:
+`npm run faces:merge:live -- <old-slug> <canonical-slug>`. It only accepts a
+merge already recorded in `metadata/person-merges.json`, snapshots the exact
+people/tags/overrides/favorites/memories state, copies and reads back every
+target reference before deleting its source reference, and uses the existing
+row-locking removal RPC to retire the empty duplicate. `--execute` is required
+for writes; rerunning without it is the final idempotent readback.
+
 ### The "Brend Wasserman" name chain, resolved (2026-08-05)
 
 The seating chart's truncated spelling had reached the roster, the catalog, the
@@ -390,6 +450,60 @@ they fail identically on a clean `main` with no local changes, so that is
 pre-existing baseline drift from the password gate rather than a regression
 from this pass. It is written up in `docs/BACKLOG.md` along with a suspected
 second profile defect in `jorie-soskin`.
+
+### Clear-stack naming continuation (2026-08-10)
+
+Rachel confirmed eight identities from the clearer multi-view stack sheets,
+covering **38 faces**: Nick Willey (10), Tom Myers (9), Allison Vega (6), Tim
+Jackowski (3), Lauren Lurie (3), Ann Marie Hoppler (3), Nita Myers (2), and
+Din Rush (2). Context was used to rank candidates, never to auto-tag them.
+Two candidate-specific rejections remain attached to stable stack IDs while
+the faces stay open: original sheet #2 / `c0300` is not Marc Soskin, and
+original sheet #4 / `c0192` is not Shirley Soskin.
+
+The refreshed Rachel-facing queue now has **16 clear stacks covering 95 open
+faces** on two sheets. Nine more stacks covering 19 faces are held out because
+they have no clear representative; `--include-blurry` remains an explicit
+long-tail option. Current tracked state is 996 reviewed additions across 548
+photos and two reviewed removals.
+
+All 25 originals that were still missing one of those confirmed embedded names
+were updated metadata-only. The follow-up safety pass verified every affected
+`ImageDataHash` and dimension before accepting the new container sizes into
+the manifest. Recoverable manifest backups are in the clean master's
+`_Metadata/backups/` directory, including
+`photo-manifest.before-size-sync-20260810T153134Z.csv`.
+
+Clean rebuilds now reproduce the same identity layer instead of resurrecting
+stale records: `metadata/person-merges.json` durably records Joan Soskin ->
+Joan AuWerter, the six approved display-name overrides are applied before the
+attendance/tag overlays, and `verify:catalog` compares the master plus those
+tracked decisions to the generated catalog. The gate passes at 1,721 photos,
+14 events, and 188 people with zero hash/count drift.
+
+The sampled originals verifier previously compared the metadata-edited local
+JPEG container against the older cloud object's whole-file SHA and size, which
+made 35 of 100 healthy samples look corrupt. Its local side now recomputes the
+stable `ImageDataHash` and dimensions; whole-file SHA/size remain the cloud
+object check. The same deterministic sample passes **100/100** after the fix.
+
+Final branch verification: `npm run verify` passed with typecheck clean; lint
+at 0 errors / 20 existing warnings; Vitest 84 passed and 2 skipped files,
+1,149 passed and 17 skipped tests; the production build passed; and Chromium
+end-to-end finished 84 passed / 28 skipped. `git diff --check`, the catalog
+gate, the 100-photo originals sample, Python compilation, and the focused
+70-test metadata/reconciliation set also passed.
+
+The authorized live sync then applied and read back all 27 pending reviewed
+joins. Production now has all **996/996 reviewed tags** with zero pending. Joan
+Soskin's only live row overlapped a photo already confirmed for Joan AuWerter,
+so the safe merge removed one duplicate join, preserved Joan AuWerter's three
+photos, migrated/checkpointed the independent favorite and memory namespaces
+(both had zero source rows), and atomically retired `joan-soskin`. Final live
+readback: **188 people, 87 overrides, 1,721 photos, 5,126 photo-person rows,
+zero pending joins, and zero pending person merges**. Recoverable pre-write
+snapshots are ignored under `metadata/faces/sync-backups/`, including the
+2026-08-10 catalog-overlay and Joan-merge snapshots.
 
 ### TEMPORARY: Preview is unauthenticated (2026-07-26)
 
@@ -432,7 +546,8 @@ That is enforced in code, not by convention.
 
 | Priority | Owner | Target | Action and definition of done |
 |---|---|---|---|
-| P0 | Rachel | Next session | Name the remaining 329 faces: `npm run tag`, then the post-session commands in `docs/FACE_TAGGING_TOOL.md` (apply overlays, rebuild thumbnails, embed names into the masters). Decisions save as you go and the session resumes if interrupted. |
+| P0 | Rachel | Next session | Name the 16 clear stacks covering 95 faces in `metadata/faces/stack-sheets/`; then run the post-session commands in `docs/FACE_TAGGING_TOOL.md`. Nine stacks / 19 faces with no clear view remain held out unless `--include-blurry` is chosen deliberately. |
+| DONE | Zach + Codex | 2026-08-10 | Applied and verified the 27 live reviewed joins, then safely merged Joan Soskin into Joan AuWerter. The final read-only plans report 996/996 tags present and zero pending joins or merges. |
 | P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 46 real names and their messages. Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
 | DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
 | DONE (half) | Zach | 2026-08-07 | Of the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`, Zach confirmed the after-party face (sim 0.483). Applied as wave 14 to all four layers: additions manifest, catalog, the original's embedded metadata, and the live database (single-row upsert with pre-state backup, because the full sync is blocked; see the P1 name-drift row). The cocktail-hour face (sim 0.615, behind sunglasses) stays undecided and unapplied. |

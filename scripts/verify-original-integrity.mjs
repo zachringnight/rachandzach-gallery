@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 // Packet 12B: sampled originals integrity check.
 //
-// Recomputes SHA-256 over a SAMPLED set of source originals (default 100)
-// and compares each against the catalog's recorded file_sha256 (plus an
-// on-disk size check). Optionally also compares catalog rows against REMOTE
+// Recomputes ImageDataHash plus dimensions over a SAMPLED set of source
+// originals (default 100). Those values remain stable across the explicitly
+// allowed metadata-only writes to the clean master; whole-file SHA-256 and
+// byte size do not. Optionally also compares catalog rows against REMOTE
 // object metadata -- size and the fileSha256 custom metadata written at
 // upload time, via the Storage .info() API and a SQL row select -- never
-// downloading object bytes back. Full-archive mode (--full) samples every
-// catalog photo; it is for manual launch-day use only and is never part of
-// automated verification (npm run verify:originals always samples).
+// downloading object bytes back. The catalog's whole-file SHA/size describe
+// the stored cloud object, while local visual integrity is the image-data
+// hash/dimensions pair. Full-archive mode (--full) samples every catalog
+// photo; it is for manual launch-day use only and is never part of automated
+// verification (npm run verify:originals always samples).
 //
 // Hard gate for this packet: local only, no cloud resources. --remote is
 // opt-in, and even then this script runs the exact same fail-closed gate as
@@ -23,10 +26,11 @@
 //     [--remote --project-ref <ref> --allowlist <ref,...> --env-file <file>]
 //     [--report <file>] [--help]
 
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { promises as fs } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { sha256Stream } from "./lib/clean-master-manifest.mjs";
 import {
   parseSyncCatalog,
   readCredentialsFromEnvFile,
@@ -36,6 +40,7 @@ import {
 } from "../src/lib/import/sync-contracts.ts";
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const execFileAsync = promisify(execFile);
 
 const DEFAULT_MASTER_ROOT =
   process.env.WEDDING_MASTER_ROOT ||
@@ -133,12 +138,64 @@ export function selectSample(photos, options = {}) {
   return picked;
 }
 
-/** Recomputes sha256 for one photo's source file and compares to the catalog. */
-export async function verifyLocalPhoto(photo, sourceRoot) {
+function chunks(values, size = 160) {
+  const result = [];
+  for (let index = 0; index < values.length; index += size) {
+    result.push(values.slice(index, index + size));
+  }
+  return result;
+}
+
+/** Read the stable visual identity fields in bounded exiftool batches. */
+export async function readLocalImageIdentities(photos, sourceRoot) {
+  const identities = new Map();
+  for (const batch of chunks(photos)) {
+    const paths = batch.map((photo) =>
+      join(sourceRoot, photo.originalRelativePath),
+    );
+    let stdout;
+    try {
+      ({ stdout } = await execFileAsync(
+        "exiftool",
+        [
+          "-json",
+          "-api",
+          "ImageHashType=MD5",
+          "-charset",
+          "filename=UTF8",
+          "-ImageDataHash",
+          "-ImageWidth",
+          "-ImageHeight",
+          ...paths,
+        ],
+        { maxBuffer: 32 * 1024 * 1024 },
+      ));
+    } catch (error) {
+      // exiftool exits non-zero when one requested file is absent but still
+      // returns valid JSON for every file it could read. Preserve those rows;
+      // verifyLocalPhoto reports the missing path as a normal mismatch.
+      if (typeof error?.stdout !== "string" || !error.stdout.trim().startsWith("[")) {
+        throw error;
+      }
+      stdout = error.stdout;
+    }
+    const records = JSON.parse(stdout);
+    for (const record of records) {
+      identities.set(resolve(record.SourceFile), {
+        imageDataHash: String(record.ImageDataHash ?? "").toLowerCase(),
+        width: Number(record.ImageWidth),
+        height: Number(record.ImageHeight),
+      });
+    }
+  }
+  return identities;
+}
+
+/** Recomputes stable image identity for one local master file. */
+export async function verifyLocalPhoto(photo, sourceRoot, suppliedIdentity) {
   const absolutePath = join(sourceRoot, photo.originalRelativePath);
-  let stat;
   try {
-    stat = await fs.stat(absolutePath);
+    await fs.stat(absolutePath);
   } catch (error) {
     return {
       imageDataHash: photo.imageDataHash,
@@ -147,21 +204,38 @@ export async function verifyLocalPhoto(photo, sourceRoot) {
       reason: `missing_file: ${error instanceof Error ? error.message : error}`,
     };
   }
-  if (stat.size !== photo.originalBytes) {
+
+  let identity = suppliedIdentity;
+  if (!identity) {
+    const identities = await readLocalImageIdentities([photo], sourceRoot);
+    identity = identities.get(resolve(absolutePath));
+  }
+  if (!identity) {
     return {
       imageDataHash: photo.imageDataHash,
       path: photo.originalRelativePath,
       ok: false,
-      reason: `size_mismatch: on-disk ${stat.size} != catalog originalBytes ${photo.originalBytes}`,
+      reason: "metadata_read_error: exiftool returned no identity record",
     };
   }
-  const actualSha256 = await sha256Stream(absolutePath);
-  if (actualSha256 !== photo.fileSha256) {
+  if (identity.imageDataHash !== photo.imageDataHash) {
     return {
       imageDataHash: photo.imageDataHash,
       path: photo.originalRelativePath,
       ok: false,
-      reason: `sha256_mismatch: recomputed ${actualSha256} != catalog fileSha256 ${photo.fileSha256}`,
+      reason:
+        `image_data_hash_mismatch: recomputed ${identity.imageDataHash} ` +
+        `!= catalog ${photo.imageDataHash}`,
+    };
+  }
+  if (identity.width !== photo.width || identity.height !== photo.height) {
+    return {
+      imageDataHash: photo.imageDataHash,
+      path: photo.originalRelativePath,
+      ok: false,
+      reason:
+        `dimension_mismatch: recomputed ${identity.width}x${identity.height} ` +
+        `!= catalog ${photo.width}x${photo.height}`,
     };
   }
   return { imageDataHash: photo.imageDataHash, path: photo.originalRelativePath, ok: true };
@@ -297,6 +371,7 @@ async function writeReport(reportPath, report) {
 /**
  * verifyOriginalIntegrity(argv[, deps]) -> Promise<{exitCode, report}>
  * deps.remoteClientFactory(credentials) injects the remote client (tests).
+ * deps.readLocalImageIdentities(photos, sourceRoot) injects exiftool (tests).
  * deps.log(...) overrides console.log (tests).
  */
 export async function verifyOriginalIntegrity(rawArgs, deps = {}) {
@@ -321,9 +396,17 @@ export async function verifyOriginalIntegrity(rawArgs, deps = {}) {
     } photo(s) against ${args.sourceRoot}`,
   );
 
+  const readIdentities = deps.readLocalImageIdentities ?? readLocalImageIdentities;
+  const localIdentities = await readIdentities(sample, args.sourceRoot);
   const localResults = [];
   for (const photo of sample) {
-    localResults.push(await verifyLocalPhoto(photo, args.sourceRoot));
+    localResults.push(
+      await verifyLocalPhoto(
+        photo,
+        args.sourceRoot,
+        localIdentities.get(resolve(args.sourceRoot, photo.originalRelativePath)),
+      ),
+    );
   }
   const localMismatches = localResults.filter((r) => !r.ok);
 
@@ -332,7 +415,7 @@ export async function verifyOriginalIntegrity(rawArgs, deps = {}) {
   const problems = [];
   if (localMismatches.length > 0) {
     problems.push(
-      `${localMismatches.length}/${sample.length} sampled original(s) failed local sha256/size verification`,
+      `${localMismatches.length}/${sample.length} sampled original(s) failed local image-data identity verification`,
     );
   }
   if (remote.attempted && remote.reachable && !remote.ok) {
@@ -361,7 +444,7 @@ export async function verifyOriginalIntegrity(rawArgs, deps = {}) {
   await writeReport(args.reportPath, report);
 
   log(
-    `[verify-original-integrity] local sha256: ${localResults.length - localMismatches.length}/${localResults.length} matched`,
+    `[verify-original-integrity] local image identity: ${localResults.length - localMismatches.length}/${localResults.length} matched`,
   );
   log(
     remote.attempted

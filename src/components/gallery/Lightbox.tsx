@@ -19,7 +19,11 @@ import {
 
 import { DownloadOriginalButton } from "@/components/downloads/DownloadOriginalButton";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
-import { PhotoImage, pickTarget } from "@/components/gallery/PhotoImage";
+import {
+  PhotoImage,
+  pickFallback,
+  pickTarget,
+} from "@/components/gallery/PhotoImage";
 import { SharePhotoButton } from "@/components/gallery/SharePhotoButton";
 import { PhotoMemories } from "@/components/memories/PhotoMemories";
 import { featureFlags } from "@/content/features";
@@ -127,6 +131,47 @@ function formatCaptureTime(capturedAt: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * 1x1 AVIF used to probe decoder support, the standard data-URI check.
+ *
+ * The adjacent-photo preloader below must warm the URL the <picture> in
+ * PhotoImage will actually request: capable browsers take the AVIF <source>,
+ * everything else takes the WebP/JPEG <img>. new Image() does no such
+ * negotiation, so preloading pickTarget's AVIF on a browser that cannot
+ * decode AVIF warmed a cache entry nothing ever read while the real fallback
+ * loaded cold.
+ */
+const AVIF_PROBE =
+  "data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAEAAAABAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=";
+
+/** Probed at most once per session; every preload shares the same answer. */
+let avifSupport: Promise<boolean> | null = null;
+
+function supportsAvif(): Promise<boolean> {
+  if (avifSupport) return avifSupport;
+  if (typeof window === "undefined" || typeof window.Image === "undefined") {
+    // SSR cannot decode anything. Resolve without caching so a hydrated
+    // client still runs the real probe.
+    return Promise.resolve(false);
+  }
+  avifSupport = new Promise<boolean>((resolve) => {
+    const probe = new window.Image();
+    probe.onload = () => resolve(true);
+    probe.onerror = () => resolve(false);
+    probe.src = AVIF_PROBE;
+  });
+  return avifSupport;
+}
+
+/**
+ * jsdom never decodes images or fires their load events, so the probe above
+ * would hang forever under Vitest. Tests pin the answer here; null restores
+ * real probing.
+ */
+export function setAvifSupportForTests(value: boolean | null): void {
+  avifSupport = value === null ? null : Promise.resolve(value);
 }
 
 function smallestPreview(photo: ClientPhoto) {
@@ -323,27 +368,48 @@ export function Lightbox({
   }, [handleKeyDown]);
 
   useEffect(() => {
-    const preloaders = [previousPhoto, nextPhoto]
-      .flatMap((candidate) => {
-        // Must resolve through the SAME selector the lightbox renders with.
-        // This used to reduce on width alone, which ties for the widest tier
-        // whenever more than one format exists at that width -- so the moment
-        // a 2400 AVIF lands beside the 2400 JPEG, this would have warmed the
-        // cache with whichever row came back first while the <img> requested
-        // the other one, downloading both and preloading neither.
-        const preview = candidate
-          ? pickTarget(candidate.previews, "lightbox", 0)
-          : null;
-        return preview ? [preview] : [];
-      })
-      .map((preview) => {
-        const image = new window.Image();
-        image.decoding = "async";
-        image.src = preview.url;
-        return image;
+    let cancelled = false;
+    const preloaders: HTMLImageElement[] = [];
+
+    const preload = (url: string) => {
+      // The effect may be gone by the time the support probe resolves; do
+      // not start a fetch whose cleanup already ran.
+      if (cancelled) return;
+      const image = new window.Image();
+      image.decoding = "async";
+      image.src = url;
+      preloaders.push(image);
+    };
+
+    for (const candidate of [previousPhoto, nextPhoto]) {
+      if (!candidate) continue;
+      // Must resolve through the SAME selector the lightbox renders with.
+      // This used to reduce on width alone, which ties for the widest tier
+      // whenever more than one format exists at that width -- so the moment
+      // a 2400 AVIF lands beside the 2400 JPEG, this would have warmed the
+      // cache with whichever row came back first while the <img> requested
+      // the other one, downloading both and preloading neither.
+      const target = pickTarget(candidate.previews, "lightbox", 0);
+      if (!target) continue;
+      const fallback = pickFallback(candidate.previews, target);
+      if (!fallback) {
+        // Non-AVIF target, or an AVIF with no universal companion: either
+        // way PhotoImage serves target.url to every browser, so warm it
+        // directly with no need to wait on the decoder probe.
+        preload(target.url);
+        continue;
+      }
+      // AVIF target with a signed fallback: PhotoImage's <picture> lets the
+      // browser negotiate, so preload whichever side of that negotiation
+      // this browser will take -- never both. The probe is cached, so only
+      // the first preload of the session actually waits on it.
+      void supportsAvif().then((supported) => {
+        preload(supported ? target.url : fallback.url);
       });
+    }
 
     return () => {
+      cancelled = true;
       for (const image of preloaders) image.src = "";
     };
   }, [nextPhoto, previousPhoto]);
