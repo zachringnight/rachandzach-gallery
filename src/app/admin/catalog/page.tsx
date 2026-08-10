@@ -3,13 +3,14 @@ import type { Metadata } from "next";
 import {
   CatalogTagger,
   type CatalogViewMode,
-  type CatalogOption,
 } from "@/components/admin/CatalogTagger";
 import {
+  type CatalogOption,
   parseAdminCatalogFilters,
 } from "@/lib/admin/catalog";
 import { loadAdminCatalogPage } from "@/lib/admin/catalog-server";
 import { requireAdmin } from "@/lib/auth/admin-session";
+import { loadPersonOverrides } from "@/lib/people/overrides";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function AdminCatalogPage({
   const initialView: CatalogViewMode =
     first(params.view) === "table" ? "table" : "grid";
   const db = createAdminClient();
-  const [initialPage, eventResult, peopleResult] = await Promise.all([
+  const [initialPage, eventResult, peopleResult, overrides] = await Promise.all([
     loadAdminCatalogPage(filters, null, db),
     db
       .from("rachandzach_events")
@@ -46,6 +47,7 @@ export default async function AdminCatalogPage({
       .from("rachandzach_people")
       .select("slug, display_name")
       .order("display_name", { ascending: true }),
+    loadPersonOverrides(db),
   ]);
   if (eventResult.error || peopleResult.error) {
     throw new Error("Could not load the catalog tag options.");
@@ -55,10 +57,12 @@ export default async function AdminCatalogPage({
     slug: event.slug,
     name: event.name,
   }));
-  const people: CatalogOption[] = (peopleResult.data ?? []).map((person) => ({
-    slug: person.slug,
-    name: person.display_name,
-  }));
+  const people: CatalogOption[] = (peopleResult.data ?? [])
+    .map((person) => ({
+      slug: person.slug,
+      name: overrides.get(person.slug)?.displayName ?? person.display_name,
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name, "en-US"));
 
   return (
     <CatalogTagger

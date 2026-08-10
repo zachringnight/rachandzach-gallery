@@ -12,6 +12,7 @@ import {
   Search,
   Tags,
   UserRound,
+  UserRoundPlus,
   X,
 } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -21,15 +22,12 @@ import type {
   AdminCatalogNeeds,
   AdminCatalogPage,
   AdminCatalogPhoto,
+  CatalogOption,
 } from "@/lib/admin/catalog";
 import { ADMIN_CATALOG_MAX_SELECTION } from "@/lib/admin/catalog";
 import { PhotoImage } from "@/components/gallery/PhotoImage";
+import { PhotoPeopleTagger } from "@/components/admin/PhotoPeopleTagger";
 import { CopyCurrentViewButton } from "@/components/ui/CopyCurrentViewButton";
-
-export interface CatalogOption {
-  slug: string;
-  name: string;
-}
 
 export interface CatalogTaggerProps {
   initialPage: AdminCatalogPage;
@@ -119,6 +117,7 @@ export function CatalogTagger({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
+  const [taggingPhotoId, setTaggingPhotoId] = useState<string | null>(null);
   const [eventMode, setEventMode] = useState("unchanged");
   const [personSlug, setPersonSlug] = useState("");
   const [personOperation, setPersonOperation] =
@@ -127,6 +126,15 @@ export function CatalogTagger({
   const [keywordOperation, setKeywordOperation] =
     useState<KeywordOperation>("add");
   const requestSeq = useRef(0);
+  const taggingReturnFocus = useRef<HTMLElement | null>(null);
+
+  const openPeopleTagger = useCallback(
+    (photoId: string, trigger: HTMLElement) => {
+      taggingReturnFocus.current = trigger;
+      setTaggingPhotoId(photoId);
+    },
+    [],
+  );
 
   const load = useCallback(
     async (
@@ -235,6 +243,10 @@ export function CatalogTagger({
   }, [page.photos, selected]);
 
   const selectedIds = useMemo(() => [...selected], [selected]);
+  const taggingPhoto = useMemo(
+    () => page.photos.find((photo) => photo.id === taggingPhotoId) ?? null,
+    [page.photos, taggingPhotoId],
+  );
   const trimmedKeyword = keyword.trim();
   const hasEdit =
     eventMode !== "unchanged" ||
@@ -323,7 +335,12 @@ export function CatalogTagger({
   ]);
 
   return (
-    <section className="atlas-catalog">
+    <>
+      <section
+        className="atlas-catalog"
+        inert={taggingPhoto ? true : undefined}
+        aria-hidden={taggingPhoto ? "true" : undefined}
+      >
       <header className="atlas-catalog-heading">
         <div>
           <p>The archive desk</p>
@@ -606,12 +623,28 @@ export function CatalogTagger({
                             </dd>
                           </div>
                         </dl>
-                        <span
-                          className="atlas-catalog-state"
-                          data-state={photo.completeness}
-                        >
-                          {completenessLabel(photo)}
-                        </span>
+                        <div className="atlas-catalog-card-actions">
+                          <span
+                            className="atlas-catalog-state"
+                            data-state={photo.completeness}
+                          >
+                            {completenessLabel(photo)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(event) =>
+                              openPeopleTagger(photo.id, event.currentTarget)
+                            }
+                            aria-label={`Tag people in ${photo.originalFilename}`}
+                          >
+                            <UserRoundPlus
+                              aria-hidden="true"
+                              size={14}
+                              strokeWidth={1.7}
+                            />
+                            Tag people
+                          </button>
+                        </div>
                       </div>
                     </li>
                   );
@@ -622,6 +655,7 @@ export function CatalogTagger({
                 photos={page.photos}
                 selected={selected}
                 onToggle={togglePhoto}
+                onTag={openPeopleTagger}
               />
             )
           ) : (
@@ -792,7 +826,25 @@ export function CatalogTagger({
           </button>
         </aside>
       </div>
-    </section>
+      </section>
+      {taggingPhoto ? (
+        <PhotoPeopleTagger
+          key={taggingPhoto.id}
+          photo={taggingPhoto}
+          people={people}
+          returnFocusRef={taggingReturnFocus}
+          onClose={() => setTaggingPhotoId(null)}
+          onSaved={async () => {
+            await load(filters, { preserveSelection: true });
+            setTaggingPhotoId(null);
+            setNotice({
+              tone: "success",
+              message: `Updated people in ${taggingPhoto.originalFilename}.`,
+            });
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -800,10 +852,12 @@ function CatalogTable({
   photos,
   selected,
   onToggle,
+  onTag,
 }: {
   photos: AdminCatalogPhoto[];
   selected: ReadonlySet<string>;
   onToggle: (photoId: string) => void;
+  onTag: (photoId: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <div className="atlas-catalog-table-wrap">
@@ -822,6 +876,7 @@ function CatalogTable({
             <th scope="col">Keywords</th>
             <th scope="col">Source</th>
             <th scope="col">Status</th>
+            <th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -882,6 +937,21 @@ function CatalogTable({
                   >
                     {completenessLabel(photo)}
                   </span>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="atlas-catalog-table-tag"
+                    onClick={(event) => onTag(photo.id, event.currentTarget)}
+                    aria-label={`Tag people in ${photo.originalFilename}`}
+                  >
+                    <UserRoundPlus
+                      aria-hidden="true"
+                      size={14}
+                      strokeWidth={1.7}
+                    />
+                    Tag people
+                  </button>
                 </td>
               </tr>
             );

@@ -22,7 +22,8 @@ the pre-launch history and are not operational instructions.
 | Latest release | `d11f05a` -- renewal recovery + open-access tests ([#19](https://github.com/zachringnight/rachandzach-gallery/pull/19), merged 2026-08-08). Preceding: [#18](https://github.com/zachringnight/rachandzach-gallery/pull/18) audit fixes, [#17](https://github.com/zachringnight/rachandzach-gallery/pull/17) CI on pull requests, [#16](https://github.com/zachringnight/rachandzach-gallery/pull/16) name-layering fix, [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15) AVIF fallback + field instrumentation, [#14](https://github.com/zachringnight/rachandzach-gallery/pull/14) mobile pass |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
-| Current unmerged face work | `codex/naming-session-and-no-tag-sweep`; 996 reviewed tags locally, not deployed or live-synced in this pass |
+| Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
+| Current unmerged app work | `codex/in-gallery-person-tagging`; protected single-photo people tagging in the admin catalog, not merged or deployed |
 
 Production aliases are active for:
 
@@ -504,6 +505,25 @@ readback: **188 people, 87 overrides, 1,721 photos, 5,126 photo-person rows,
 zero pending joins, and zero pending person merges**. Recoverable pre-write
 snapshots are ignored under `metadata/faces/sync-backups/`, including the
 2026-08-10 catalog-overlay and Joan-merge snapshots.
+
+### In-gallery people tagging (unshipped, 2026-08-10)
+
+The admin catalog now offers **Tag people** on every grid card and table row.
+It opens the selected photograph at viewing size beside a searchable guest
+list, shows the current names as removable chips, and saves only the exact add
+and remove deltas through the existing protected `PATCH /api/admin/catalog`
+route. It does not expose a public or guest-authorized write path, replace the
+complete join set, add a browser-side service credential, or require a schema
+change. Approved display-name overrides are used in the picker, so Joan
+AuWerter and the other admin name corrections do not regress to base catalog
+names.
+
+Focused component and API coverage passes with 14 tests. The interaction was
+also checked without saving against the live read-only catalog at 1440px and
+390px: search receives focus, the background becomes inert, Escape closes and
+returns focus to the originating button, the dialog has no horizontal
+overflow, and Axe reports no serious or critical violations. Production was
+not changed. Merge and deployment remain an explicit follow-up decision.
 
 ### TEMPORARY: Preview is unauthenticated (2026-07-26)
 

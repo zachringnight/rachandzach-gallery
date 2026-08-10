@@ -136,6 +136,92 @@ describe("CatalogTagger", () => {
     expect(await screen.findByText("Updated 1 photo.")).toBeDefined();
   });
 
+  it("opens one photo at full size and saves exact people-tag deltas", async () => {
+    const updatedPage = page([
+      photo(PHOTO_A, "RZ-001.jpg"),
+      photo(PHOTO_B, "RZ-002.jpg", [
+        { slug: "zach-soskin", displayName: "Zach Soskin" },
+      ]),
+    ]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            results: [{ photoId: PHOTO_B, ok: true }],
+            updated: 1,
+            failed: 0,
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(updatedPage), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <CatalogTagger
+        initialPage={page()}
+        initialFilters={{
+          query: "",
+          needs: "all",
+          event: null,
+          person: null,
+          source: null,
+          sort: "weekend",
+        }}
+        events={[{ slug: "ceremony", name: "Ceremony" }]}
+        people={[
+          { slug: "rachel", name: "Rachel" },
+          { slug: "zach-soskin", name: "Zach Soskin" },
+        ]}
+      />,
+    );
+
+    const tagTrigger = screen.getByRole("button", {
+      name: "Tag people in RZ-002.jpg",
+    });
+    tagTrigger.focus();
+    fireEvent.click(tagTrigger);
+
+    expect(screen.getByRole("dialog", { name: "Who is in this photo?" })).toBeDefined();
+    expect(screen.getByAltText("Tag people in RZ-002.jpg")).toBeDefined();
+    expect(screen.getByRole("checkbox", { name: /Rachel/ })).toHaveProperty(
+      "checked",
+      true,
+    );
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), {
+      target: { value: "zach" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Zach Soskin/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove Rachel" }));
+    expect(screen.getByText("2 unsaved changes")).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save people" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/admin/catalog");
+    expect(options.method).toBe("PATCH");
+    expect(JSON.parse(String(options.body))).toEqual({
+      photoIds: [PHOTO_B],
+      addPeopleSlugs: ["zach-soskin"],
+      removePeopleSlugs: ["rachel"],
+      addKeywords: [],
+      removeKeywords: [],
+    });
+    expect(
+      await screen.findByText("Updated people in RZ-002.jpg."),
+    ).toBeDefined();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(tagTrigger));
+  });
+
   it("filters by missing metadata and clears the current selection", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify(page()), {
