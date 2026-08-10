@@ -676,7 +676,9 @@ npm run verify
 ```
 
 `main` auto-deploys to Vercel Production. Every other Git branch auto-deploys
-to Vercel Preview, and every pull request runs the full GitHub CI gate. Confirm
+to Vercel Preview, and every pull request runs the full GitHub CI gate. GitHub
+protects `main` with strict required checks for `npm run verify` and `Vercel`,
+so neither a missing CI run nor a missing Preview can silently merge. Confirm
 that a green Vercel check points to a `READY` deployment for the exact commit;
 an ignored or canceled deployment is not a test build.
 
