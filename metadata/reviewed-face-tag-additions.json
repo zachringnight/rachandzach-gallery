@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "source": {
-    "auditFingerprint": "f6ca639ad3fc214c034b118c8b5dc02ee9068fb2607e2f045dea3c6639b36ee3",
+    "auditFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
     "auditFingerprints": [
       "89d7732b1be5606d7413bc21b5f634c0fb71b1af0e4dee964905ce02de6fd08b",
       "a6bb35488b45afb864280e3a16a656bd26b627d1d2fbe7552977105d76b90a45",
@@ -14,9 +14,10 @@
       "aa3171d3ca9425e7620c4e772100e309b1d695e813e9eb22734b9866b0ad476c",
       "8c82412731f5880717b72e45c108bcc50b23578725ac1fe286e1c8059b9a175a",
       "9e536d5fc71fddff3fe4fef2139a6a667f54cb50106bad11cbcf71dd35aee985",
-      "f6ca639ad3fc214c034b118c8b5dc02ee9068fb2607e2f045dea3c6639b36ee3"
+      "f6ca639ad3fc214c034b118c8b5dc02ee9068fb2607e2f045dea3c6639b36ee3",
+      "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce"
     ],
-    "reviewedAt": "2026-08-06",
+    "reviewedAt": "2026-08-10",
     "reviewedBy": "Codex visual side-by-side review + Zach recurring-face identification + Zach contact-sheet confirmation + Rachel face naming session",
     "reviewMethod": "Committed saved profiles were compared with detected candidate faces in local derivatives. Zero-tag photos were also reviewed as complete images, repeated faces were grouped across photos, and lower-score confirmations required matching same-day visual context. Wedding originals were not opened or changed. Recurring unnamed clusters are promoted only when Zach selects an attendee in the private local tagger; those human decisions do not depend on model similarity. Rachel named each face herself while looking at the photograph, with Zach present. The tool never proposed an identity and no model score was consulted, so these assignments do not depend on face similarity. Faces that look alike were shown together so one identification could cover the photographs it was made from.",
     "savedFaceProfileCount": 164,
@@ -24,8 +25,8 @@
     "savedCropAnchorCount": 26,
     "minSimilarity": 0.55,
     "minMargin": 0.08,
-    "candidatesReviewed": 1150,
-    "candidatesApproved": 964,
+    "candidatesReviewed": 1182,
+    "candidatesApproved": 996,
     "candidatesRejected": 186,
     "reviewWaves": [
       {
@@ -603,6 +604,16 @@
             "reason": "blurred background face"
           }
         ]
+      },
+      {
+        "wave": 17,
+        "auditFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+        "reviewType": "Human identity assignment from the local face-naming session",
+        "reviewMethod": "Rachel named each face herself while looking at the photograph, with Zach present. The tool never proposed an identity and no model score was consulted, so these assignments do not depend on face similarity. Faces that look alike were shown together so one identification could cover the photographs it was made from.",
+        "manualConfirmation": true,
+        "candidatesReviewed": 32,
+        "candidatesApproved": 32,
+        "candidatesRejected": 0
       }
     ]
   },
@@ -11258,6 +11269,358 @@
       "confirmationKind": "human-face-naming",
       "reviewFingerprint": "9e536d5fc71fddff3fe4fef2139a6a667f54cb50106bad11cbcf71dd35aee985",
       "contextEvidence": "Zach identified this face as Todd Lurie on the contact sheet of photographs carrying no tags at all. No model score was used: this photograph had no names on it, so nothing could be inferred from them."
+    },
+    {
+      "photoId": "f1cc20b36b0ce384426162df185720a4",
+      "path": "12 After Party/rachelzach-1143.jpg",
+      "personSlug": "lauren-lurie",
+      "displayName": "Lauren Lurie",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Lauren Lurie while looking at 12 After Party/rachelzach-1143.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "6057b022d553d0a1b1442a904bd15925",
+      "path": "01 Day 1/rachelzachday1-164.jpg",
+      "personSlug": "ann-marie-hoppler",
+      "displayName": "Ann Marie Hoppler",
+      "faceIndex": 1,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Ann Marie Hoppler while looking at 01 Day 1/rachelzachday1-164.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "f97644c22605b8cea5b80c630e769bf6",
+      "path": "07 Cocktail Hour/rachelzach-620.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 1,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 07 Cocktail Hour/rachelzach-620.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "980b48082f2c91a0fbaa266c07c9b527",
+      "path": "01 Day 1/rachelzachday1-291.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 10,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 01 Day 1/rachelzachday1-291.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "206939de74fb7c20372a79a7e8464dfd",
+      "path": "01 Day 1/rachelzachday1-263.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 10,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 01 Day 1/rachelzachday1-263.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "7a66c809f9aece63a6c446ea2b0fd20e",
+      "path": "01 Day 1/rachelzachday1-290.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 10,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 01 Day 1/rachelzachday1-290.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "3cd09fbcae651094fff2de2e96d7b9a9",
+      "path": "01 Day 1/rachelzachday1-266.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 7,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 01 Day 1/rachelzachday1-266.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "cc45e82a0a7f12e87dd706fd894938a2",
+      "path": "01 Day 1/rachelzachday1-295.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 14,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 01 Day 1/rachelzachday1-295.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "b188fd1adf728d9cc73f10fc951b1e8a",
+      "path": "01 Day 1/rachelzachday1-296.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 18,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 01 Day 1/rachelzachday1-296.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "455b9fe6a406bf7127127be661d01d99",
+      "path": "01 Day 1/rachelzachday1-230.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 2,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 01 Day 1/rachelzachday1-230.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "45bc13fa532e2accc058759e8b6afe58",
+      "path": "05 Ceremony/rachelzach-233.jpg",
+      "personSlug": "tom-myers",
+      "displayName": "Tom Myers",
+      "faceIndex": 20,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tom Myers while looking at 05 Ceremony/rachelzach-233.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "1c680390d2549102ce81f4baa7431f35",
+      "path": "01 Day 1/rachelzachday1-228.jpg",
+      "personSlug": "tim-jackowski",
+      "displayName": "Tim Jackowski",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tim Jackowski while looking at 01 Day 1/rachelzachday1-228.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "60b0601cf56f7fd35aa78132da3dbcde",
+      "path": "01 Day 1/rachelzachday1-246.jpg",
+      "personSlug": "tim-jackowski",
+      "displayName": "Tim Jackowski",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tim Jackowski while looking at 01 Day 1/rachelzachday1-246.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "cf0d32ee8bc4ced5f5a2e1276d7940d6",
+      "path": "01 Day 1/rachelzachday1-245.jpg",
+      "personSlug": "tim-jackowski",
+      "displayName": "Tim Jackowski",
+      "faceIndex": 1,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Tim Jackowski while looking at 01 Day 1/rachelzachday1-245.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "80b646a282be29b1fafadc624e33b705",
+      "path": "05 Ceremony/rachelzach-343.jpg",
+      "personSlug": "nita-myers",
+      "displayName": "Nita Myers",
+      "faceIndex": 5,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nita Myers while looking at 05 Ceremony/rachelzach-343.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "863e65758c5f09f291b5f6a8e45c97bd",
+      "path": "05 Ceremony/rachelzach-377.jpg",
+      "personSlug": "nita-myers",
+      "displayName": "Nita Myers",
+      "faceIndex": 15,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nita Myers while looking at 05 Ceremony/rachelzach-377.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "81182017754708006a11c9066afacc24",
+      "path": "05 Ceremony/rachelzach-250.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 3,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 05 Ceremony/rachelzach-250.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "eb7438a43ddf8f4e84c87a364c6f0168",
+      "path": "07 Cocktail Hour/rachelzach-553.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 1,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 07 Cocktail Hour/rachelzach-553.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "9c4ef7a97639a053545ff7079ea4550e",
+      "path": "07 Cocktail Hour/rachelzach-569.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 07 Cocktail Hour/rachelzach-569.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "8b45f9e7d4a506a0b2a806363141f8a0",
+      "path": "07 Cocktail Hour/rachelzach-592.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 07 Cocktail Hour/rachelzach-592.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "4330c090bdad3f349441b93619f04f1b",
+      "path": "14 Film/rachelzachfilm-164.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 1,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 14 Film/rachelzachfilm-164.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "c098a520cb3bb651a9b96a4c761224bd",
+      "path": "14 Film/rachelzachfilm-244.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 6,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 14 Film/rachelzachfilm-244.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "60eb5a90200d3b775709e8be1563e40e",
+      "path": "09 Reception/rachelzach-848.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 3,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 09 Reception/rachelzach-848.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "fdd3f0a43360e40928ccc302717dc46c",
+      "path": "05 Ceremony/rachelzach-246.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 05 Ceremony/rachelzach-246.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "ec100d02c828a6d37aca48bed1a3bace",
+      "path": "09 Reception/rachelzach-864.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 09 Reception/rachelzach-864.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "ec0d53a368f8dd1c12112d53c83cabff",
+      "path": "01 Day 1/rachelzachday1-241.jpg",
+      "personSlug": "nick-willey",
+      "displayName": "Nick Willey",
+      "faceIndex": 15,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Nick Willey while looking at 01 Day 1/rachelzachday1-241.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "6057b022d553d0a1b1442a904bd15925",
+      "path": "01 Day 1/rachelzachday1-164.jpg",
+      "personSlug": "allison-vega",
+      "displayName": "Allison Vega",
+      "faceIndex": 2,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Allison Vega while looking at 01 Day 1/rachelzachday1-164.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "eb7438a43ddf8f4e84c87a364c6f0168",
+      "path": "07 Cocktail Hour/rachelzach-553.jpg",
+      "personSlug": "allison-vega",
+      "displayName": "Allison Vega",
+      "faceIndex": 0,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Allison Vega while looking at 07 Cocktail Hour/rachelzach-553.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "56f2bb51845377e2fb086643a759c93d",
+      "path": "01 Day 1/rachelzachday1-286.jpg",
+      "personSlug": "allison-vega",
+      "displayName": "Allison Vega",
+      "faceIndex": 11,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Allison Vega while looking at 01 Day 1/rachelzachday1-286.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "9414fa272b8dc2924194d8b04e8add74",
+      "path": "05 Ceremony/rachelzach-344.jpg",
+      "personSlug": "allison-vega",
+      "displayName": "Allison Vega",
+      "faceIndex": 13,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Allison Vega while looking at 05 Ceremony/rachelzach-344.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "ec0d53a368f8dd1c12112d53c83cabff",
+      "path": "01 Day 1/rachelzachday1-241.jpg",
+      "personSlug": "allison-vega",
+      "displayName": "Allison Vega",
+      "faceIndex": 12,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Allison Vega while looking at 01 Day 1/rachelzachday1-241.jpg in the local naming session. No model score was used."
+    },
+    {
+      "photoId": "8c2cc036b0c15e322dfee4fa3e595843",
+      "path": "07 Cocktail Hour/rachelzach-632.jpg",
+      "personSlug": "allison-vega",
+      "displayName": "Allison Vega",
+      "faceIndex": 5,
+      "confirmationKind": "human-face-naming",
+      "reviewWave": 17,
+      "reviewFingerprint": "1dde5086a80b47090ff0d2ac43325586bde55a2d7e89c5011cecb60f8cbcb8ce",
+      "contextEvidence": "Rachel identified this face as Allison Vega while looking at 07 Cocktail Hour/rachelzach-632.jpg in the local naming session. No model score was used."
     }
   ]
 }

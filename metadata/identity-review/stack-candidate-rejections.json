@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-09",
+  "rejections": [
+    {
+      "stackId": "c0300",
+      "personSlug": "marc-soskin",
+      "sourceSheetNumber": 2,
+      "reason": "Human review confirmed that this stack is not Marc Soskin.",
+      "rejectedAt": "2026-08-09"
+    },
+    {
+      "stackId": "c0192",
+      "personSlug": "shirley-soskin",
+      "sourceSheetNumber": 4,
+      "reason": "Human review confirmed that this stack is not Shirley Soskin.",
+      "rejectedAt": "2026-08-09"
+    }
+  ]
+}

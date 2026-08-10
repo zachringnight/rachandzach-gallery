@@ -8,7 +8,7 @@ by looking at printed sheets and calling out answers, after a browser session
 of the same length had managed 107 single-face decisions.
 
 ```bash
-node scripts/face/render-stack-sheets.mjs      # numbered sheets of nameless faces
+node scripts/face/render-stack-sheets.mjs      # clear, numbered stacks of nameless faces
 open metadata/faces/stack-sheets/              # flip through them in Preview
 node scripts/face/apply-stack-names.mjs answers.txt          # dry run
 node scripts/face/apply-stack-names.mjs answers.txt --write  # apply
@@ -20,14 +20,21 @@ A name must resolve to exactly one guest or the whole batch aborts before
 writing. Naming a stack tags every face in it EXCEPT any already answered, so
 a sweep can never overwrite a more considered decision.
 
-Each sheet cell shows the stack's most recognizable face (ranked by the
-detector's own confidence, so not a back of a head), how many photographs the
-name would reach, and **who is already tagged in those photographs**. That
-last line is the real hint: these stacks exist precisely because no saved
-profile matched, so the model has nothing to suggest, but "standing beside two
-Myerses" usually lets a human place the face at once. By default the sheets
-show only stacks nobody has named, and the header lists every seated guest who
-appears in no photograph, because those two lists are largely the same people.
+Each sheet cell shows up to three of the stack's clearest faces, how many
+photographs the name would reach, and **who is already tagged in those
+photographs**. That last line is the real hint: these stacks exist precisely
+because no saved profile matched, so the model has nothing to suggest, but
+"standing beside two Myerses" usually lets a human place the face at once.
+By default the sheets hold back stacks with no usable view; pass
+`--include-blurry` only for the long tail. The header lists every seated guest
+who appears in no photograph, because those two lists are largely the same
+people.
+
+When a reviewer can rule out a suggested name but cannot yet identify the
+face, record that pair in
+`metadata/identity-review/stack-candidate-rejections.json`. The renderer uses
+the stable stack ID, not the temporary sheet number, to suppress that one name
+on later sheets while leaving the stack open for another pass.
 
 Two more tools worth knowing:
 
@@ -104,17 +111,20 @@ indistinguishable afterwards and a session can move between them freely.
 - Confirmed names → `metadata/reviewed-face-tag-additions.json`
 - "Not a guest", "not sure" and "too blurry" →
   `metadata/identity-review/naming-decisions.json`
+- Rejected context-based suggestions →
+  `metadata/identity-review/stack-candidate-rejections.json`
 
 "Not sure" is deliberately re-askable: it means nobody could place the face
 then, and a later pass should ask again. "Too blurry" and "not a guest" are
 settled and never come back. Every whole-row sweep skips faces that already
 carry a settled answer.
 
-Both are tracked in git. The second one is the only record of what was ruled
-out, and it is what lets a session resume where it stopped, so it is
-deliberately exempted from the `metadata/identity-review/*` ignore rule. If it
-ever goes missing, every dismissed face gets asked again with no way to know
-which those were.
+All three are tracked in git. The two decision ledgers are the only records of
+what was ruled out, and they let a session resume without repeating settled
+questions, so both are deliberately exempted from the
+`metadata/identity-review/*` ignore rule. If they go missing, dismissed faces
+or rejected suggestions can be asked again with no record of the earlier
+answer.
 
 Writes are atomic (temp file, fsync, rename) and validated against a throwaway
 catalog copy before anything touches disk, and all decision files are backed up
