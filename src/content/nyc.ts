@@ -84,11 +84,20 @@ export const nycFundraiser = {
    * republished here: see nycSupporters below for why.
    */
   progress: {
-    raised: 4546,
+    /*
+     * Read off https://fundraisers.nyrr.org/rachel-casciano on 2026-08-11.
+     *
+     * Cross-checked rather than eyeballed: the Supporters tab listed 52
+     * donations whose amounts sum to exactly $5,032.00, matching the total
+     * the page displays, with no pagination left to load and no repeated
+     * donor names. So `supporters: 52` is 52 distinct people, not 52
+     * donations from a smaller set.
+     */
+    raised: 5032,
     goal: 10000,
-    supporters: 47,
-    asOf: "July 27, 2026",
-    asOfISO: "2026-07-27",
+    supporters: 52,
+    asOf: "August 11, 2026",
+    asOfISO: "2026-08-11",
   },
   /**
    * The Team for Kids numbers quoted in Rachel's own NYRR story below. Kept

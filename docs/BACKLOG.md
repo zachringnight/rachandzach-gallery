@@ -228,3 +228,21 @@ Fixed in [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26)
 by seeding `momentOpen` from the URL. Found by GitHub Copilot's review of
 that PR, against the browse-landing prompts added there, which had inherited
 the same broken assumption.
+
+### Pending Rachel's approval: 6 new names for the /nyc supporters wall
+
+The fundraiser totals were refreshed to 2026-08-11 ($5,032 of $10,000, 52
+donors). The **supporters wall was not touched** and still shows the 46 names
+Rachel read and approved on 2026-07-27.
+
+Six people have donated since, all named, none anonymous. Their names are
+deliberately NOT recorded here: `nycSupporters.approved` says "Only Rachel
+should set this to true, and only after reading the list", and writing
+unapproved names into the repo would route around exactly the consent step
+that gate exists to enforce. They are on
+<https://fundraisers.nyrr.org/rachel-casciano> under Supporters, in order,
+after "Vanguard".
+
+To add them: Rachel reads the six on NYRR, then they go into
+`nycSupporters.people` in `src/content/nyc.ts` with `seededOn` updated. The
+existing 46 all still appear on NYRR, so nothing needs removing.

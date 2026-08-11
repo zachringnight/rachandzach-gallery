@@ -93,12 +93,26 @@ export function FundraiserProgress() {
         />
       </p>
 
+      {/*
+       * The sentence is ONE flex item, not four.
+       *
+       * .atlas-nyc-progress-note is a flex row, so every bare text node
+       * around the <time> element became its own flex item and wrapped
+       * independently. With a short date ("July 27, 2026") they happened to
+       * fit on one line and it looked fine; "August 11, 2026" pushed it over
+       * and stranded ", entered by hand." alone on the next line with the
+       * comma leading. Wrapping the prose in a span makes it a single item
+       * that wraps as prose, and leaves the link as the one thing the
+       * space-between pushes to the right.
+       */}
       <p className="atlas-nyc-progress-note">
-        Totals as of{" "}
-        <time dateTime={progress.asOfISO}>{progress.asOf}</time>, entered by
-        hand.{" "}
-        {/* Renders nothing while the figures are fresh; see UpdatedAgo. */}
-        <UpdatedAgo iso={progress.asOfISO} className="atlas-nyc-stale" />{" "}
+        <span>
+          Totals as of{" "}
+          <time dateTime={progress.asOfISO}>{progress.asOf}</time>, entered by
+          hand.{" "}
+          {/* Renders nothing while the figures are fresh; see UpdatedAgo. */}
+          <UpdatedAgo iso={progress.asOfISO} className="atlas-nyc-stale" />
+        </span>
         <Link
           href={nycFundraiser.fundraiserUrl}
           target="_blank"
