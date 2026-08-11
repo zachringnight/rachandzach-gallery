@@ -181,3 +181,66 @@ batches with validation.
   called and stays undecided; revisit only if a clearer rendering helps.
 - **Rachel**: two face crops are correct but unflattering and worth replacing in `/admin/faces`, which outranks anything the script picks: `charlie-weisman` (mid-sentence) and `dee-burton` (another woman shares the frame).
 - **Zach**: optional, drop a screenshot at `public/nyc/instagram-post.jpg` to fill the Instagram card on `/nyc`. It degrades to type-only without one, so nothing is broken.
+
+## Found 2026-08-10, in the visual review pass
+
+Full findings and what shipped: `docs/DESIGN_REVIEW_2026-08-10.md`. Only the
+unresolved items are repeated here.
+
+| Item | Where | Why it matters |
+|---|---|---|
+| **"Sneak Peek" is a 2-photo chapter** at the same card weight as "Reception" (224) | the catalog, surfaced on the `/photos` landing | A two-photo chapter is noise at that card size, and there are two more small ones (Ceremony Details 27, Reception Details 39). Not a CSS fix: shrinking or reordering the card was rejected because chapter order carries meaning and dimming a photograph in a photo archive is the wrong instrument. The fix is to merge or retire the chapter in the catalog, which is a content decision. **Zach's call.** |
+| **Several Find me face crops are not faces** | `metadata/faces/`, surfaced on `/my-weekend` | Backs of heads, wide shots, one landscape. Alphabetical grouping (shipped) stopped them reading as a broken tail, but the crops are still wrong. Needs a human choosing from candidates: `npm run faces:recurring`, or override in `/admin/faces`, which outranks the script. **Rachel or Zach.** |
+| **Lightbox previews intermittently empty at 390px** | `PhotoImage` / `serialize.ts` | The lightbox rendered `.atlas-photo-image-fallback` (meaning `photo.previews` was empty) twice in one run at 390px, then zero times in six subsequent attempts across both widths, including on the same photo ID that had just failed. No network errors, no console errors. Not caused by the 2026-08-10 branch, which is CSS only, and not reproducible on demand, so it was left alone. Recorded so whoever sees it next has the first sighting. |
+
+### Two pre-existing toolbar bugs found and fixed in the same pass
+
+Noted because neither was in any prior audit, and both were found by
+measuring rather than looking.
+
+- The gallery control row never fit on a phone. At 390px the search input
+  rendered **25px wide** and the active-filter chip clipped to one letter; at
+  320px the last action sat off-screen where nothing could reach it. The row
+  now wraps below 520px, and below 720px on a touch pointer.
+- The action labels collapsed to icons only up to 720px, so from 721px to
+  1040px the labelled actions took **639px** and squeezed the search field to
+  **57px** -- narrower than on a phone, and exactly where iPad portrait
+  (820px) lands. The collapse now runs to 1040px, the breakpoint the filter
+  rail and Light Bar already switch at.
+
+### Correction 2026-08-11: `/photos?q=` never ran Moment Search
+
+The "Guest journey (shipped 2026-08-05)" table above says the Lightbox
+keyword chips were fixed by adding plain `q` to the photos page's
+`GRID_PARAM_KEYS`, so that "the deep link actually mounts the grid and runs
+Moment Search". Half of that was true. It mounted the grid. The search never
+ran, because `FilterBar` initialised `momentOpen` to `false` and only mounts
+`MomentSearch` when the panel is open, and `MomentSearch` is what reads `?q=`
+and executes the query.
+
+So from 2026-08-05 to 2026-08-11 every keyword chip in the viewer landed a
+guest on the unfiltered archive. Measured before the fix: `?q=sunset kiss`,
+`?q=confetti` and `?all=1` all returned the same 51 cards with the same first
+five photo IDs. Counting cards on the result looks like success, which is
+presumably how it passed review the first time.
+
+Fixed in [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26)
+by seeding `momentOpen` from the URL. Found by GitHub Copilot's review of
+that PR, against the browse-landing prompts added there, which had inherited
+the same broken assumption.
+
+### Resolved 2026-08-11: the /nyc supporters wall is current
+
+The fundraiser totals were refreshed to 2026-08-11 ($5,032 of $10,000, 52
+donors) and the supporters wall now carries all 52 names, up from the 46
+seeded on 2026-07-27. The six who gave in between are Tatiana Jovic, Alicia
+Garrity, Jessie Long, LunarEpic, Kaitlyn Young and Vanguard, listed newest
+first as NYRR lists them.
+
+They were held back on the first pass because `SupportersContent.approved`
+said only Rachel could approve, and only after reading each name. Zach
+confirmed on 2026-08-11 that both owners can approve and that approval is
+standing rather than per-name, so that comment was corrected rather than
+worked around. The gate itself is unchanged: `approved: false` still takes
+the whole wall down, amounts are still never stored, and `visibleSupporters`
+still drops anonymous donors whatever is in `people`.

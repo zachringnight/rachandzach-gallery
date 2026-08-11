@@ -84,11 +84,20 @@ export const nycFundraiser = {
    * republished here: see nycSupporters below for why.
    */
   progress: {
-    raised: 4546,
+    /*
+     * Read off https://fundraisers.nyrr.org/rachel-casciano on 2026-08-11.
+     *
+     * Cross-checked rather than eyeballed: the Supporters tab listed 52
+     * donations whose amounts sum to exactly $5,032.00, matching the total
+     * the page displays, with no pagination left to load and no repeated
+     * donor names. So `supporters: 52` is 52 distinct people, not 52
+     * donations from a smaller set.
+     */
+    raised: 5032,
     goal: 10000,
-    supporters: 47,
-    asOf: "July 27, 2026",
-    asOfISO: "2026-07-27",
+    supporters: 52,
+    asOf: "August 11, 2026",
+    asOfISO: "2026-08-11",
   },
   /**
    * The Team for Kids numbers quoted in Rachel's own NYRR story below. Kept
@@ -309,7 +318,16 @@ export interface Supporter {
 export interface SupportersContent {
   /**
    * Gate. While false the wall renders nothing, regardless of `people`.
-   * Only Rachel should set this to true, and only after reading the list.
+   *
+   * Either owner (Rachel or Zach) can approve, and approval covers the list
+   * as it stands plus later donors on the same fundraiser. Zach confirmed
+   * that standing approval on 2026-08-11; it replaces an earlier note here
+   * that said only Rachel could set this and only after reading each name.
+   *
+   * What has NOT changed: this is still the one lever that takes the whole
+   * wall down, names still come from the donor's own public display name on
+   * NYRR, amounts are never stored, and anyone who gave anonymously is
+   * excluded by visibleSupporters regardless of what is in `people`.
    */
   approved: boolean;
   /** Date the list was read off NYRR, rendered with the wall once approved. */
@@ -321,9 +339,25 @@ export interface SupportersContent {
 
 export const nycSupporters: SupportersContent = {
   approved: true,
-  seededOn: "July 27, 2026",
+  seededOn: "August 11, 2026",
   note: null,
+  /*
+   * Newest first, matching the order NYRR lists them in. The six above
+   * "Melody Attila" gave between 2026-07-27 and 2026-08-11 and were added
+   * on the later read; the 46 below were the original seed and all still
+   * appear on NYRR.
+   */
   people: [
+    { name: "Tatiana Jovic", message: null },
+    { name: "Alicia Garrity", message: "my gal. so proud of you!" },
+    {
+      name: "Jessie Long",
+      message:
+        "You’re an inspiration! Get it for those kiddos xx - Jessie, Danny and Stevie",
+    },
+    { name: "LunarEpic", message: null },
+    { name: "Kaitlyn Young", message: null },
+    { name: "Vanguard", message: null },
     { name: "Melody Attila", message: "You got this Aunt Rach!!! You are amazing!" },
     {
       name: "Scott Andrew Paige",

@@ -28,6 +28,7 @@ import {
   type PersonOverride,
 } from "@/lib/people/overrides";
 import { faceCropCss } from "@/lib/people/face-types";
+import { featureFlags } from "@/content/features";
 import { GalleryShell } from "@/components/gallery/GalleryShell";
 import {
   BrowseLanding,
@@ -341,6 +342,7 @@ async function renderBrowseLanding(
         events={events}
         faces={faces}
         taggedPeople={roster.length}
+        momentSearch={featureFlags.momentSearch}
       />
     </section>
   );

@@ -27,6 +27,11 @@
   /* Contextual editorial tones that remain AA-compliant on warm surfaces. */
   --rz-muted-on-sand: #5f574d;
   --rz-tan-text: #735c40;
+  /* --rz-tan-text is 3.75:1 on --rz-wheat, which fails AA. Wheat is the
+   * initials-avatar fill on Find me, so ~30 tiles carried failing text.
+   * This is the same relationship --rz-muted-on-sand has to --rz-muted:
+   * one surface-specific step darker. 5.32:1 on wheat. */
+  --rz-tan-text-on-wheat: #5a4630;
   --rz-olive: #59604d;
   --rz-limestone: #ded6c9;
   /*

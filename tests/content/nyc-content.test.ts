@@ -61,29 +61,29 @@ describe("NYC fundraiser content", () => {
   });
 
   it("calculates a bounded progress percentage for the bar", () => {
-    expect(fundraiserProgressPercent()).toBe(45);
+    expect(fundraiserProgressPercent()).toBe(50);
     expect(fundraiserProgressPercent(11_000, 10_000)).toBe(100);
     expect(fundraiserProgressPercent(-20, 10_000)).toBe(0);
     expect(fundraiserProgressPercent(100, 0)).toBe(0);
   });
 
   it("lets the displayed percentage exceed the goal", () => {
-    expect(fundraiserRawPercent()).toBe(45);
+    expect(fundraiserRawPercent()).toBe(50);
     expect(fundraiserRawPercent(12_700, 10_000)).toBe(127);
     expect(fundraiserRawPercent(-20, 10_000)).toBe(0);
     expect(fundraiserRawPercent(100, 0)).toBe(0);
   });
 
   it("never reports a negative amount remaining", () => {
-    expect(fundraiserRemaining()).toBe(5454);
+    expect(fundraiserRemaining()).toBe(4968);
     expect(fundraiserRemaining(12_000, 10_000)).toBe(0);
     expect(fundraiserRemaining(10_000, 10_000)).toBe(0);
   });
 
   it("dates every hand-entered figure", () => {
-    expect(nycFundraiser.progress.raised).toBe(4546);
+    expect(nycFundraiser.progress.raised).toBe(5032);
     expect(nycFundraiser.progress.goal).toBe(10_000);
-    expect(nycFundraiser.progress.supporters).toBe(47);
+    expect(nycFundraiser.progress.supporters).toBe(52);
     expect(nycFundraiser.progress.asOfISO).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(nycFundraiser.progress.asOf.length).toBeGreaterThan(0);
   });
@@ -139,9 +139,19 @@ describe("supporters wall", () => {
     expect(visibleSupporters(withdrawn)).toHaveLength(0);
   });
 
-  it("carries the seeded draft ready for her review", () => {
-    expect(nycSupporters.people.length).toBe(46);
+  it("carries the approved list, dated", () => {
+    expect(nycSupporters.people.length).toBe(52);
     expect(nycSupporters.seededOn.length).toBeGreaterThan(0);
+  });
+
+  it("never lists more names than there were donors", () => {
+    // The wall is drawn FROM the donor list, so it can only ever be equal to
+    // or shorter than it (anonymous donors are excluded by name). If a name
+    // is ever hand-added that did not come off NYRR, or the donor count is
+    // updated downward without revisiting the wall, this catches it.
+    expect(nycSupporters.people.length).toBeLessThanOrEqual(
+      nycFundraiser.progress.supporters,
+    );
   });
 
   it("never stores a donation amount", () => {
@@ -202,10 +212,14 @@ describe("countdown", () => {
   });
 
   it("agrees with the NYRR figure the deadline was derived from", () => {
-    // NYRR showed "72 days remaining" on 2026-07-27, which is where
-    // nycFundraisingDeadline came from. This pins that derivation.
+    // Re-anchored 2026-08-11: NYRR's own page read "Only 57 days remaining"
+    // on the same visit the totals above were read off, and Oct 7 is 57 days
+    // from Aug 11. Pinning our stored deadline against NYRR's live countdown
+    // on the SAME date is what makes this a check rather than a restatement
+    // of our own arithmetic -- if their end date ever moves, this fails on
+    // the next figures update instead of drifting silently.
     expect(
       daysUntil(nycFundraisingDeadline.iso, noon(nycFundraiser.progress.asOfISO)),
-    ).toBe(72);
+    ).toBe(57);
   });
 });

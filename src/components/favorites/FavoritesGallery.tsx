@@ -21,7 +21,7 @@ import { PhotoImage } from "@/components/gallery/PhotoImage";
  */
 const GALLERY_IDS_FETCH_CHUNK = 100;
 
-function chunk<T>(items: T[], size: number): T[][] {
+function chunk<T>(items: readonly T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
   return out;
@@ -36,7 +36,13 @@ function chunk<T>(items: T[], size: number): T[][] {
  * FavoriteButton.tsx does not need this: favoriteStore.has() returns a
  * primitive boolean, which Object.is already compares by value.
  */
-function useFavoriteIds(): string[] {
+/* getServerSnapshot has the same referential-stability contract as
+ * getSnapshot. Returning a fresh `[]` literal made React warn "The result of
+ * getServerSnapshot should be cached to avoid an infinite loop" on every
+ * /favorites load. One frozen module-level empty array satisfies Object.is. */
+const NO_FAVORITE_IDS: readonly string[] = Object.freeze([]);
+
+function useFavoriteIds(): readonly string[] {
   const cache = useRef<{ key: string; ids: string[] }>({ key: "", ids: [] });
   return useSyncExternalStore(
     useCallback(
@@ -51,7 +57,7 @@ function useFavoriteIds(): string[] {
       }
       return cache.current.ids;
     },
-    () => [],
+    () => NO_FAVORITE_IDS,
   );
 }
 
@@ -62,7 +68,7 @@ function useFavoriteIds(): string[] {
  * lookup returns each id's photo in the order requested, and favorite ids
  * are already in the guest's favorite order.
  */
-async function fetchPhotosByIds(ids: string[]): Promise<ClientPhoto[]> {
+async function fetchPhotosByIds(ids: readonly string[]): Promise<ClientPhoto[]> {
   const photos: ClientPhoto[] = [];
   for (const group of chunk(ids, GALLERY_IDS_FETCH_CHUNK)) {
     const params = new URLSearchParams();
@@ -75,6 +81,39 @@ async function fetchPhotosByIds(ids: string[]): Promise<ClientPhoto[]> {
     photos.push(...body.photos);
   }
   return photos;
+}
+
+/** How many photographs the empty state offers to start a shortlist with. */
+const SUGGESTION_COUNT = 6;
+/** Sampled from this many, so the six are not six frames of one moment. */
+const SUGGESTION_POOL = 60;
+
+/**
+ * A small sample for the empty state.
+ *
+ * Deliberately NOT a "best of": nothing in the data ranks photographs, and
+ * inventing a ranking here would be the site asserting a preference it has
+ * no basis for. But the first six in weekend order are six frames of the
+ * same table, because the day opens on details -- taking the head of the
+ * list produced a strip of six near-identical flower arrangements.
+ *
+ * So: drop burst followers (the archive already knows which frames are
+ * near-duplicates of each other), then take an even spread across a larger
+ * window. That is a sampling rule, not a judgement about which photographs
+ * are good.
+ */
+async function fetchSuggestions(): Promise<ClientPhoto[]> {
+  const response = await fetch(`/api/gallery?limit=${SUGGESTION_POOL}`);
+  if (!response.ok) throw new Error("Could not load suggestions.");
+  const body = (await response.json()) as { photos: ClientPhoto[] };
+  const pool = body.photos.filter(
+    (photo) => !photo.burst || photo.burst.index === 0,
+  );
+  if (pool.length <= SUGGESTION_COUNT) return pool;
+  const stride = pool.length / SUGGESTION_COUNT;
+  return Array.from({ length: SUGGESTION_COUNT }, (_, i) =>
+    pool[Math.floor(i * stride)],
+  );
 }
 
 /**
@@ -126,6 +165,7 @@ function toSlideshowPhoto(photo: ClientPhoto): SlideshowPhoto {
 export function FavoritesGallery() {
   const favoriteIds = useFavoriteIds();
   const [photos, setPhotos] = useState<ClientPhoto[] | null>(null);
+  const [suggestions, setSuggestions] = useState<ClientPhoto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [slideshowIndex, setSlideshowIndex] = useState<number | null>(null);
   const hasFavorites = favoriteIds.length > 0;
@@ -174,6 +214,32 @@ export function FavoritesGallery() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasFavorites, favoriteIdsKey]);
 
+  /*
+   * An empty favorites page used to be a headline and two links on the left
+   * half of the screen with the right half blank to the footer, and it asked
+   * the guest to go somewhere else to do the one thing the page is about.
+   * These few photographs give the heart something to act on in place: the
+   * tile carries a real FavoriteButton, so a guest can start their shortlist
+   * without leaving. Fetched only when there is nothing to show, so a guest
+   * who already has favorites never pays for it.
+   */
+  useEffect(() => {
+    if (hasFavorites) return;
+    let cancelled = false;
+    fetchSuggestions()
+      .then((result) => {
+        if (!cancelled) setSuggestions(result);
+      })
+      // A failed suggestion strip is not an error worth showing: the empty
+      // state below still renders its copy and both links.
+      .catch(() => {
+        if (!cancelled) setSuggestions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasFavorites]);
+
   if (hasFavorites && photos === null && !error) {
     return (
       <div>
@@ -200,9 +266,19 @@ export function FavoritesGallery() {
     return (
       <div>
         <FavoritesPageBar count={0} />
-        <section className="atlas-favorites-empty">
-          <Heart aria-hidden="true" size={40} strokeWidth={1} />
-          <div>
+        {/* The second column only exists when there is something to put in
+            it. Reserving it unconditionally made the void WORSE on the very
+            case that matters -- suggestions still loading, or the fetch
+            failed -- by narrowing the copy AND leaving the right half
+            blank. */}
+        <section
+          className="atlas-favorites-empty"
+          data-has-strip={
+            suggestions && suggestions.length > 0 ? "true" : "false"
+          }
+        >
+          <div className="atlas-favorites-empty-copy">
+            <Heart aria-hidden="true" size={40} strokeWidth={1} />
             <p className="atlas-kicker">A collection in the making</p>
             <p>
               Tap the heart on any photo and it lands here. Your shortlist
@@ -221,6 +297,40 @@ export function FavoritesGallery() {
               </Link>
             </div>
           </div>
+
+          {suggestions && suggestions.length > 0 ? (
+            <div className="atlas-favorites-empty-strip">
+              <p className="atlas-kicker">Or start here</p>
+              <ul>
+                {suggestions.map((photo) => {
+                  const label = photo.people
+                    .map((person) => person.displayName)
+                    .join(", ");
+                  return (
+                    <li key={photo.id} className="atlas-favorite-tile">
+                      <PhotoImage
+                        photo={photo}
+                        alt={
+                          label
+                            ? `${label} at ${photo.eventName}`
+                            : photo.eventName
+                        }
+                        tier="card"
+                        targetWidth={260}
+                        className="h-full w-full"
+                        imageClassName="h-full w-full object-cover"
+                      />
+                      <FavoriteButton
+                        photoId={photo.id}
+                        label={label || photo.eventName}
+                        className="atlas-photo-favorite"
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
         </section>
       </div>
     );

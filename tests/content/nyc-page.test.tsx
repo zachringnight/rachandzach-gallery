@@ -75,11 +75,11 @@ describe("/nyc page", () => {
   it("shows a dated, hand-entered total rather than implying a live one", () => {
     const { container } = render(<NycPage />);
     const text = container.textContent ?? "";
-    expect(text).toContain("$4,546");
+    expect(text).toContain("$5,032");
     expect(text).toContain("$10,000");
     expect(text).toContain(nycFundraiser.progress.asOf);
     expect(text).toMatch(/entered by hand/i);
-    expect(text).toContain("47 people have already chipped in");
+    expect(text).toContain("52 people have already chipped in");
   });
 
   it("clamps the progress bar fill and keeps aria within range", () => {
@@ -90,7 +90,7 @@ describe("/nyc page", () => {
     const max = Number(bar?.getAttribute("aria-valuemax"));
     expect(now).toBeLessThanOrEqual(max);
     const fill = bar?.querySelector("span") as HTMLElement;
-    expect(fill.style.getPropertyValue("--atlas-progress")).toBe("45%");
+    expect(fill.style.getPropertyValue("--atlas-progress")).toBe("50%");
   });
 });
 

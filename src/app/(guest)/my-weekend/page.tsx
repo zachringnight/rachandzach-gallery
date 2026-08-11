@@ -61,10 +61,13 @@ export default async function MyWeekendPage() {
         </p>
       </header>
 
-      <div className="atlas-guest-body">
-        <MyWeekendClient people={people} identities={identities} faces={faces} />
-      </div>
-
+      {/*
+       * Moment Search sits ABOVE the face wall, not below it. The wall is 186
+       * faces and roughly 4,000px tall, and semantic search was parked under
+       * all of it, so the most distinctive feature on the site was the least
+       * discoverable thing on the page. Nothing about the feature changed;
+       * only where it sits in the document.
+       */}
       {featureFlags.momentSearch ? (
         <div className="atlas-guest-feature">
           <p className="atlas-kicker">Beta</p>
@@ -74,6 +77,10 @@ export default async function MyWeekendPage() {
           </div>
         </div>
       ) : null}
+
+      <div className="atlas-guest-body">
+        <MyWeekendClient people={people} identities={identities} faces={faces} />
+      </div>
     </section>
   );
 }

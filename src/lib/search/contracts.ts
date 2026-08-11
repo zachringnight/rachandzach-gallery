@@ -26,6 +26,28 @@
  * by src/lib/downloads/contracts.ts and src/lib/uploads/contracts.ts.
  */
 
+/**
+ * Approachable prompts based on visual categories only -- scenes and objects,
+ * never a person's name (Moment Search performs no face recognition or
+ * identity inference; see the packet's Privacy and model rules).
+ *
+ * These live here rather than in SearchExamples.tsx because that file is a
+ * Client Component, and Next replaces a client module's exports with client
+ * references when a Server Component imports them: BrowseLanding (a server
+ * component) got a proxy object and `.slice` was not a function. A plain leaf
+ * module is readable from both sides, which is the whole point of this file.
+ */
+export const MOMENT_SEARCH_EXAMPLES = [
+  "sunset kiss",
+  "champagne toast",
+  "people dancing",
+  "first dance",
+  "confetti",
+  "laughing at the table",
+  "flower details",
+  "golden hour portraits",
+] as const;
+
 /** Mirrors the packet's validation range: 2 to 80 characters. */
 export const MOMENT_SEARCH_MIN_QUERY_LENGTH = 2;
 export const MOMENT_SEARCH_MAX_QUERY_LENGTH = 80;

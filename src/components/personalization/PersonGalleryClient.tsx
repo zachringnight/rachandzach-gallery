@@ -68,10 +68,14 @@ export function PersonGalleryClient({
   return (
     <div className="atlas-person-page">
       <div className="atlas-person-page-share">
+        {/* These two lines used to promise a "wedding password" that stopped
+            existing when the gate came out (2026-08-09). Telling a guest that
+            sharing their own page needs a credential nobody has is a reason
+            not to share it. The link is the whole permission now. */}
         <p>
           {isMe
-            ? "This private page is yours to keep and share with anyone who has the wedding password."
-            : `${personName}'s photos. Share this page with anyone who has the wedding password.`}
+            ? "This page is yours to keep. Share the link with anyone you want to have these."
+            : `${personName}'s photos. Anyone with this link can open the page.`}
         </p>
         <div className="atlas-person-page-actions">
           <ShareGuestPageButton personSlug={personSlug} />
