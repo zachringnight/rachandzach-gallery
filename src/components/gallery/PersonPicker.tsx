@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { ClientGalleryFacets } from "@/lib/gallery/client-types";
 import {
   faceCropCss,
@@ -62,6 +62,52 @@ export function PersonPicker({
     return faces ? base : base.slice(0, 40);
   }, [people, query, faces]);
 
+  /*
+   * Find me is 186 guests. They arrived ordered by tag count, which meant a
+   * flat wall with no way to navigate it: to locate yourself you either
+   * already knew roughly how photographed you were, or you scrolled all of
+   * it. Alphabetical groups with a sticky letter give the wall an index.
+   *
+   * This also fixes the beige tail. People the face pipeline never resolved
+   * render as initials, and because those are overwhelmingly the low-count
+   * guests, count order swept every one of them into one block of ~30 empty
+   * discs at the bottom of the page. The review that found this proposed
+   * moving them to a separate "Also at the wedding" group; sorting by name
+   * is the better fix, because it distributes them through the alphabet AND
+   * keeps one lookup rule for everybody. Segregating the faceless would have
+   * made those guests harder to find, which is the opposite of the job.
+   *
+   * Grouped by the first letter of the displayed name (first name), because
+   * that is the string the guest reads on the tile. While a search is
+   * active the list stays flat: a filtered set of three does not need an
+   * index, and letter rows in it would be noise.
+   */
+  const letterGroups = useMemo(() => {
+    if (!faces || query.trim()) return null;
+    const byLetter = new Map<string, typeof filtered>();
+    for (const person of filtered) {
+      const initial = person.displayName.trim().charAt(0).toUpperCase();
+      // Anything that is not A-Z (a name starting with a digit or a
+      // diacritic that uppercases oddly) collects under one bucket rather
+      // than minting a single-tile letter row.
+      const key = initial >= "A" && initial <= "Z" ? initial : "#";
+      const bucket = byLetter.get(key);
+      if (bucket) bucket.push(person);
+      else byLetter.set(key, [person]);
+    }
+    return [...byLetter.entries()]
+      .map(([letter, group]) => ({
+        letter,
+        people: [...group].sort((a, b) =>
+          a.displayName.localeCompare(b.displayName),
+        ),
+      }))
+      // "#" last, letters in order.
+      .sort((a, b) =>
+        a.letter === "#" ? 1 : b.letter === "#" ? -1 : a.letter.localeCompare(b.letter),
+      );
+  }, [faces, query, filtered]);
+
   if (people.length === 0) return null;
 
   // The two variants do different jobs, so they announce different jobs. The
@@ -104,19 +150,30 @@ export function PersonPicker({
               </span>
               <span className="atlas-face-tile-name">Everyone</span>
             </button>
-            {filtered.map((person) => (
-              <FaceTile
-                // Keyed on the face, not just the slug: a re-signed URL or a
-                // newly saved crop remounts the tile, which is what resets its
-                // load-failure state without an effect.
-                key={`${person.slug}:${faceKeyOf(faceDirectory?.[person.slug])}`}
-                slug={person.slug}
-                name={person.displayName}
-                face={faceDirectory?.[person.slug] ?? null}
-                active={selected === person.slug}
-                onClick={() => onSelect(person.slug)}
-              />
-            ))}
+            {(letterGroups ?? [{ letter: null, people: filtered }]).map(
+              (group) => (
+                <Fragment key={group.letter ?? "flat"}>
+                  {group.letter ? (
+                    <h3 className="atlas-face-letter" aria-hidden="true">
+                      {group.letter}
+                    </h3>
+                  ) : null}
+                  {group.people.map((person) => (
+                    <FaceTile
+                      // Keyed on the face, not just the slug: a re-signed URL
+                      // or a newly saved crop remounts the tile, which is what
+                      // resets its load-failure state without an effect.
+                      key={`${person.slug}:${faceKeyOf(faceDirectory?.[person.slug])}`}
+                      slug={person.slug}
+                      name={person.displayName}
+                      face={faceDirectory?.[person.slug] ?? null}
+                      active={selected === person.slug}
+                      onClick={() => onSelect(person.slug)}
+                    />
+                  ))}
+                </Fragment>
+              ),
+            )}
           </>
         ) : (
           <>

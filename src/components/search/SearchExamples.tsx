@@ -1,25 +1,14 @@
 "use client";
 
+import { MOMENT_SEARCH_EXAMPLES } from "@/lib/search/contracts";
+
 export interface SearchExamplesProps {
   onPick: (query: string) => void;
 }
 
-/**
- * Approachable prompts based on visual categories only -- scenes and
- * objects, never a person's name (Moment Search performs no face
- * recognition or identity inference; see the packet's Privacy and model
- * rules).
- */
-const EXAMPLES = [
-  "sunset kiss",
-  "champagne toast",
-  "people dancing",
-  "first dance",
-  "confetti",
-  "laughing at the table",
-  "flower details",
-  "golden hour portraits",
-] as const;
+/** The prompt list itself lives in the client-safe contracts leaf so server
+ *  components (BrowseLanding) can read it too. See its doc comment. */
+const EXAMPLES = MOMENT_SEARCH_EXAMPLES;
 
 export function SearchExamples({ onPick }: SearchExamplesProps) {
   return (

@@ -181,3 +181,29 @@ batches with validation.
   called and stays undecided; revisit only if a clearer rendering helps.
 - **Rachel**: two face crops are correct but unflattering and worth replacing in `/admin/faces`, which outranks anything the script picks: `charlie-weisman` (mid-sentence) and `dee-burton` (another woman shares the frame).
 - **Zach**: optional, drop a screenshot at `public/nyc/instagram-post.jpg` to fill the Instagram card on `/nyc`. It degrades to type-only without one, so nothing is broken.
+
+## Found 2026-08-10, in the visual review pass
+
+Full findings and what shipped: `docs/DESIGN_REVIEW_2026-08-10.md`. Only the
+unresolved items are repeated here.
+
+| Item | Where | Why it matters |
+|---|---|---|
+| **"Sneak Peek" is a 2-photo chapter** at the same card weight as "Reception" (224) | the catalog, surfaced on the `/photos` landing | A two-photo chapter is noise at that card size, and there are two more small ones (Ceremony Details 27, Reception Details 39). Not a CSS fix: shrinking or reordering the card was rejected because chapter order carries meaning and dimming a photograph in a photo archive is the wrong instrument. The fix is to merge or retire the chapter in the catalog, which is a content decision. **Zach's call.** |
+| **Several Find me face crops are not faces** | `metadata/faces/`, surfaced on `/my-weekend` | Backs of heads, wide shots, one landscape. Alphabetical grouping (shipped) stopped them reading as a broken tail, but the crops are still wrong. Needs a human choosing from candidates: `npm run faces:recurring`, or override in `/admin/faces`, which outranks the script. **Rachel or Zach.** |
+| **Lightbox previews intermittently empty at 390px** | `PhotoImage` / `serialize.ts` | The lightbox rendered `.atlas-photo-image-fallback` (meaning `photo.previews` was empty) twice in one run at 390px, then zero times in six subsequent attempts across both widths, including on the same photo ID that had just failed. No network errors, no console errors. Not caused by the 2026-08-10 branch, which is CSS only, and not reproducible on demand, so it was left alone. Recorded so whoever sees it next has the first sighting. |
+
+### Two pre-existing toolbar bugs found and fixed in the same pass
+
+Noted because neither was in any prior audit, and both were found by
+measuring rather than looking.
+
+- The gallery control row never fit on a phone. At 390px the search input
+  rendered **25px wide** and the active-filter chip clipped to one letter; at
+  320px the last action sat off-screen where nothing could reach it. The row
+  now wraps below 520px, and below 720px on a touch pointer.
+- The action labels collapsed to icons only up to 720px, so from 721px to
+  1040px the labelled actions took **639px** and squeezed the search field to
+  **57px** -- narrower than on a phone, and exactly where iPad portrait
+  (820px) lands. The collapse now runs to 1040px, the breakpoint the filter
+  rail and Light Bar already switch at.

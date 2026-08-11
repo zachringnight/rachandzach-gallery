@@ -1,8 +1,10 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Search } from "lucide-react";
 
 import { Reveal } from "@/components/motion/Reveal";
+import { GALLERY_SEARCH_URL_PARAM } from "@/lib/gallery/client-types";
+import { MOMENT_SEARCH_EXAMPLES } from "@/lib/search/contracts";
 
 /**
  * The browse landing: what /photos renders when a guest arrives with NO
@@ -59,7 +61,12 @@ export interface BrowseLandingProps {
   faces: BrowseFace[];
   /** How many guests are tagged. A roster size, not a per-person count. */
   taggedPeople: number;
+  /** Whether to offer Moment Search prompts. Mirrors featureFlags. */
+  momentSearch: boolean;
 }
+
+/** A handful of prompts, not the full set: this is a door, not the panel. */
+const LANDING_MOMENT_PROMPTS = MOMENT_SEARCH_EXAMPLES.slice(0, 4);
 
 /** Card sizes track the event grid's column count (see globals.css). */
 const COVER_SIZES =
@@ -70,6 +77,7 @@ export function BrowseLanding({
   events,
   faces,
   taggedPeople,
+  momentSearch,
 }: BrowseLandingProps) {
   return (
     <div className="atlas-browse">
@@ -145,6 +153,58 @@ export function BrowseLanding({
           </span>
         </Link>
       </nav>
+
+      {/*
+       * Search is one of the four named guest jobs, and until now it only
+       * existed once the grid had mounted: a guest who arrived knowing they
+       * wanted "the sunset kiss" had to open all 1,721 photographs first and
+       * find the field inside. This is a plain GET form, so it works with no
+       * JavaScript and lands directly on the filtered grid -- gallery_q is
+       * already in GRID_PARAM_KEYS, so the URL mounts the grid rather than
+       * bouncing back to this landing.
+       */}
+      <section className="atlas-browse-search" aria-labelledby="atlas-browse-search-title">
+        <h2 id="atlas-browse-search-title" className="atlas-kicker">
+          By search
+        </h2>
+        <form action="/photos" method="get" role="search">
+          <label htmlFor="atlas-browse-search-input">
+            Search names, events, tags
+          </label>
+          <div className="atlas-browse-search-field">
+            <Search aria-hidden="true" size={16} strokeWidth={1.6} />
+            <input
+              id="atlas-browse-search-input"
+              type="search"
+              name={GALLERY_SEARCH_URL_PARAM}
+              placeholder="Search names, events, tags"
+              autoComplete="off"
+            />
+            <button type="submit">Search</button>
+          </div>
+        </form>
+        {momentSearch ? (
+          /* Moment Search sat at the bottom of /my-weekend, below all 186
+           * faces, on a 4,287px page. These prompts are a second door to it
+           * from the surface guests actually land on. Plain `q` is Moment
+           * Search's param and is also in GRID_PARAM_KEYS. */
+          <div className="atlas-browse-prompts">
+            <p>Or describe a moment:</p>
+            <ul>
+              {LANDING_MOMENT_PROMPTS.map((prompt) => (
+                <li key={prompt}>
+                  <Link
+                    href={`/photos?q=${encodeURIComponent(prompt)}`}
+                    className="atlas-picker-chip"
+                  >
+                    {prompt}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
 
       {events.length > 0 ? (
         <section

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { CSSProperties } from "react";
 
-import { DaysRemaining } from "@/components/nyc/DaysRemaining";
+import { DaysRemaining, UpdatedAgo } from "@/components/nyc/DaysRemaining";
 import {
   fundraiserProgressPercent,
   fundraiserRawPercent,
@@ -97,6 +97,8 @@ export function FundraiserProgress() {
         Totals as of{" "}
         <time dateTime={progress.asOfISO}>{progress.asOf}</time>, entered by
         hand.{" "}
+        {/* Renders nothing while the figures are fresh; see UpdatedAgo. */}
+        <UpdatedAgo iso={progress.asOfISO} className="atlas-nyc-stale" />{" "}
         <Link
           href={nycFundraiser.fundraiserUrl}
           target="_blank"

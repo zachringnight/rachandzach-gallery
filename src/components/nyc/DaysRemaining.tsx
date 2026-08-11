@@ -109,3 +109,43 @@ export function DaysRemaining({
   if (!label) return null;
   return <span className={className}>{label}</span>;
 }
+
+/** Below this, the totals are current enough that saying so is noise. */
+const STALE_AFTER_DAYS = 3;
+
+export interface UpdatedAgoProps {
+  /** Absolute date the figures were last entered, YYYY-MM-DD. */
+  iso: string;
+  className?: string;
+}
+
+/**
+ * "Updated N days ago", and nothing at all while the figures are fresh.
+ *
+ * The fundraiser totals are entered by hand, and they sit inches from two
+ * live countdowns, so a two-week-old "$4,546 raised" reads as current. The
+ * absolute "as of" date was already on the page but in the same muted note
+ * voice as everything else, so it did not register. This says the one thing
+ * a reader actually needs -- how old is this number -- and computes it in
+ * the browser for the same reason DaysRemaining does: /nyc is statically
+ * prerendered, so a server-computed age would freeze at build time.
+ *
+ * Silent under STALE_AFTER_DAYS, so it only appears when it is telling the
+ * reader something, and it needs no upkeep of its own.
+ */
+export function UpdatedAgo({ iso, className }: UpdatedAgoProps) {
+  const label = useSyncExternalStore(
+    subscribeToNothing,
+    useCallback(() => {
+      const days = daysUntil(iso);
+      if (days === null || days > 0) return null;
+      const age = -days;
+      if (age < STALE_AFTER_DAYS) return null;
+      return age === 1 ? "updated 1 day ago" : `updated ${age} days ago`;
+    }, [iso]),
+    () => null,
+  );
+
+  if (!label) return null;
+  return <span className={className}>{label}</span>;
+}

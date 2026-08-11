@@ -2467,10 +2467,20 @@ button {
   margin: 0;
 }
 
+/*
+ * Was the body sans at up to 4rem: the only place on the site where a large
+ * headline was not the display face, and at 1440px it broke "Drag your
+ * photos here" across two lines around the word "here". The display face at
+ * a calmer size sets it on one line and puts the page back inside the type
+ * system.
+ */
 .atlas-upload-dropzone > p:first-of-type {
-  font-family: var(--rz-font-body);
-  font-size: clamp(2rem, 4vw, 4rem);
-  letter-spacing: -0.045em;
+  font-family: var(--rz-font-display);
+  font-size: clamp(1.9rem, 3vw, 3rem);
+  font-weight: 430;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
 .atlas-upload-dropzone > p:nth-of-type(2) {
@@ -2536,6 +2546,23 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+/*
+ * "Upload photos" is the primary action on this page, and before any file is
+ * chosen it is disabled. `disabled:opacity-40` faded it into the cream until
+ * it was grey on grey and effectively unreadable, so a guest could not tell
+ * what the button they were waiting to press even said. Disabled controls
+ * are exempt from SC 1.4.3, but "you cannot read the label" is a
+ * comprehension problem, not a contrast-standard one. A solid muted state
+ * stays legible (5.32:1) and still reads as unavailable.
+ */
+.atlas-upload-actions button:disabled {
+  border-color: var(--rz-wheat);
+  background: var(--rz-wheat);
+  color: var(--rz-tan-text-on-wheat);
+  cursor: not-allowed;
+  opacity: 1;
 }
 
 .atlas-upload-queue {
@@ -2877,9 +2904,15 @@ button {
   padding: 0;
   border-right: 0;
   /* The rail is chrome, like the masthead above it: near-white with an ink
-   * hairline, so the working controls read as a shelf over the cream page. */
+   * hairline, so the working controls read as a shelf over the cream page.
+   *
+   * 92% was translucent enough that scrolling photographs showed through
+   * behind the button row: faces drifted under "Copy current view" and the
+   * labels lost their ground. 97% still reads as a glass shelf over the
+   * page (the blur does that work) without the photographs competing with
+   * the controls sitting on top of them. */
   border-bottom: 1px solid color-mix(in srgb, var(--rz-ink) 12%, transparent);
-  background: color-mix(in srgb, var(--rz-white) 92%, transparent);
+  background: color-mix(in srgb, var(--rz-white) 97%, transparent);
   backdrop-filter: blur(18px);
 }
 
@@ -3872,7 +3905,20 @@ button {
   z-index: 100;
   inset: 0;
   height: 100dvh;
+  /*
+   * `clip`, not `hidden`, and the distinction is load-bearing. The closed
+   * Notes panel is parked at translateX(100%), and a transformed box still
+   * contributes to its ancestor's scrollable overflow: scrollWidth was 1824
+   * against a clientWidth of 1440. An `overflow: hidden` box is still
+   * programmatically scrollable, so when focus moved to Close on open the
+   * browser scrolled that button into view and dragged the whole lightbox
+   * 154px left -- putting the Previous arrow off-screen at left: -49px and
+   * clipping the caption. `clip` produces a non-scrollable box, so no
+   * scroll offset is possible at any width. `hidden` stays first as the
+   * fallback for engines without `clip`.
+   */
   overflow: hidden;
+  overflow: clip;
   background: color-mix(in srgb, var(--rz-ink) 98.5%, black);
   color: var(--rz-cream);
   outline: none;
@@ -3956,6 +4002,12 @@ button {
   letter-spacing: 0.01em;
   line-height: 1.45;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The event name and timestamp are one unit; wrapping between them produced
+ * a two-line "DAY / 1" on a phone. */
+.atlas-lightbox-meta span {
   white-space: nowrap;
 }
 
@@ -4477,6 +4529,35 @@ button {
 }
 
 /*
+ * The alphabet index for the Find me wall. A full-width grid item rather
+ * than a wrapper element per group, so all 186 tiles keep one continuous
+ * column rhythm instead of restarting it at every letter.
+ *
+ * aria-hidden on the element: each tile already announces the guest's full
+ * name, so a screen reader gains nothing from an interleaved single letter,
+ * and the visual grouping it provides is the whole point.
+ */
+.atlas-face-letter {
+  position: sticky;
+  z-index: 2;
+  top: 4.7rem;
+  grid-column: 1 / -1;
+  margin: 0.9rem 0 -0.2rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--rz-wheat);
+  background: var(--rz-cream);
+  color: var(--rz-ink);
+  font-family: var(--rz-font-archive);
+  font-size: 0.85rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+}
+
+.atlas-face-letter:first-child {
+  margin-top: 0;
+}
+
+/*
  * Phones get three faces per row. Four across forced the guest's name -- the
  * primary label on this screen -- down to ~10px, which is unreadable for the
  * older relatives this page exists for. Three across keeps names at 0.8rem
@@ -4515,7 +4596,7 @@ button {
   border-radius: 50%;
   background: var(--rz-wheat);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--rz-tan) 34%, transparent);
-  color: var(--rz-tan-text);
+  color: var(--rz-tan-text-on-wheat);
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -4602,17 +4683,16 @@ button {
 .atlas-favorites-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 0.55rem;
 }
 
-.atlas-weekend-downloads {
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rz-wheat);
-}
-
-.atlas-weekend-downloads button,
-.atlas-weekend-downloads a,
+/* .atlas-weekend-downloads is gone: the download button moved up into
+ * .atlas-weekend-collection-actions, and nothing else rendered that wrapper.
+ * /favorites has always used .atlas-favorites-actions. */
+.atlas-weekend-collection-actions button,
+.atlas-weekend-collection-actions a,
 .atlas-favorites-actions button,
 .atlas-favorites-actions a {
   border-radius: 0 !important;
@@ -4676,12 +4756,57 @@ button {
  * paragraph that named Find me and the archive without linking either. Tighter
  * block, real controls.
  */
+/*
+ * Two columns, not one. This state used to be a 34rem block on the left with
+ * the right half of the viewport empty down to the footer, and it asked the
+ * guest to navigate away to do the thing the page is for. The right column
+ * carries a few real, heartable photographs instead.
+ */
 .atlas-favorites-empty {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+  padding: clamp(1.75rem, 4vw, 2.75rem) 0 clamp(2rem, 4vw, 3rem);
+}
+
+/* Two columns only once the strip has photographs to show. */
+.atlas-favorites-empty[data-has-strip="true"] {
+  grid-template-columns: minmax(0, 30rem) minmax(0, 1fr);
+}
+
+.atlas-favorites-empty-copy {
+  display: grid;
+  max-width: 34rem;
   gap: 1rem;
   justify-items: start;
-  max-width: 34rem;
-  padding: clamp(1.75rem, 4vw, 2.75rem) 0 clamp(2rem, 4vw, 3rem);
+}
+
+.atlas-favorites-empty-strip ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0.9rem 0 0;
+  padding: 0;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.atlas-favorites-empty-strip .atlas-favorite-tile {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+
+/* The heart is the entire point of this strip, so it does not wait for a
+ * hover the way a heart on a browsing tile does. */
+.atlas-favorites-empty-strip .atlas-photo-favorite {
+  opacity: 1;
+}
+
+@media (max-width: 900px) {
+  .atlas-favorites-empty[data-has-strip="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .atlas-favorites-empty-actions {
@@ -4692,11 +4817,11 @@ button {
   margin-top: 1.6rem;
 }
 
-.atlas-favorites-empty > svg {
+.atlas-favorites-empty-copy > svg {
   color: var(--rz-coral);
 }
 
-.atlas-favorites-empty div > p:last-child {
+.atlas-favorites-empty-copy > p:nth-of-type(2) {
   max-width: 34rem;
   margin: 0.65rem 0 0;
   color: var(--rz-muted);
@@ -5079,6 +5204,28 @@ button {
   }
 }
 
+/*
+ * The action labels collapse to icons up to the same 1040px breakpoint the
+ * rail and Light Bar already switch at, not 720px.
+ *
+ * Between 721px and 1040px the labelled actions measured 639px wide, which
+ * squeezed the search input to 57px -- narrower than it is on a 390px
+ * phone, and squarely where iPad portrait (820px) lands. Extending the
+ * collapse takes the actions to 181px and gives the field back roughly
+ * 240px. Pre-existing; found while measuring the touch-target work.
+ */
+@media (max-width: 1040px) {
+  .atlas-filter-action > span:not(.atlas-filter-count) {
+    display: none;
+  }
+
+  .atlas-filter-action {
+    min-height: 2.15rem;
+    padding-inline: 0.5rem;
+    border-left: 0;
+  }
+}
+
 @media (max-width: 1040px) {
   .atlas-filter-rail {
     position: sticky;
@@ -5173,6 +5320,42 @@ button {
 }
 
 @media (max-width: 720px) {
+  /*
+   * On a phone the tools row alone costs about 290px of a 390px header, so
+   * the caption was left roughly 100px: the event name broke into "DAY / 1"
+   * and a ten-name group frame truncated to "Rac...". Nobody could tell who
+   * was in the photograph on the device most guests use.
+   *
+   * The header becomes two rows instead of one: tools first, caption
+   * underneath with the full width to itself. The caption is allowed two
+   * lines before it ellipsizes, which covers the great majority of frames;
+   * Notes still carries the complete list.
+   */
+  .atlas-lightbox-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.3rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .atlas-lightbox-tools {
+    order: 1;
+    justify-self: end;
+  }
+
+  .atlas-lightbox-title {
+    order: 2;
+  }
+
+  .atlas-lightbox-people {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
   /* P1: the control bar collapses to one row; actions become icon-only. */
   .atlas-control-row {
     min-height: 3rem;
@@ -5610,6 +5793,16 @@ button {
   text-transform: none;
 }
 
+/* Appears only once the hand-entered totals are three days old or more, so
+ * when it is on screen it is the point of the line, not a footnote to it. */
+.atlas-nyc-stale {
+  padding: 0.1rem 0.36rem;
+  background: color-mix(in srgb, var(--rz-coral) 14%, transparent);
+  color: var(--rz-ink);
+  font-weight: 680;
+  white-space: nowrap;
+}
+
 .atlas-nyc-progress-note a,
 .atlas-nyc-inline-link {
   display: inline-flex;
@@ -5764,7 +5957,9 @@ button {
 
 .atlas-nyc-impact-stats span {
   max-width: 12rem;
-  color: var(--rz-muted);
+  /* This band sits on --rz-sand, where --rz-muted is 4.47:1 and misses AA by
+   * 0.03. --rz-muted-on-sand exists for exactly this surface: 5.29:1. */
+  color: var(--rz-muted-on-sand);
   font-size: 0.7rem;
   font-weight: 650;
   letter-spacing: 0.1em;
@@ -7698,6 +7893,20 @@ button {
   background: var(--rz-sand);
 }
 
+/*
+ * The left column is a headline and two lines; the right column is two
+ * articles roughly twice as tall. That left about 400px of dead sand under
+ * the headline, which read as a hole rather than as space. Making the
+ * headline sticky gives the emptiness a job: it holds "The archive stays
+ * useful." in view while the guest reads both of the things that keep it
+ * useful, so the column is deliberately open instead of merely unfilled.
+ */
+.archive-forward-heading {
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+}
+
 .archive-forward-heading h2 {
   font-size: clamp(2.8rem, 4.8vw, 5.5rem);
 }
@@ -7929,8 +8138,16 @@ button {
     scrollbar-width: thin;
   }
 
+  /*
+   * 8.3rem fitted exactly three cards edge to edge on a 390px phone, so
+   * "Save originals" and "Add photos" sat off-screen with nothing to say so:
+   * the rail scrolls, but iOS hides the scrollbar until you already scroll.
+   * 7.4rem leaves a third of the fourth card visible, which is the
+   * affordance -- a clipped card reads as "there is more" without adding a
+   * single pixel of chrome.
+   */
   .archive-action-rail ol {
-    grid-auto-columns: minmax(8.3rem, 1fr);
+    grid-auto-columns: minmax(7.4rem, 1fr);
     grid-auto-flow: column;
     grid-template-columns: none;
     width: max-content;
@@ -8397,6 +8614,96 @@ button {
   object-fit: fill;
 }
 
+/* The search door. Deliberately quieter than the two cards above it: those
+ * are destinations, this is a field you type into. Same hairline seam as the
+ * chapter index below. */
+.atlas-browse-search {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: clamp(1.75rem, 3.5vw, 2.75rem);
+  border-top: 1px solid color-mix(in srgb, var(--rz-ink) 16%, transparent);
+}
+
+.atlas-browse-search label {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.atlas-browse-search-field {
+  display: flex;
+  max-width: 34rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.15rem 0.15rem 0.15rem 0.8rem;
+  border: 1px solid var(--rz-wheat);
+  background: var(--rz-white);
+  transition: border-color var(--rz-dur-fast) ease;
+}
+
+.atlas-browse-search-field:focus-within {
+  border-color: var(--rz-ink);
+}
+
+.atlas-browse-search-field svg {
+  flex: 0 0 auto;
+  color: var(--rz-muted);
+}
+
+.atlas-browse-search-field input {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0.6rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--rz-ink);
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.atlas-browse-search-field button {
+  flex: 0 0 auto;
+  min-height: 2.4rem;
+  padding-inline: 1.1rem;
+  border: 0;
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.atlas-browse-search-field button:hover {
+  background: var(--rz-coral);
+}
+
+.atlas-browse-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.atlas-browse-prompts p {
+  margin: 0;
+  color: var(--rz-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.atlas-browse-prompts ul {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  gap: 0.4rem;
+  list-style: none;
+}
+
 /* An ink hairline opens the chapter index, so the seam between the doors and
  * the contact sheet is drawn rather than implied by whitespace. */
 .atlas-browse-events {
@@ -8484,16 +8791,26 @@ button {
 }
 
 /* The frame number rides the photograph, so it carries its own legibility. */
+/*
+ * A text-shadow alone could not hold this. Over "Ceremony Details" (white
+ * flowers) and "Cocktail Hour" (bright sky) the numeral was effectively
+ * invisible, and a cover photograph can be any luminance, so no single text
+ * colour works. The numeral gets its own small ink plate instead, which is
+ * legible over every cover in the set and reads as an archive stamp rather
+ * than a caption floating on the image.
+ */
 .atlas-browse-event-index {
   position: absolute;
   top: 0.45rem;
   left: 0.55rem;
+  padding: 0.16rem 0.34rem;
+  background: color-mix(in srgb, var(--rz-ink) 72%, transparent);
   color: var(--rz-cream);
   font-family: var(--rz-font-archive);
   font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.14em;
-  text-shadow: 0 1px 8px rgba(15, 12, 8, 0.65);
+  backdrop-filter: blur(6px);
 }
 
 .atlas-browse-event-line {
@@ -9121,5 +9438,143 @@ button {
   .atlas-nyc-progress-deadline,
   .atlas-nyc-share {
     align-items: flex-start;
+  }
+}
+
+/* ==========================================================================
+ * Touch target floor. THIS BLOCK MUST STAY LAST IN THE FILE.
+ *
+ * There was already a `@media (pointer: coarse)` block raising controls to
+ * 44px, but the `@media (max-width: 720px)` block below it re-shrank the
+ * lightbox arrows to 2rem and the filmstrip frames to 2.7rem. Equal
+ * specificity, later wins, so the touch floor was defeated on exactly the
+ * devices it was written for. Measured on an iPhone 13 profile before this
+ * block: arrows 32x56, filmstrip frames 33x43, gallery toolbar icons 31x34,
+ * and Light Bar chapter jumps as small as 6x11.
+ *
+ * 2.75rem is the 44px Apple HIG floor. 1.5rem is 24px, the WCAG 2.2 AA
+ * minimum (SC 2.5.8), used where 44px is geometrically impossible: the
+ * Light Bar draws all 14 chapters at once, and 14 x 44px is 616px, wider
+ * than any phone. Full-size chapter navigation exists on the /photos
+ * landing and in the chapter tab, so the rail is a refinement, not the only
+ * route.
+ * ========================================================================== */
+@media (pointer: coarse) {
+  .atlas-lightbox-arrow {
+    width: 2.75rem;
+    height: 3.5rem;
+  }
+
+  .atlas-lightbox-frame {
+    height: 2.75rem;
+  }
+
+  .atlas-lightbox-icon,
+  .atlas-lightbox-control {
+    min-width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  /*
+   * The gallery actions are icon-only on a phone, so they had no label to
+   * grow into and measured 31x34.
+   *
+   * Height gets the full 44px floor. Width does not, and cannot: the row
+   * holds FIVE actions plus the search field inside 358px, and 5 x 44px
+   * alone is 220px. Forcing 44 wide overflowed the row by 37px and clipped
+   * the Search button off the screen. 2.5rem (40px) is the widest that
+   * fits, is 67% wider than what was there, and clears the WCAG 2.2 AA
+   * target-size floor (SC 2.5.8, 24x24) with room to spare. The pair is
+   * 40x44, which is a thumb-sized target in practice.
+   */
+  .atlas-filter-action {
+    min-width: 2.5rem;
+    min-height: 2.75rem;
+  }
+
+  /* And the search field yields the difference rather than the actions
+   * being clipped. 7rem still shows about eight characters of the query. */
+  .atlas-gallery-search {
+    min-width: 7rem;
+  }
+}
+
+/*
+ * The single-row control bar does not fit on a phone, and did not before
+ * any of the touch-target work above. The five actions need ~218px and the
+ * gaps another ~18px, so a 390px screen leaves about 122px for the search
+ * field AND the active-filter chip: measured, the input rendered 25px wide
+ * (about three characters of the query) and the chip clipped to a single
+ * letter. At 320px the last action sat off the right edge entirely, where
+ * nothing could reach it.
+ *
+ * So the row wraps: the search field takes its own line at full width, the
+ * chips and actions take the next. It costs one line of sticky chrome,
+ * which the existing hide-on-scroll-down behaviour already folds away, and
+ * it is the only arrangement where the search field is legible and every
+ * control is reachable.
+ *
+ * Two triggers, because the threshold is not purely a width. Under 520px it
+ * never fits at any pointer size. Between 520px and 720px it fits only with
+ * the smaller fine-pointer controls, so a touch device wraps there and a
+ * mouse does not: measured at 520px, coarse gave a 78px input and fine gave
+ * a comfortable one.
+ */
+@media (max-width: 519px), (pointer: coarse) and (max-width: 719px) {
+  .atlas-control-row {
+    flex-wrap: wrap;
+  }
+
+  .atlas-gallery-search {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .atlas-control-actions {
+    margin-left: auto;
+  }
+
+  .atlas-light-bar-segment {
+    min-height: 1.5rem;
+  }
+
+  /* The photographer credits are inline in a sentence and take the SC 2.5.8
+   * inline exception. The standalone Admin link does not. */
+  .atlas-footer-credit > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+  }
+
+  /* The wordmark measured 123x23: one pixel under the floor. The home
+   * page's row and forward links land on the same 23px for the same
+   * reason (line-height, no padding), so they take the same fix. */
+  .atlas-brand-link,
+  .archive-utility-row a,
+  .archive-forward-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+  }
+}
+
+/* The rail turns horizontal below 1040px, so the floor swaps axis with it.
+ * 14 segments x 24px = 336px, which fits inside a 390px phone. */
+@media (pointer: coarse) and (max-width: 1040px) {
+  /* The rail is border-box with a 1px hairline top and bottom, so a flat
+   * 1.5rem left the segments themselves at 22px. The border sits outside
+   * the target. */
+  .atlas-light-bar-rail {
+    height: calc(1.5rem + 2px);
+  }
+
+  .atlas-light-bar-segment {
+    min-width: 1.5rem;
+    min-height: 1.5rem;
+  }
+
+  .atlas-light-bar:hover .atlas-light-bar-rail,
+  .atlas-light-bar:focus-within .atlas-light-bar-rail {
+    height: calc(1.5rem + 2px);
   }
 }

@@ -149,9 +149,13 @@ export default async function PersonGalleryPage({
     <section className="atlas-guest-page atlas-person-route">
       <header className="atlas-page-bar">
         <h1>{person.displayName}</h1>
+        {/* "that includes you" was wrong more often than not: this page
+            renders for whoever is being looked at, and guests browse each
+            other's pages constantly. Same person-neutral rule the gallery
+            heading already follows. */}
         <p className="atlas-page-bar-note">
-          Every confirmed photo that includes you, gathered in one private
-          place and ready to favorite, download, or save.
+          Every confirmed photo of {person.displayName}, gathered in one place
+          and ready to favorite, download, or save.
         </p>
       </header>
 

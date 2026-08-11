@@ -11,6 +11,8 @@ import {
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { groupByEvent } from "@/lib/personalization/my-weekend";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
+import { ContactStackCard } from "@/components/gallery/ContactStackCard";
+import { buildDisplayList } from "@/lib/gallery/grouping";
 import { Lightbox } from "@/components/gallery/Lightbox";
 import { Slideshow } from "@/components/slideshow/Slideshow";
 import { DownloadMyWeekendButton } from "@/components/personalization/DownloadMyWeekendButton";
@@ -117,6 +119,19 @@ export function MyWeekendGallery({
   const [photos, setPhotos] = useState<ClientPhoto[]>([]);
   const [openPhotoId, setOpenPhotoId] = useState<string | null>(null);
   const [slideshowOpen, setSlideshowOpen] = useState(false);
+  /*
+   * Burst IDs the guest has fanned out. The main grid has collapsed
+   * near-identical frames into one stack card since P4, but this page did
+   * not, so a guest's own collection -- the link they get texted -- opened on
+   * four almost-identical versions of the same moment. Same display model,
+   * same component, so the two surfaces cannot drift.
+   */
+  const [expandedBursts, setExpandedBursts] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const expandBurst = useCallback((burstId: string) => {
+    setExpandedBursts((current) => new Set(current).add(burstId));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -169,9 +184,16 @@ export function MyWeekendGallery({
           <div>
             {/* Person-neutral wording: this renders for whoever is being
                 viewed, which is frequently not the guest reading it. "Find
-                me" and "your collection" both quietly asserted otherwise. */}
+                me" and "your collection" both quietly asserted otherwise.
+
+                The name is NOT repeated here. The route already sets it as
+                the h1, and this block used to restate it as "Guest gallery /
+                {name}'s photos" directly underneath, with the download button
+                saying it a third time. Three occurrences of the same name
+                filled the first 730px of the page and pushed the first
+                photograph below the fold. The count is the only new
+                information this row carries, so the count is all it says. */}
             <p className="atlas-kicker">Guest gallery</p>
-            <h2>{personName}&rsquo;s photos</h2>
             {state === "ready" ? (
               <p className="atlas-weekend-photo-count">
                 {photos.length.toLocaleString()}{" "}
@@ -179,6 +201,13 @@ export function MyWeekendGallery({
               </p>
             ) : null}
           </div>
+          {/* Download sits on this row rather than on a full-width row of its
+              own below it. Count, slideshow and download are one decision
+              ("what do I do with these 665?"), and splitting them across two
+              rows cost about 90px of vertical chrome above the first
+              photograph for no gain. DownloadMyWeekendButton renders nothing
+              on its own while photos is empty (see its doc comment), so no
+              separate gate is needed here. */}
           <div className="atlas-weekend-collection-actions">
             {photos.length > 0 ? (
               <button
@@ -189,23 +218,16 @@ export function MyWeekendGallery({
                 Play slideshow
               </button>
             ) : null}
+            <DownloadMyWeekendButton
+              personName={personName}
+              personSlug={personSlug}
+              photoIds={photoIds}
+            />
             {/* No "Not you?" here any more. This gallery renders for whoever
                 the guest is LOOKING at, which is often not them, so an
                 identity control belongs with the rest of the identity UI in
                 PersonGalleryClient rather than duplicated on every view. */}
           </div>
-        </div>
-
-        {/* Renders nothing on its own (see DownloadMyWeekendButton's doc
-            comment) while photos is still empty, whether that is "still
-            loading" or "this person has none" -- no separate gate needed
-            here. */}
-        <div className="atlas-weekend-downloads">
-          <DownloadMyWeekendButton
-            personName={personName}
-            personSlug={personSlug}
-            photoIds={photoIds}
-          />
         </div>
       </div>
 
@@ -244,16 +266,28 @@ export function MyWeekendGallery({
             </header>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {tileSize > 0
-                ? group.photos.map((photo) => (
-                    <div key={photo.id} className="aspect-square">
-                      <PhotoCard
-                        photo={photo}
-                        width={tileSize}
-                        height={tileSize}
-                        onOpen={setOpenPhotoId}
-                      />
-                    </div>
-                  ))
+                ? buildDisplayList(group.photos, expandedBursts).map((item) =>
+                    item.kind === "stack" ? (
+                      <div key={item.key} className="aspect-square">
+                        <ContactStackCard
+                          photos={item.photos}
+                          size={item.size}
+                          width={tileSize}
+                          height={tileSize}
+                          onExpand={() => expandBurst(item.burstId)}
+                        />
+                      </div>
+                    ) : (
+                      <div key={item.key} className="aspect-square">
+                        <PhotoCard
+                          photo={item.photo}
+                          width={tileSize}
+                          height={tileSize}
+                          onOpen={setOpenPhotoId}
+                        />
+                      </div>
+                    ),
+                  )
                 : null}
             </div>
           </section>

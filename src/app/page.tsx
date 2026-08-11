@@ -123,7 +123,9 @@ export default function HomePage() {
             </div>
             <p>
               <span>Selected from the private archive</span>
-              <span>Original quality available after sign-in</span>
+              {/* Was "available after sign-in" until the password gate was
+                  removed (2026-08-09). There is no sign-in to wait for. */}
+              <span>Original quality on every download</span>
             </p>
           </Reveal>
         </div>

@@ -372,7 +372,10 @@ export function UploadClient() {
             type="button"
             onClick={() => void start()}
             disabled={items.length === 0}
-            className="atlas-inline-action disabled:opacity-40"
+            /* The disabled treatment lives in globals.css
+               (.atlas-upload-actions button:disabled). opacity-40 made the
+               label unreadable. */
+            className="atlas-inline-action"
           >
             Upload {items.length > 0 ? `${items.length} ` : ""}photos
           </button>
