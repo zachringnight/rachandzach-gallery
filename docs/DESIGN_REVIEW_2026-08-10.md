@@ -10,9 +10,9 @@ prior brief and most of it shipped; see "What the last pass fixed" below.
 
 ## STATUS: built, 2026-08-10, branch `design-review-2026-08-10`
 
-Every packet below is implemented except the two items listed under
-"Deliberately not built". Section 6 records what shipped, what changed
-during the build, and the verification evidence.
+Every packet below is implemented except the three items listed under
+"Deliberately not built" (section 7). Section 6 records what shipped, what
+changed during the build, and the verification evidence.
 
 ## Method
 

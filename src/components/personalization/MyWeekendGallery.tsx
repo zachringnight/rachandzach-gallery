@@ -8,6 +8,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { Layers } from "lucide-react";
+
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 import { groupByEvent } from "@/lib/personalization/my-weekend";
 import { PhotoCard } from "@/components/gallery/PhotoCard";
@@ -131,6 +133,13 @@ export function MyWeekendGallery({
   );
   const expandBurst = useCallback((burstId: string) => {
     setExpandedBursts((current) => new Set(current).add(burstId));
+  }, []);
+  const collapseBurst = useCallback((burstId: string) => {
+    setExpandedBursts((current) => {
+      const next = new Set(current);
+      next.delete(burstId);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -278,13 +287,44 @@ export function MyWeekendGallery({
                         />
                       </div>
                     ) : (
-                      <div key={item.key} className="aspect-square">
+                      /* A burst-frame is NOT an ordinary photo: it carries
+                         the contact-sheet edge treatment, and its leader
+                         carries the control that folds the burst back up.
+                         Rendering it as a plain card (as this first did)
+                         meant an expanded stack here could never be
+                         collapsed again, which VirtualPhotoGrid has always
+                         allowed. Same class, same data attribute and same
+                         control as that grid. */
+                      <div
+                        key={item.key}
+                        className={
+                          item.kind === "burst-frame"
+                            ? "atlas-burst-frame relative aspect-square"
+                            : "aspect-square"
+                        }
+                        data-burst-frame={
+                          item.kind === "burst-frame" ? "true" : undefined
+                        }
+                      >
                         <PhotoCard
                           photo={item.photo}
                           width={tileSize}
                           height={tileSize}
                           onOpen={setOpenPhotoId}
                         />
+                        {item.kind === "burst-frame" && item.leader ? (
+                          <button
+                            type="button"
+                            className="atlas-stack-collapse"
+                            aria-label={`Collapse these ${
+                              item.photo.burst?.size ?? 0
+                            } frames back into one stack`}
+                            title="Collapse stack"
+                            onClick={() => collapseBurst(item.burstId)}
+                          >
+                            <Layers aria-hidden="true" size={14} strokeWidth={1.8} />
+                          </button>
+                        ) : null}
                       </div>
                     ),
                   )

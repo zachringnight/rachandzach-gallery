@@ -207,3 +207,24 @@ measuring rather than looking.
   **57px** -- narrower than on a phone, and exactly where iPad portrait
   (820px) lands. The collapse now runs to 1040px, the breakpoint the filter
   rail and Light Bar already switch at.
+
+### Correction 2026-08-11: `/photos?q=` never ran Moment Search
+
+The "Guest journey (shipped 2026-08-05)" table above says the Lightbox
+keyword chips were fixed by adding plain `q` to the photos page's
+`GRID_PARAM_KEYS`, so that "the deep link actually mounts the grid and runs
+Moment Search". Half of that was true. It mounted the grid. The search never
+ran, because `FilterBar` initialised `momentOpen` to `false` and only mounts
+`MomentSearch` when the panel is open, and `MomentSearch` is what reads `?q=`
+and executes the query.
+
+So from 2026-08-05 to 2026-08-11 every keyword chip in the viewer landed a
+guest on the unfiltered archive. Measured before the fix: `?q=sunset kiss`,
+`?q=confetti` and `?all=1` all returned the same 51 cards with the same first
+five photo IDs. Counting cards on the result looks like success, which is
+presumably how it passed review the first time.
+
+Fixed in [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26)
+by seeding `momentOpen` from the URL. Found by GitHub Copilot's review of
+that PR, against the browse-landing prompts added there, which had inherited
+the same broken assumption.

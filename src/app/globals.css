@@ -8021,6 +8021,13 @@ button {
   .archive-forward {
     grid-template-columns: 1fr;
   }
+
+  /* The sticky headline only makes sense beside the articles. In one
+   * column it is above them, so sticking would pin it over the top of the
+   * contribute and NYC copy as they scroll past underneath. */
+  .archive-forward-heading {
+    position: static;
+  }
 }
 
 @media (max-width: 820px) {

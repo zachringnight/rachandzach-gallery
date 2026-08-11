@@ -23,7 +23,7 @@ the pre-launch history and are not operational instructions.
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | None |
+| Current unmerged app work | [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26), branch `design-review-2026-08-10`, **open and green, not merged**. The visual-review build: four defects (the lightbox rendering 154px off-screen at 1440px and narrower, the mobile lightbox caption, three strings still promising the removed password gate, a `getServerSnapshot` warning), 0 axe violations across 8 routes at 2 viewports, search on the `/photos` landing, Moment Search lifted above the Find me wall, alphabetical face grouping, and burst collapsing on the person page. Findings and reasoning: `docs/DESIGN_REVIEW_2026-08-10.md`. Unresolved items it hands off: `docs/BACKLOG.md` |
 
 Production aliases are active for:
 

@@ -4,6 +4,7 @@ import { ArrowUpRight, Search } from "lucide-react";
 
 import { Reveal } from "@/components/motion/Reveal";
 import { GALLERY_SEARCH_URL_PARAM } from "@/lib/gallery/client-types";
+import { MAX_GALLERY_SEARCH_LENGTH } from "@/lib/gallery/query";
 import { MOMENT_SEARCH_EXAMPLES } from "@/lib/search/contracts";
 
 /**
@@ -179,6 +180,13 @@ export function BrowseLanding({
               name={GALLERY_SEARCH_URL_PARAM}
               placeholder="Search names, events, tags"
               autoComplete="off"
+              /* Same cap as the in-grid field and as parseGalleryQuery.
+                 Without it the browser happily submits a longer value, the
+                 server throws GalleryQueryError, and the catch falls back to
+                 the unfiltered gallery while initialFilters clears the
+                 query -- so a submission that looked fine returns the whole
+                 archive with no indication why. */
+              maxLength={MAX_GALLERY_SEARCH_LENGTH}
             />
             <button type="submit">Search</button>
           </div>
