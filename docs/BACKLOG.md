@@ -229,20 +229,18 @@ by seeding `momentOpen` from the URL. Found by GitHub Copilot's review of
 that PR, against the browse-landing prompts added there, which had inherited
 the same broken assumption.
 
-### Pending Rachel's approval: 6 new names for the /nyc supporters wall
+### Resolved 2026-08-11: the /nyc supporters wall is current
 
 The fundraiser totals were refreshed to 2026-08-11 ($5,032 of $10,000, 52
-donors). The **supporters wall was not touched** and still shows the 46 names
-Rachel read and approved on 2026-07-27.
+donors) and the supporters wall now carries all 52 names, up from the 46
+seeded on 2026-07-27. The six who gave in between are Tatiana Jovic, Alicia
+Garrity, Jessie Long, LunarEpic, Kaitlyn Young and Vanguard, listed newest
+first as NYRR lists them.
 
-Six people have donated since, all named, none anonymous. Their names are
-deliberately NOT recorded here: `nycSupporters.approved` says "Only Rachel
-should set this to true, and only after reading the list", and writing
-unapproved names into the repo would route around exactly the consent step
-that gate exists to enforce. They are on
-<https://fundraisers.nyrr.org/rachel-casciano> under Supporters, in order,
-after "Vanguard".
-
-To add them: Rachel reads the six on NYRR, then they go into
-`nycSupporters.people` in `src/content/nyc.ts` with `seededOn` updated. The
-existing 46 all still appear on NYRR, so nothing needs removing.
+They were held back on the first pass because `SupportersContent.approved`
+said only Rachel could approve, and only after reading each name. Zach
+confirmed on 2026-08-11 that both owners can approve and that approval is
+standing rather than per-name, so that comment was corrected rather than
+worked around. The gate itself is unchanged: `approved: false` still takes
+the whole wall down, amounts are still never stored, and `visibleSupporters`
+still drops anonymous donors whatever is in `people`.

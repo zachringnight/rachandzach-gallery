@@ -139,9 +139,19 @@ describe("supporters wall", () => {
     expect(visibleSupporters(withdrawn)).toHaveLength(0);
   });
 
-  it("carries the seeded draft ready for her review", () => {
-    expect(nycSupporters.people.length).toBe(46);
+  it("carries the approved list, dated", () => {
+    expect(nycSupporters.people.length).toBe(52);
     expect(nycSupporters.seededOn.length).toBeGreaterThan(0);
+  });
+
+  it("never lists more names than there were donors", () => {
+    // The wall is drawn FROM the donor list, so it can only ever be equal to
+    // or shorter than it (anonymous donors are excluded by name). If a name
+    // is ever hand-added that did not come off NYRR, or the donor count is
+    // updated downward without revisiting the wall, this catches it.
+    expect(nycSupporters.people.length).toBeLessThanOrEqual(
+      nycFundraiser.progress.supporters,
+    );
   });
 
   it("never stores a donation amount", () => {
