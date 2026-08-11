@@ -20,11 +20,17 @@ import { siteConfig } from "@/content/site";
  * each `.variable` to <html> so every page resolves the real faces; until
  * then the token fallback stacks apply.
  */
+/*
+ * SOFT and opsz only. Fraunces' WONK axis swaps in the quirky alternate
+ * letterforms (the curled single-story `g`, the swashed `y`), which read as
+ * decorative noise at headline size rather than as character. The axis is not
+ * loaded at all so no stylesheet can reintroduce it by accident.
+ */
 export const displayFont = Fraunces({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-display-face",
-  axes: ["SOFT", "WONK", "opsz"],
+  axes: ["SOFT", "opsz"],
 });
 
 export const bodyFont = Inter({

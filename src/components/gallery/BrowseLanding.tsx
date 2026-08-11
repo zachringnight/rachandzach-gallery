@@ -82,7 +82,7 @@ export function BrowseLanding({
 }: BrowseLandingProps) {
   return (
     <div className="atlas-browse">
-      <nav className="atlas-browse-doors" aria-label="Ways into the archive">
+      <nav className="atlas-browse-doors" aria-label="Ways to browse">
         <Link
           href="/my-weekend"
           className="atlas-browse-door atlas-browse-door-people"

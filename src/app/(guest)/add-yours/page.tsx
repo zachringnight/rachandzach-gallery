@@ -24,8 +24,8 @@ export default async function AddYoursPage() {
       <header className="atlas-page-bar">
         <h1>Add your photos</h1>
         <p className="atlas-page-bar-note">
-          Contribute the photos only you have. Every submission waits for
-          review before it joins the private archive.
+          Add the photos only you have. Rachel and Zach look at every one
+          before it goes up.
         </p>
       </header>
 

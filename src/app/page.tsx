@@ -16,7 +16,7 @@ import { siteConfig } from "@/content/site";
 import { storyPhotos } from "@/content/story-photos";
 
 export const metadata: Metadata = {
-  title: "Private Photo Archive | Rach & Zach · Santa Barbara",
+  title: "Photos | Rachel & Zach · Santa Barbara",
   description:
     "Find your photos, keep a private shortlist, and save Rachel and Zach's original photos wherever you keep them.",
 };
@@ -71,8 +71,8 @@ export default function HomePage() {
       <section className="archive-utility" aria-labelledby="archive-utility-title">
         <Reveal className="archive-utility-heading">
           <div>
-            <p className="atlas-kicker">Made to use</p>
-            <h2 id="archive-utility-title">A private archive that works for you.</h2>
+            <p className="atlas-kicker">How it works</p>
+            <h2 id="archive-utility-title">Everything from the weekend, in one place.</h2>
           </div>
           <p>
             Start with your name or search the whole collection. Keep the
@@ -123,7 +123,7 @@ export default function HomePage() {
               ))}
             </div>
             <p>
-              <span>Selected from the private archive</span>
+              <span>A few of our favorites</span>
               {/* Was "available after sign-in" until the password gate was
                   removed (2026-08-09). There is no sign-in to wait for. */}
               <span>Original quality on every download</span>
@@ -137,7 +137,7 @@ export default function HomePage() {
       <section className="archive-forward" aria-labelledby="archive-forward-title">
         <Reveal className="archive-forward-heading">
           <p className="atlas-kicker">What comes next</p>
-          <h2 id="archive-forward-title">The archive stays useful.</h2>
+          <h2 id="archive-forward-title">A couple more things.</h2>
           <p>
             Add what only you have, come back for the photos you need,
             and follow the next chapter taking shape.
@@ -146,7 +146,7 @@ export default function HomePage() {
 
         <div className="archive-forward-links">
           <Reveal as="article">
-            <span>01 / CONTRIBUTE</span>
+            <span>01 / Your photos</span>
             <h3>Add your point of view.</h3>
             <p>{siteConfig.voice.uploadIntro}</p>
             <Link href="/add-yours">
@@ -155,7 +155,7 @@ export default function HomePage() {
             </Link>
           </Reveal>
           <Reveal as="article" delayMs={80}>
-            <span>02 / FOLLOW</span>
+            <span>02 / New York</span>
             <h3>Rach runs New York.</h3>
             <p>
               Follow Rachel&rsquo;s road to 26.2 and support Team for Kids.

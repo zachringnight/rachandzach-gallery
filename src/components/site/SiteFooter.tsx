@@ -20,7 +20,7 @@ export function SiteFooter() {
           <p className="atlas-footer-names">
             {siteConfig.names.primary} &amp; {siteConfig.names.secondary}
           </p>
-          <p>Private photo archive · Santa Barbara</p>
+          <p>Santa Barbara · July 19, 2025</p>
           <p className="atlas-footer-love">
             Made for the people in it.
           </p>

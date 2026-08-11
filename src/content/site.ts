@@ -138,7 +138,7 @@ export const siteConfig: SiteConfig = {
     },
   ],
   voice: {
-    eyebrow: "Private photo archive",
+    eyebrow: "Rachel & Zach's wedding weekend",
     // Not "the photos are ready": they have been ready for a long time, and
     // a headline that announces an event goes stale the day after it does.
     // This one still reads right in five years.
@@ -148,6 +148,6 @@ export const siteConfig: SiteConfig = {
     galleryIntro:
       "Search, filter, select, download, or save the original photos to your own cloud account.",
     uploadIntro:
-      "Contribute the photos only you have. Every submission is reviewed before it joins the archive.",
+      "Add the photos only you have. Every one is reviewed before it goes up.",
   },
 };

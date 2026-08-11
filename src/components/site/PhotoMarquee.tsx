@@ -10,7 +10,7 @@ export interface PhotoMarqueeProps {
 }
 
 /**
- * A slow drift of archive photographs. The images are decorative because the
+ * A slow drift of photographs. The images are decorative because the
  * same frames carry real alt text elsewhere, but the motion control remains
  * available to every guest. The track is duplicated once so the CSS loop
  * (translateX(-50%)) is seamless; OS reduced-motion also stops the drift.
@@ -37,10 +37,10 @@ export function PhotoMarquee({ photos }: PhotoMarqueeProps) {
       data-marquee
       data-paused={motionPaused ? "true" : "false"}
       className="atlas-marquee"
-      aria-label="Archive contact sheet"
+      aria-label="A few from the weekend"
     >
       <div className="atlas-marquee-label">
-        <span>Archive contact sheet</span>
+        <span>A few from the weekend</span>
         <button
           type="button"
           className="atlas-marquee-toggle"
@@ -54,11 +54,7 @@ export function PhotoMarquee({ photos }: PhotoMarqueeProps) {
           ) : (
             <Pause aria-hidden="true" size={14} strokeWidth={1.5} />
           )}
-          {prefersReducedMotion
-            ? "Motion off"
-            : paused
-              ? "Resume motion"
-              : "Pause motion"}
+          {prefersReducedMotion ? "Paused by your settings" : paused ? "Play" : "Pause"}
         </button>
       </div>
       <div className="rz-marquee-track" aria-hidden="true">

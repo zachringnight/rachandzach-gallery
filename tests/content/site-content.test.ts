@@ -58,12 +58,23 @@ describe("site identity", () => {
   });
 });
 
-describe("archive-first voice", () => {
-  it("leads with the archive's current uses", () => {
+describe("use-first voice", () => {
+  it("leads with what a guest can do today, in plain words", () => {
     const voice = collectStrings(siteConfig.voice).join("\n").toLowerCase();
-    expect(voice).toContain("private photo archive");
+    expect(voice).toContain("wedding weekend");
     expect(voice).toContain("save the originals");
     expect(voice).toContain("cloud account");
+  });
+
+  /*
+   * "Archive" was the working name for this thing while it was being built and
+   * it leaked into the guest copy everywhere. Guests came here for photos of
+   * their friends, not for a records system. The word stays out of the voice
+   * fields for good.
+   */
+  it("keeps the internal 'archive' vocabulary out of the public voice", () => {
+    const voice = collectStrings(siteConfig.voice).join("\n").toLowerCase();
+    expect(voice).not.toContain("archive");
   });
 
   it("keeps recap language out of the public voice fields", () => {

@@ -27,9 +27,9 @@ describe("guest not-found", () => {
     expect(findMe.className).toContain("bg-ink");
   });
 
-  it("offers the full archive as the secondary action", () => {
+  it("offers all the photos as the secondary action", () => {
     render(<GuestNotFound />);
-    const archive = screen.getByRole("link", { name: /open the archive/i });
+    const archive = screen.getByRole("link", { name: /browse all photos/i });
     expect(archive.getAttribute("href")).toBe("/photos");
     expect(archive.className).not.toContain("bg-ink");
   });

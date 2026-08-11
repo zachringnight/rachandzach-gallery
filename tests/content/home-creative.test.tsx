@@ -23,11 +23,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("homepage archive index", () => {
-  it("keeps all five real archive jobs in one labeled index", () => {
+describe("homepage photo shortcuts", () => {
+  it("keeps all five real jobs in one labeled shortcut nav", () => {
     render(<Hero />);
 
-    const index = screen.getByRole("navigation", { name: "Archive index" });
+    const index = screen.getByRole("navigation", { name: "Photo shortcuts" });
     const links = Array.from(index.querySelectorAll("a"));
 
     expect(links).toHaveLength(5);
@@ -38,19 +38,19 @@ describe("homepage archive index", () => {
       "/photos",
       "/add-yours",
     ]);
-    expect(screen.queryByRole("navigation", { name: "Archive shortcuts" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Archive index" })).toBeNull();
   });
 });
 
-describe("homepage archive contact sheet", () => {
+describe("homepage photo drift", () => {
   const photos = [storyPhotos.chapters.coast, storyPhotos.chapters.dancing];
 
   it("duplicates only the decorative track and lets a guest pause or resume it", async () => {
     const user = userEvent.setup();
     render(<PhotoMarquee photos={photos} />);
 
-    const region = screen.getByRole("region", { name: "Archive contact sheet" });
-    const button = screen.getByRole("button", { name: "Pause motion" });
+    const region = screen.getByRole("region", { name: "A few from the weekend" });
+    const button = screen.getByRole("button", { name: "Pause" });
     const images = region.querySelectorAll("img");
 
     expect(images).toHaveLength(photos.length * 2);
@@ -58,12 +58,12 @@ describe("homepage archive contact sheet", () => {
     expect(region.getAttribute("data-paused")).toBe("false");
 
     await user.click(button);
-    expect(screen.getByRole("button", { name: "Resume motion" })).toBe(button);
+    expect(screen.getByRole("button", { name: "Play" })).toBe(button);
     expect(button.getAttribute("aria-pressed")).toBe("true");
     expect(region.getAttribute("data-paused")).toBe("true");
 
     await user.click(button);
-    expect(screen.getByRole("button", { name: "Pause motion" })).toBe(button);
+    expect(screen.getByRole("button", { name: "Pause" })).toBe(button);
     expect(region.getAttribute("data-paused")).toBe("false");
   });
 
@@ -71,8 +71,8 @@ describe("homepage archive contact sheet", () => {
     mockReducedMotion(true);
     render(<PhotoMarquee photos={photos} />);
 
-    const region = screen.getByRole("region", { name: "Archive contact sheet" });
-    const button = await screen.findByRole("button", { name: "Motion off" });
+    const region = screen.getByRole("region", { name: "A few from the weekend" });
+    const button = await screen.findByRole("button", { name: "Paused by your settings" });
 
     await waitFor(() => expect(region.getAttribute("data-paused")).toBe("true"));
     expect((button as HTMLButtonElement).disabled).toBe(true);

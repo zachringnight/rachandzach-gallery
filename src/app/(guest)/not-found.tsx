@@ -30,7 +30,7 @@ export default function GuestNotFound() {
           href="/photos"
           className="inline-flex min-h-12 items-center justify-center rounded-[2px] border border-ink px-7 font-body text-sm font-medium text-ink hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
         >
-          Open the archive
+          Browse all photos
         </Link>
       </div>
     </section>
