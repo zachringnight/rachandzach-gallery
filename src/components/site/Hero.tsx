@@ -81,6 +81,27 @@ export function Hero() {
             </div>
           </div>
 
+          <nav className="archive-radial-index" aria-label="Archive index">
+            <div className="archive-radial-center" aria-hidden="true">
+              <span>Archive</span>
+              <strong>0719</strong>
+            </div>
+            <ol>
+              {archiveActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <li key={action.number}>
+                    <Link href={action.href} aria-label={action.accessibleLabel}>
+                      <span>{action.number}</span>
+                      <Icon aria-hidden="true" size={22} strokeWidth={1.25} />
+                      <strong>{action.label}</strong>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+
           <div className="archive-hero-note">
             <span>Private to invited guests</span>
             <span>Santa Barbara · 0719</span>
@@ -110,23 +131,6 @@ export function Hero() {
           </figcaption>
         </figure>
       </section>
-
-      <nav className="archive-action-rail" aria-label="Archive shortcuts">
-        <ol>
-          {archiveActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <li key={action.number}>
-                <Link href={action.href} aria-label={action.accessibleLabel}>
-                  <span className="archive-action-number">{action.number}</span>
-                  <Icon aria-hidden="true" size={25} strokeWidth={1.25} />
-                  <strong>{action.label}</strong>
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
     </div>
   );
 }

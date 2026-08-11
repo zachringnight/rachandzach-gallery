@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-08-10 (PDT).
+Updated 2026-08-11 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -23,7 +23,7 @@ the pre-launch history and are not operational instructions.
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26), branch `design-review-2026-08-10`, **open and green, not merged**. The visual-review build: four defects (the lightbox rendering 154px off-screen at 1440px and narrower, the mobile lightbox caption, three strings still promising the removed password gate, a `getServerSnapshot` warning), 0 axe violations across 8 routes at 2 viewports, search on the `/photos` landing, Moment Search lifted above the Find me wall, alphabetical face grouping, and burst collapsing on the person page. Findings and reasoning: `docs/DESIGN_REVIEW_2026-08-10.md`. Unresolved items it hands off: `docs/BACKLOG.md` |
+| Current unmerged app work | Local branch `codex/creative-library-upgrade`, uncommitted and not pushed or deployed. It adds the homepage archival radial index, a user-visible pause control for the contact-sheet marquee, focused coverage, and intentional homepage visual baselines. `npm run verify` passed locally: 1,133 Vitest tests with 17 documented skips, 46 Chromium E2E tests with 26 documented skips, and 16 visual checks. PR [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26) is now merged in `main` at `2f7a517`. |
 
 Production aliases are active for:
 

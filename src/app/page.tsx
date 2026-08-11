@@ -10,6 +10,7 @@ import {
 
 import { Reveal } from "@/components/motion/Reveal";
 import { Hero } from "@/components/site/Hero";
+import { PhotoMarquee } from "@/components/site/PhotoMarquee";
 import { PublicShell } from "@/components/site/PublicShell";
 import { siteConfig } from "@/content/site";
 import { storyPhotos } from "@/content/story-photos";
@@ -130,6 +131,8 @@ export default function HomePage() {
           </Reveal>
         </div>
       </section>
+
+      <PhotoMarquee photos={Object.values(storyPhotos.chapters)} />
 
       <section className="archive-forward" aria-labelledby="archive-forward-title">
         <Reveal className="archive-forward-heading">
