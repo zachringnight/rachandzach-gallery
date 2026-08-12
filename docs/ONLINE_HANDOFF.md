@@ -112,7 +112,11 @@ against the current query version. Only `MomentSearch` remounts when that query
 changes, so unrelated gallery-control state is not discarded. Review also
 found that a keyword link opened results behind a preserved gallery Lightbox;
 the Link now clears that viewer state without racing its route transition
-against `history.back()`.
+against `history.back()`. A subsequent Codex review found that native gallery
+filter URL rewrites could remove `q` while leaving the original server seed in
+memory; the shell now derives its hydrated Moment query from Next's reactive
+search-param store, so Link, replace-state, and back/forward navigation share
+one current value.
 
 The branch also moves evaluation of `query-embedding` inside the existing
 embedding fallback boundary. A native encoder import failure therefore cannot
@@ -122,7 +126,7 @@ model cache is excluded, Node is pinned to the deployed `24.x` major, and a
 post-build assertion now checks that the native binding and adjacent shared
 library are present without bundling a local model.
 
-Safe-point verification is green: 82 focused Vitest checks, typecheck, Vercel
+Safe-point verification is green: 83 focused Vitest checks, typecheck, Vercel
 configuration validation, lint with zero errors and 19 existing warnings,
 `git diff --check`, and local browser checks at desktop and 390px. The real
 `/photos` -> `sunset kiss` link returned 24 embedding matches; a direct reload

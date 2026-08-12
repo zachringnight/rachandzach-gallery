@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type {
   ClientGalleryFacets,
   ClientGalleryPage,
@@ -135,6 +136,10 @@ function filtersFromSearch(search: string): GalleryFilterState {
   };
 }
 
+function normalizeMomentQuery(value: string | null | undefined): string {
+  return (value ?? "").trim().replace(/\s+/g, " ");
+}
+
 export function GalleryShell({
   initialPage,
   facets,
@@ -144,6 +149,17 @@ export function GalleryShell({
   toolbarSlot,
   heading,
 }: GalleryShellProps) {
+  const routeSearchParams = useSearchParams();
+  // The server prop keeps the first render deterministic. After hydration,
+  // Next's search-param store is the source of truth: its patched native
+  // history API updates this hook when applyFilters/pageUrl removes `q`, and
+  // it also follows Link plus back/forward navigation. Reading the original
+  // prop forever would resurrect a Moment query no longer present in the URL.
+  const momentQuery = normalizeMomentQuery(
+    typeof window === "undefined"
+      ? initialMomentQuery
+      : routeSearchParams.get("q"),
+  );
   const [filters, setFilters] = useState<GalleryFilterState>(initialFilters);
   const [photos, setPhotos] = useState<ClientPhoto[]>(initialPage.photos);
   const [cursor, setCursor] = useState<string | null>(initialPage.nextCursor);
@@ -546,13 +562,13 @@ export function GalleryShell({
         selecting={selection.selecting}
         selectedCount={selectedIds.length}
         onStartSelection={selection.start}
-        momentSearchQuery={initialMomentQuery}
+        momentSearchQuery={momentQuery}
         momentSearchSlot={
           featureFlags.momentSearch ? (
             <MomentSearch
-              key={initialMomentQuery || "moment-search"}
+              key={momentQuery || "moment-search"}
               events={facets.events}
-              initialQuery={initialMomentQuery}
+              initialQuery={momentQuery}
             />
           ) : undefined
         }
