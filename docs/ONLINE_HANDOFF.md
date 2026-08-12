@@ -13,17 +13,17 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Deployed application release | `f4f1090f647036922c990afec36641b8f9d07735` |
+| Deployed application release | `7a336d83d34303b102bdd48d54ee626bb18a1c04` |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `de7a1bf` -- creative-library upgrade and guest-copy cleanup ([#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), merged 2026-08-11). Preceding: `f4f1090` in-gallery people tagging and immutable public-story caching ([#23](https://github.com/zachringnight/rachandzach-gallery/pull/23), merged 2026-08-10) |
+| Latest release | `7a336d8` -- production Moment Search runtime repair and structured fallback diagnostics ([#28](https://github.com/zachringnight/rachandzach-gallery/pull/28), merged 2026-08-12). Preceding: `de7a1bf` creative-library upgrade and guest-copy cleanup ([#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), merged 2026-08-11) |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | PR [#28](https://github.com/zachringnight/rachandzach-gallery/pull/28), branch `codex/gallery-search-runtime-fix`, repairs Moment Search's Vercel runtime and adds privacy-safe structured stage logging. Exact Preview evidence is recorded below. |
+| Current unmerged app work | None. PR [#28](https://github.com/zachringnight/rachandzach-gallery/pull/28) merged and is verified on the stable Production domain. |
 
 Production aliases are active for:
 
@@ -64,7 +64,7 @@ Photo-overlay labels were removed. The existing photo memories wall remains
 complete. `tsconfig.tsbuildinfo` was deleted from source control and
 `*.tsbuildinfo` is ignored when TypeScript regenerates its incremental cache.
 
-### Moment Search runtime repair (release candidate, 2026-08-12)
+### Moment Search runtime repair (shipped, 2026-08-12)
 
 Production's generic `/api/search` 500 was traced in a logging-only Preview to
 the missing Linux `libonnxruntime.so.1` dependency while importing
@@ -77,7 +77,7 @@ cache for this Node runtime.
 
 The route logs request, fallback stage, completion, deployment ID, commit SHA,
 duration, and embedding/keyword result counts without logging the query. The
-exact head `f005843645fff6e87c2dd9e5094a2272ab20edd7` is `READY` in Preview as
+exact repair head `f005843645fff6e87c2dd9e5094a2272ab20edd7` was `READY` in Preview as
 deployment `dpl_9vxEZidmAsXf74sLjNJMgmHGKyGL`. Direct API checks returned:
 
 - `people dancing`: three results, all `matchType: embedding`, 7.5-second cold
@@ -88,9 +88,12 @@ deployment `dpl_9vxEZidmAsXf74sLjNJMgmHGKyGL`. Direct API checks returned:
 The full local gate passed: Vercel config validation, typecheck, lint with zero
 errors and 18 existing warnings, 1,141 Vitest tests with 17 documented skips,
 production build, and 46 Chromium tests with 26 documented live-database
-skips. Production remains on the older broken search build until PR #28 merges;
-replace this release-candidate note with the exact Production deployment and
-stable-domain readback after promotion.
+skips. PR #28 merged as `7a336d83d34303b102bdd48d54ee626bb18a1c04`.
+Production deployment `dpl_H3jTUHyyChavAjpGhAS5PSrCDXpU` is `READY` with the
+apex, `www`, project, and `main` aliases attached. On `rachandzach.com`, the
+homepage returns `200` and `people dancing` returns three explicit
+`matchType: embedding` results with nonzero similarities. The post-smoke
+Production error-log query returned no runtime errors.
 
 ## Verification evidence
 
