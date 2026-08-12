@@ -775,10 +775,10 @@ button {
   margin: clamp(1rem, 2.5vh, 1.75rem) 0 0;
   font-family: var(--rz-font-display);
   font-size: clamp(3.3rem, 5.8vw, 7.1rem);
-  font-variation-settings: "opsz" 72, "SOFT" 35, "WONK" 0.6;
+  font-variation-settings: "opsz" 72, "SOFT" 35;
   font-weight: 430;
-  letter-spacing: -0.058em;
-  line-height: 0.83;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
   text-wrap: balance;
 }
 
@@ -964,7 +964,7 @@ button {
   font-size: clamp(2.25rem, 4.7vw, 5.75rem);
   font-variation-settings: "opsz" 72, "SOFT" 40;
   font-weight: 380;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
   line-height: 0.98;
 }
 
@@ -1013,7 +1013,7 @@ button {
   font-size: clamp(2.4rem, 4.7vw, 5.35rem);
   font-variation-settings: "opsz" 72, "SOFT" 35;
   font-weight: 390;
-  letter-spacing: -0.052em;
+  letter-spacing: -0.025em;
   line-height: 0.94;
 }
 
@@ -1286,7 +1286,7 @@ button {
   font-family: var(--rz-font-archive);
   font-size: clamp(7rem, 13vw, 15rem);
   font-weight: 320;
-  letter-spacing: -0.08em;
+  letter-spacing: -0.025em;
   line-height: 1;
 }
 
@@ -1297,7 +1297,7 @@ button {
   font-size: clamp(2.8rem, 5vw, 6rem);
   font-variation-settings: "opsz" 72, "SOFT" 35;
   font-weight: 390;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.025em;
   line-height: 0.9;
 }
 
@@ -1333,6 +1333,7 @@ button {
 
 .atlas-marquee-label {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 2rem;
   width: min(100%, var(--atlas-max));
@@ -1341,12 +1342,46 @@ button {
   color: var(--rz-muted-on-sand);
 }
 
+.atlas-marquee-toggle {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--rz-ink) 28%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--rz-cream) 58%, transparent);
+  color: var(--rz-ink);
+  font-family: var(--rz-font-archive);
+  font-size: 0.6rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    background var(--rz-dur-fast) var(--rz-ease-out),
+    color var(--rz-dur-fast) var(--rz-ease-out);
+}
+
+.atlas-marquee-toggle:hover:not(:disabled) {
+  background: var(--rz-ink);
+  color: var(--rz-cream);
+}
+
+.atlas-marquee-toggle:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
 .rz-marquee-track {
   display: flex;
   width: max-content;
   gap: 0.75rem;
   padding-left: 0.75rem;
   animation: rz-drift 95s linear infinite;
+}
+
+.atlas-marquee[data-paused="true"] .rz-marquee-track {
+  animation-play-state: paused;
 }
 
 .atlas-marquee-image {
@@ -1532,7 +1567,7 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(2rem, 4vw, 4.6rem);
   font-weight: 380;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
   line-height: 0.95;
 }
 
@@ -1997,8 +2032,8 @@ button {
   font-size: clamp(4.5rem, 11vw, 12rem);
   font-variation-settings: "opsz" 96, "SOFT" 34;
   font-weight: 360;
-  letter-spacing: -0.07em;
-  line-height: 0.76;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
 }
 
 .atlas-page-hero > p:not(.atlas-kicker) {
@@ -2028,8 +2063,8 @@ button {
   font-family: var(--rz-font-archive);
   font-size: clamp(5rem, 12vw, 10rem);
   font-weight: 300;
-  letter-spacing: -0.08em;
-  line-height: 0.8;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
 }
 
 .atlas-page-hero-index small {
@@ -2146,7 +2181,7 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(2.6rem, 5vw, 5.4rem);
   font-weight: 380;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.025em;
   line-height: 0.92;
 }
 
@@ -2457,7 +2492,7 @@ button {
   font-family: var(--rz-font-archive);
   font-size: clamp(9rem, 22vw, 19rem);
   font-weight: 260;
-  line-height: 0.8;
+  line-height: 0.96;
 }
 
 .atlas-upload-dropzone > p {
@@ -2677,8 +2712,8 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(4rem, 7.5vw, 8rem);
   font-weight: 360;
-  letter-spacing: -0.065em;
-  line-height: 0.82;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
 }
 
 .atlas-access-copy > p:not(.atlas-kicker) {
@@ -4394,7 +4429,7 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(2.5rem, 5vw, 5rem);
   font-weight: 390;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
   line-height: 0.94;
 }
 
@@ -5608,8 +5643,8 @@ button {
   font-size: clamp(4rem, 7.3vw, 8.2rem);
   font-variation-settings: "opsz" 90, "SOFT" 35;
   font-weight: 360;
-  letter-spacing: -0.068em;
-  line-height: 0.78;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
   text-wrap: balance;
 }
 
@@ -5839,7 +5874,7 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(2.5rem, 5vw, 5rem);
   font-weight: 330;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
 }
 
 .atlas-nyc-story-copy {
@@ -5853,7 +5888,7 @@ button {
   font-size: clamp(2.8rem, 5vw, 5.4rem);
   font-variation-settings: "opsz" 72, "SOFT" 30;
   font-weight: 360;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.025em;
   line-height: 0.95;
   text-wrap: balance;
 }
@@ -5925,7 +5960,7 @@ button {
   font-size: clamp(3rem, 6vw, 6.6rem);
   font-variation-settings: "opsz" 80, "SOFT" 35;
   font-weight: 350;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.025em;
   line-height: 0.9;
 }
 
@@ -5951,8 +5986,8 @@ button {
   font-family: var(--rz-font-archive);
   font-size: clamp(3.5rem, 7vw, 7.4rem);
   font-weight: 320;
-  letter-spacing: -0.075em;
-  line-height: 0.85;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
 }
 
 .atlas-nyc-impact-stats span {
@@ -6131,8 +6166,8 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(3.6rem, 9vw, 8.5rem);
   font-weight: 350;
-  letter-spacing: -0.065em;
-  line-height: 0.8;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
 }
 
 .atlas-submission-card {
@@ -6245,8 +6280,8 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(3.4rem, 7vw, 7.8rem);
   font-weight: 360;
-  letter-spacing: -0.065em;
-  line-height: 0.82;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
 }
 
 .atlas-catalog-heading-copy {
@@ -7119,8 +7154,8 @@ button {
   font-family: var(--rz-font-display);
   font-size: 2.9rem;
   font-weight: 360;
-  letter-spacing: -0.06em;
-  line-height: 0.8;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
 }
 
 .atlas-catalog-inspector-heading p,
@@ -7512,15 +7547,15 @@ button {
 .archive-hero {
   display: grid;
   grid-template-columns: minmax(28rem, 0.82fr) minmax(34rem, 1.18fr);
-  min-height: clamp(35rem, calc(100svh - 12.5rem), 52rem);
+  min-height: clamp(44rem, calc(100svh - 5rem), 57rem);
 }
 
 .archive-hero-copy {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-rows: auto auto minmax(16rem, 1fr) auto;
+  gap: clamp(0.5rem, 1.25vh, 1rem);
   min-width: 0;
-  flex-direction: column;
-  justify-content: space-between;
   padding: clamp(2rem, 4vw, 4.5rem) var(--atlas-gutter) 2rem;
   border-right: 1px solid var(--rz-wheat);
   background: color-mix(in srgb, var(--rz-cream) 88%, var(--rz-white));
@@ -7549,17 +7584,23 @@ button {
 
 .archive-hero-message {
   max-width: 39rem;
-  padding-block: clamp(4rem, 11vh, 8rem);
+  padding-block: clamp(2.25rem, 4.8vh, 4.25rem);
 }
 
+/*
+ * Tracking was -0.074em with line-height 0.88, which closed the word space in
+ * "The photo" to nothing and clipped the descender on "gallery." Fraunces is
+ * already a tight face at display optical size; -0.022em is as far as it goes
+ * before words start touching.
+ */
 .archive-hero-message h1 {
-  max-width: 9ch;
+  max-width: 11ch;
   margin: 1.1rem 0 0;
   font-family: var(--rz-font-display);
-  font-size: clamp(3.65rem, 6.25vw, 7.65rem);
+  font-size: clamp(3.35rem, 5.3vw, 6.2rem);
   font-weight: 430;
-  letter-spacing: -0.074em;
-  line-height: 0.88;
+  letter-spacing: -0.022em;
+  line-height: 1;
   text-wrap: balance;
 }
 
@@ -7625,6 +7666,150 @@ button {
   border-top: 1px solid var(--rz-wheat);
 }
 
+/*
+ * The front door's signature is a working archive index, not an ornamental
+ * dial: each point on the ring opens one of the five things guests come back
+ * to do. The center holds the collection identity while the photograph stays
+ * visually dominant in the adjacent column.
+ */
+.archive-radial-index {
+  position: relative;
+  width: min(100%, 31rem);
+  min-height: 17.5rem;
+  align-self: stretch;
+  justify-self: center;
+  isolation: isolate;
+}
+
+.archive-radial-index::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0.75rem 3.3rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--rz-tan) 43%, transparent);
+  border-radius: 50%;
+  content: "";
+}
+
+.archive-radial-index::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(var(--rz-wheat), var(--rz-wheat)) center top / 1px 1.45rem no-repeat,
+    linear-gradient(var(--rz-wheat), var(--rz-wheat)) center bottom / 1px 1.45rem no-repeat,
+    linear-gradient(90deg, var(--rz-wheat), var(--rz-wheat)) left center / 1.45rem 1px no-repeat,
+    linear-gradient(90deg, var(--rz-wheat), var(--rz-wheat)) right center / 1.45rem 1px no-repeat;
+  content: "";
+  pointer-events: none;
+}
+
+.archive-radial-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  min-width: 6rem;
+  place-items: center;
+  gap: 0.25rem;
+  padding: 0.8rem;
+  background: color-mix(in srgb, var(--rz-cream) 91%, var(--rz-white));
+  transform: translate(-50%, -50%);
+}
+
+.archive-radial-center span {
+  color: var(--rz-coral);
+  font-family: var(--rz-font-archive);
+  font-size: 0.61rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.archive-radial-center strong {
+  font-family: var(--rz-font-display);
+  font-size: 2.1rem;
+  font-weight: 430;
+  letter-spacing: -0.025em;
+  line-height: 0.9;
+}
+
+.archive-radial-index ol {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archive-radial-index li {
+  position: absolute;
+}
+
+.archive-radial-index li:nth-child(1) {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+.archive-radial-index li:nth-child(2) {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.archive-radial-index li:nth-child(3) {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.archive-radial-index li:nth-child(4) {
+  right: 10%;
+  bottom: 0;
+}
+
+.archive-radial-index li:nth-child(5) {
+  bottom: 0;
+  left: 10%;
+}
+
+.archive-radial-index a {
+  display: grid;
+  min-width: 6.8rem;
+  min-height: 4.8rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  background: color-mix(in srgb, var(--rz-cream) 91%, var(--rz-white));
+  color: var(--rz-ink);
+  text-align: center;
+  text-decoration: none;
+  transition: color var(--rz-dur-fast) var(--rz-ease-out);
+}
+
+.archive-radial-index a:hover,
+.archive-radial-index a:focus-visible {
+  color: var(--rz-coral);
+}
+
+.archive-radial-index a > span {
+  color: var(--rz-tan-text);
+  font-family: var(--rz-font-archive);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.archive-radial-index a strong {
+  font-size: 0.69rem;
+  font-weight: 610;
+}
+
+.archive-radial-index li:first-child a {
+  color: var(--rz-coral);
+}
+
 .archive-hero-media {
   position: relative;
   min-width: 0;
@@ -7643,7 +7828,7 @@ button {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: clamp(35rem, calc(100svh - 12.5rem), 52rem);
+  min-height: clamp(44rem, calc(100svh - 5rem), 57rem);
   object-fit: cover;
   animation: atlas-image-arrive 1.2s var(--rz-ease-out) both;
 }
@@ -7663,60 +7848,6 @@ button {
   backdrop-filter: blur(14px);
 }
 
-.archive-action-rail {
-  overflow: hidden;
-  background: var(--rz-cream);
-}
-
-.archive-action-rail ol {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.archive-action-rail li + li {
-  border-left: 1px solid var(--rz-wheat);
-}
-
-.archive-action-rail a {
-  position: relative;
-  display: grid;
-  min-height: 7.4rem;
-  place-items: center;
-  align-content: center;
-  gap: 0.62rem;
-  color: var(--rz-ink);
-  text-decoration: none;
-  transition:
-    background var(--rz-dur-med) var(--rz-ease-out),
-    color var(--rz-dur-med) var(--rz-ease-out);
-}
-
-.archive-action-rail a:hover {
-  background: var(--rz-sand);
-}
-
-.archive-action-rail li:first-child a {
-  color: var(--rz-coral);
-}
-
-.archive-action-number {
-  position: absolute;
-  top: 0.85rem;
-  left: 1rem;
-  color: var(--rz-tan-text);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.archive-action-rail strong {
-  font-size: 0.8rem;
-  font-weight: 560;
-}
-
 .archive-utility {
   width: min(100%, var(--atlas-max));
   margin: 0 auto;
@@ -7732,13 +7863,13 @@ button {
 
 .archive-utility-heading h2,
 .archive-forward-heading h2 {
-  max-width: 11ch;
+  max-width: 14ch;
   margin: 1rem 0 0;
   font-family: var(--rz-font-display);
-  font-size: clamp(3rem, 5.6vw, 6.5rem);
+  font-size: clamp(2.75rem, 4.8vw, 5.4rem);
   font-weight: 430;
-  letter-spacing: -0.065em;
-  line-height: 0.94;
+  letter-spacing: -0.022em;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
@@ -7789,8 +7920,8 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(1.25rem, 1.8vw, 1.7rem);
   font-weight: 520;
-  letter-spacing: -0.035em;
-  line-height: 1.15;
+  letter-spacing: -0.014em;
+  line-height: 1.2;
 }
 
 .archive-utility-row p {
@@ -7908,7 +8039,7 @@ button {
 }
 
 .archive-forward-heading h2 {
-  font-size: clamp(2.8rem, 4.8vw, 5.5rem);
+  font-size: clamp(2.6rem, 4.1vw, 4.6rem);
 }
 
 .archive-forward-heading > p:last-child {
@@ -7941,8 +8072,8 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(1.65rem, 2.4vw, 2.5rem);
   font-weight: 470;
-  letter-spacing: -0.045em;
-  line-height: 1.03;
+  letter-spacing: -0.018em;
+  line-height: 1.12;
 }
 
 .archive-forward-links p {
@@ -7969,8 +8100,8 @@ button {
   max-width: 9ch;
   font-size: clamp(3.9rem, 8.2vw, 8.4rem);
   font-weight: 430;
-  letter-spacing: -0.07em;
-  line-height: 0.88;
+  letter-spacing: -0.025em;
+  line-height: 0.96;
   text-wrap: balance;
 }
 
@@ -7987,14 +8118,14 @@ button {
   font-size: clamp(2.8rem, 6vw, 6.5rem);
   font-style: normal;
   font-weight: 440;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.025em;
 }
 
 /* The rebuilt shell keeps the espresso footer from the base layer. */
 .atlas-footer-names {
   font-size: clamp(2rem, 3.7vw, 4rem);
   font-weight: 440;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.025em;
 }
 
 .atlas-footer-love {
@@ -8125,7 +8256,8 @@ button {
   }
 
   .archive-hero-copy {
-    min-height: 38rem;
+    grid-template-rows: auto auto auto auto;
+    min-height: auto;
     border-right: 0;
     border-top: 1px solid var(--rz-wheat);
     padding-top: 2rem;
@@ -8140,29 +8272,64 @@ button {
     min-height: min(84svh, 46rem);
   }
 
-  .archive-action-rail {
-    overflow-x: auto;
-    scrollbar-width: thin;
+  .archive-radial-index {
+    width: 100%;
+    min-height: 0;
+    margin: 0 0 2rem;
+    border-top: 1px solid var(--rz-wheat);
   }
 
-  /*
-   * 8.3rem fitted exactly three cards edge to edge on a 390px phone, so
-   * "Save originals" and "Add photos" sat off-screen with nothing to say so:
-   * the rail scrolls, but iOS hides the scrollbar until you already scroll.
-   * 7.4rem leaves a third of the fourth card visible, which is the
-   * affordance -- a clipped card reads as "there is more" without adding a
-   * single pixel of chrome.
-   */
-  .archive-action-rail ol {
-    grid-auto-columns: minmax(7.4rem, 1fr);
-    grid-auto-flow: column;
-    grid-template-columns: none;
-    width: max-content;
-    min-width: 100%;
+  .archive-radial-index::before,
+  .archive-radial-index::after {
+    display: none;
   }
 
-  .archive-action-rail a {
-    min-height: 6.8rem;
+  .archive-radial-center {
+    position: static;
+    display: flex;
+    min-width: 0;
+    justify-content: space-between;
+    padding: 1rem 0;
+    background: transparent;
+    transform: none;
+  }
+
+  .archive-radial-center strong {
+    font-family: var(--rz-font-archive);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .archive-radial-index ol {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--rz-wheat);
+    border-left: 1px solid var(--rz-wheat);
+  }
+
+  .archive-radial-index li,
+  .archive-radial-index li:nth-child(n) {
+    position: static;
+    border-right: 1px solid var(--rz-wheat);
+    border-bottom: 1px solid var(--rz-wheat);
+    transform: none;
+  }
+
+  .archive-radial-index li:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .archive-radial-index a {
+    min-width: 0;
+    min-height: 5.2rem;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    justify-items: start;
+    gap: 0.7rem;
+    padding: 0.8rem;
+    background: transparent;
+    text-align: left;
   }
 
   .archive-utility-heading,
@@ -8234,10 +8401,6 @@ button {
   .archive-hero-media img {
     min-height: 116vw;
     max-height: 41rem;
-  }
-
-  .archive-action-rail a {
-    min-height: 6.25rem;
   }
 
   .archive-utility {
@@ -8916,7 +9079,7 @@ button {
   font-family: var(--rz-font-display);
   font-size: clamp(2.5rem, 5vw, 5rem);
   font-weight: 330;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
   line-height: 1;
 }
 
@@ -8989,7 +9152,7 @@ button {
   font-size: clamp(2.2rem, 4vw, 4.2rem);
   font-variation-settings: "opsz" 72, "SOFT" 30;
   font-weight: 360;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
   line-height: 0.98;
   text-wrap: balance;
 }
@@ -9365,7 +9528,7 @@ button {
   font-size: clamp(2.2rem, 4vw, 4.2rem);
   font-variation-settings: "opsz" 72, "SOFT" 30;
   font-weight: 360;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.025em;
   line-height: 0.98;
   text-wrap: balance;
 }
@@ -9467,6 +9630,15 @@ button {
  * route.
  * ========================================================================== */
 @media (pointer: coarse) {
+  /*
+   * The homepage marquee's pause control ships at 2rem for the mouse, where
+   * it sits as quiet chrome beside the label. On a touch device that is 32px
+   * and under the floor, and it is the only motion control a guest has.
+   */
+  .atlas-marquee-toggle {
+    min-height: 2.75rem;
+  }
+
   .atlas-lightbox-arrow {
     width: 2.75rem;
     height: 3.5rem;

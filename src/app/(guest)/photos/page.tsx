@@ -39,7 +39,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "The Archive | Rach & Zach",
+  title: "All Photos | Rach & Zach",
   description: "Search, select, download, and save the original photos.",
 };
 
@@ -327,7 +327,7 @@ async function renderBrowseLanding(
   return (
     <section className="atlas-guest-page atlas-photos-page">
       <header className="atlas-page-bar">
-        <h1>The archive</h1>
+        <h1>All photos</h1>
         <p className="atlas-page-bar-count">
           <strong>{totalPhotos.toLocaleString()}</strong>
           {totalPhotos === 1 ? " photo" : " photos"}
@@ -398,7 +398,7 @@ export default async function PhotosPage({
   return (
     <section className="atlas-guest-page atlas-photos-page">
       <GalleryShell
-        heading="The archive"
+        heading="All photos"
         initialPage={initialPage}
         facets={surfaceGalleryFacets(facets, overrides)}
         initialFilters={filterStateFromParams(params)}

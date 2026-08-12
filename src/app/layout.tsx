@@ -7,9 +7,9 @@ import { archiveFont, bodyFont, displayFont } from "@/components/brand/Wordmark"
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Private Photo Archive | Rach & Zach",
+  title: "Rachel & Zach · Santa Barbara",
   description:
-    "Find, favorite, download, and save photos from Rachel and Zach's private archive.",
+    "Find, favorite, download, and save the photos from Rachel and Zach's wedding weekend.",
 };
 
 export const viewport: Viewport = {

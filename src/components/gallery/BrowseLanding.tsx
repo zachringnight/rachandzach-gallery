@@ -82,7 +82,7 @@ export function BrowseLanding({
 }: BrowseLandingProps) {
   return (
     <div className="atlas-browse">
-      <nav className="atlas-browse-doors" aria-label="Ways into the archive">
+      <nav className="atlas-browse-doors" aria-label="Ways to browse">
         <Link
           href="/my-weekend"
           className="atlas-browse-door atlas-browse-door-people"
@@ -142,8 +142,8 @@ export function BrowseLanding({
             Or open all {totalPhotos.toLocaleString()}.
           </span>
           <span className="atlas-browse-door-body">
-            The whole archive in one grid, with search, filters, favorites,
-            and original downloads. It is a long scroll on purpose.
+            Every photo in one grid, with search, filters, favorites, and
+            original downloads. It is a long scroll on purpose.
           </span>
           <span className="atlas-browse-door-meta">
             Photographer and guest photos

@@ -11,14 +11,14 @@ export default function NotFound() {
           This page is out of frame.
         </h1>
         <p className="mt-5 font-body text-base leading-relaxed text-ink">
-          Return to the archive home or open the photos.
+          Head back to the home page, or go straight to the photos.
         </p>
         <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/"
             className="inline-flex min-h-12 items-center justify-center rounded-[2px] bg-ink px-7 font-body text-sm font-medium text-cream hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
           >
-            Archive home
+            Home
           </Link>
           <Link
             href="/photos"

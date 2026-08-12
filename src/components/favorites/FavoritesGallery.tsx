@@ -292,7 +292,7 @@ export function FavoritesGallery() {
                 <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.5} />
               </Link>
               <Link href="/photos" className="archive-outline-link">
-                Open the archive
+                Browse all photos
                 <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.5} />
               </Link>
             </div>

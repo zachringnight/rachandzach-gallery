@@ -29,20 +29,20 @@ describe("public route titles", () => {
 });
 
 describe("home page", () => {
-  it("leads with the private archive promise and both primary actions", () => {
+  it("leads with the gallery promise and both primary actions", () => {
     render(<HomePage />);
     expect(
       screen.getByRole("heading", { level: 1, name: /the photo gallery/i }),
     ).toBeDefined();
     const findPhotos = screen.getByRole("link", { name: /^find my photos$/i });
     expect(findPhotos.getAttribute("href")).toBe("/my-weekend");
-    const openArchive = screen.getByRole("link", { name: /open the archive/i });
-    expect(openArchive.getAttribute("href")).toBe("/photos");
+    const browseAll = screen.getByRole("link", { name: /browse all photos/i });
+    expect(browseAll.getAttribute("href")).toBe("/photos");
   });
 
-  it("replaces the recap with archive utilities", () => {
+  it("replaces the recap with the utility rows", () => {
     const { container } = render(<HomePage />);
-    expect(screen.getByRole("heading", { name: /a private archive that works for you/i }))
+    expect(screen.getByRole("heading", { name: /everything from the weekend, in one place/i }))
       .toBeDefined();
     expect(screen.getByRole("heading", { name: /take the originals with you/i }))
       .toBeDefined();
@@ -202,10 +202,10 @@ describe("robots and sitemap", () => {
 });
 
 describe("not-found page", () => {
-  it("routes back to the working archive", () => {
+  it("routes back to the working site", () => {
     render(<NotFound />);
     expect(screen.getByRole("heading", { name: /out of frame/i })).toBeDefined();
-    const home = screen.getByRole("link", { name: /archive home/i });
+    const home = screen.getByRole("link", { name: /^home$/i });
     expect(home.getAttribute("href")).toBe("/");
   });
 });

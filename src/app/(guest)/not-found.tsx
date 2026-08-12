@@ -17,7 +17,7 @@ export default function GuestNotFound() {
       </h1>
       <p className="mt-5 font-body text-base leading-relaxed text-ink">
         A typed name has to match exactly. Your photos are still here: find
-        yourself by name, or open the full archive.
+        yourself by name, or browse all of them.
       </p>
       <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <Link
@@ -30,7 +30,7 @@ export default function GuestNotFound() {
           href="/photos"
           className="inline-flex min-h-12 items-center justify-center rounded-[2px] border border-ink px-7 font-body text-sm font-medium text-ink hover:bg-sand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
         >
-          Open the archive
+          Browse all photos
         </Link>
       </div>
     </section>

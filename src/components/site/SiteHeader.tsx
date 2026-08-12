@@ -28,7 +28,7 @@ export function SiteHeader() {
           <BrandMark size={20} alt="0719 + co. home" />
           <span aria-hidden="true" className="atlas-header-place">
             <i />
-            Private archive
+            Santa Barbara
           </span>
         </Link>
 

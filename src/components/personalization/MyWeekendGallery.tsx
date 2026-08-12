@@ -250,7 +250,7 @@ export function MyWeekendGallery({
       ) : null}
       {state === "empty" ? (
         <p className="atlas-personal-state">
-          No confirmed photos of {personName} are in the archive yet. Check back
+          No confirmed photos of {personName} yet. Check back
           as more photos are tagged.
         </p>
       ) : null}

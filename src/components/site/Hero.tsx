@@ -23,7 +23,7 @@ const archiveActions = [
     number: "02",
     label: "Search",
     href: "/photos",
-    accessibleLabel: "Search the full photo archive",
+    accessibleLabel: "Search all the photos",
     icon: Search,
   },
   {
@@ -37,21 +37,21 @@ const archiveActions = [
     number: "04",
     label: "Save originals",
     href: "/photos",
-    accessibleLabel: "Open photos to download or save originals",
+    accessibleLabel: "Download or save the original photos",
     icon: CloudDownload,
   },
   {
     number: "05",
     label: "Add photos",
     href: "/add-yours",
-    accessibleLabel: "Contribute your photos",
+    accessibleLabel: "Add your own photos",
     icon: Upload,
   },
 ] as const;
 
 /**
- * The archive's working front door: one photograph, one promise, and the
- * five actions guests return for. No event recap is required before use.
+ * The site's working front door: one photograph, one promise, and the five
+ * actions guests return for. No event recap is required before use.
  */
 export function Hero() {
   const photo = storyPhotos.hero;
@@ -61,8 +61,8 @@ export function Hero() {
       <section className="archive-hero" aria-labelledby="archive-title">
         <div className="archive-hero-copy">
           <div className="archive-hero-index" aria-hidden="true">
-            <span>ARCHIVE</span>
-            <span>0719</span>
+            <span>Santa Barbara</span>
+            <span>July 19, 2025</span>
           </div>
 
           <div className="archive-hero-message">
@@ -75,15 +75,36 @@ export function Hero() {
                 <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.5} />
               </Link>
               <Link href="/photos" className="archive-outline-link">
-                Open the archive
+                Browse all photos
                 <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.5} />
               </Link>
             </div>
           </div>
 
+          <nav className="archive-radial-index" aria-label="Photo shortcuts">
+            <div className="archive-radial-center" aria-hidden="true">
+              <span>Start here</span>
+              <strong>0719</strong>
+            </div>
+            <ol>
+              {archiveActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <li key={action.number}>
+                    <Link href={action.href} aria-label={action.accessibleLabel}>
+                      <span>{action.number}</span>
+                      <Icon aria-hidden="true" size={22} strokeWidth={1.25} />
+                      <strong>{action.label}</strong>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+
           <div className="archive-hero-note">
             <span>Private to invited guests</span>
-            <span>Santa Barbara · 0719</span>
+            <span>Yours to download</span>
           </div>
         </div>
 
@@ -110,23 +131,6 @@ export function Hero() {
           </figcaption>
         </figure>
       </section>
-
-      <nav className="archive-action-rail" aria-label="Archive shortcuts">
-        <ol>
-          {archiveActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <li key={action.number}>
-                <Link href={action.href} aria-label={action.accessibleLabel}>
-                  <span className="archive-action-number">{action.number}</span>
-                  <Icon aria-hidden="true" size={25} strokeWidth={1.25} />
-                  <strong>{action.label}</strong>
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
     </div>
   );
 }
