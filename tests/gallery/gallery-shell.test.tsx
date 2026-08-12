@@ -54,6 +54,20 @@ vi.mock("@/components/gallery/VirtualPhotoGrid", () => ({
   },
 }));
 
+vi.mock("@/components/gallery/Lightbox", () => ({
+  Lightbox: ({
+    onMomentSearchNavigate,
+  }: {
+    onMomentSearchNavigate?: () => void;
+  }) => (
+    <div role="dialog" aria-label="Photo viewer">
+      <button type="button" onClick={onMomentSearchNavigate}>
+        Search this keyword
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock("@/components/gallery/useSelection", () => ({
   useSelection: () => ({
     selecting: false,
@@ -226,5 +240,50 @@ describe("GalleryShell filter commits", () => {
       />,
     );
     expect(screen.queryByTestId("moment-panel")).toBeNull();
+  });
+
+  it("closes a preserved gallery lightbox before a keyword opens Moment Search", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ results: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pageWithPhoto = {
+      ...initialPage,
+      photos: [photo],
+      total: 1,
+    };
+    const view = render(
+      <GalleryShell
+        initialPage={pageWithPhoto}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={photo.id}
+        initialMomentQuery=""
+      />,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Photo viewer" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Search this keyword" }));
+    expect(screen.queryByRole("dialog", { name: "Photo viewer" })).toBeNull();
+
+    view.rerender(
+      <GalleryShell
+        initialPage={pageWithPhoto}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery="ceremony"
+      />,
+    );
+
+    expect(screen.getByTestId("moment-panel")).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/search?q=ceremony");
+    });
+    expect(screen.queryByRole("dialog", { name: "Photo viewer" })).toBeNull();
   });
 });

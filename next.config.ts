@@ -7,7 +7,7 @@ const onnxRuntimeTarget = `${process.platform}/${process.arch}`;
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   turbopack: {
-    root: process.cwd()
+    root: process.cwd(),
   },
   // onnxruntime-node resolves its native binding dynamically. Next's normal
   // file trace found the .node binding but omitted the adjacent shared
@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "/api/search": [
       "./node_modules/@huggingface/transformers/.cache/**/*",
-    ]
+    ],
   },
   // Security headers for every response, including the static assets the
   // proxy matcher skips. proxy.ts applies the identical set to proxied

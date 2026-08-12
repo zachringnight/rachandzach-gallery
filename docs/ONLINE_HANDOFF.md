@@ -24,7 +24,7 @@ the pre-launch history and are not operational instructions.
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | Local branch `codex/gallery-review-improvements`: Moment Search deep-link lifecycle repair, import-level fail-soft containment, portable runtime-trace assertion, and regression coverage. Local only; not pushed, previewed, or deployed. |
+| Current unmerged app work | Ready-for-review PR [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) from `codex/gallery-review-improvements`: Moment Search deep-link lifecycle repair, Lightbox keyword-navigation closure, import-level fail-soft containment, portable runtime-trace assertion, and regression coverage. Unmerged and not deployed to Production. |
 
 Production aliases are active for:
 
@@ -99,17 +99,20 @@ homepage returns `200` and `people dancing` returns three explicit
 `matchType: embedding` results with nonzero similarities. The post-smoke
 Production error-log query returned no runtime errors.
 
-### Moment Search deep-link and fail-soft hardening (local, unshipped, 2026-08-12)
+### Moment Search deep-link and fail-soft hardening (PR #30, unshipped, 2026-08-12)
 
 The shipped runtime repair restored semantic API responses, but two lifecycle
 paths remained broken. A direct `/photos?q=...` request server-rendered the
 Moment disclosure closed and recovered after hydration with React error 418;
 a same-route link from `/photos` updated the URL but left the disclosure closed
-and never mounted the search. The local branch now normalizes `q` on the
+and never mounted the search. The PR branch now normalizes `q` on the
 server, passes it through `PhotosPage` -> `GalleryShell` -> `FilterBar` and
 `MomentSearch`, and models the mutually exclusive Filters/Moments disclosure
 against the current query version. Only `MomentSearch` remounts when that query
-changes, so unrelated gallery-control state is not discarded.
+changes, so unrelated gallery-control state is not discarded. Review also
+found that a keyword link opened results behind a preserved gallery Lightbox;
+the Link now clears that viewer state without racing its route transition
+against `history.back()`.
 
 The branch also moves evaluation of `query-embedding` inside the existing
 embedding fallback boundary. A native encoder import failure therefore cannot
@@ -119,14 +122,15 @@ model cache is excluded, Node is pinned to the deployed `24.x` major, and a
 post-build assertion now checks that the native binding and adjacent shared
 library are present without bundling a local model.
 
-Safe-point verification is green: 71 focused Vitest checks, typecheck, Vercel
+Safe-point verification is green: 82 focused Vitest checks, typecheck, Vercel
 configuration validation, lint with zero errors and 19 existing warnings,
 `git diff --check`, and local browser checks at desktop and 390px. The real
 `/photos` -> `sunset kiss` link returned 24 embedding matches; a direct reload
-kept the disclosure open with no hydration or console errors. The full build,
-runtime-trace assertion, complete `npm run verify`, Preview, and Production
-readback remain required before release. Nothing in this branch has been
-pushed or deployed.
+kept the disclosure open with no hydration or console errors. PR #30's initial
+head `185bbb6` passed the complete GitHub `npm run verify` check and produced a
+`READY` Vercel Preview. The review-fix head must retain both green gates before
+merge; stable-domain Production readback remains required after release. The
+PR is not merged or deployed to Production.
 
 ## Verification evidence
 

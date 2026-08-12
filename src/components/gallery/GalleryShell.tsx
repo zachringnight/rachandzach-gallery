@@ -426,6 +426,12 @@ export function GalleryShell({
       setActivePhotoId(null);
     }
   }, [activePhotoId, filters]);
+  const closePhotoForMomentSearch = useCallback(() => {
+    // The keyword Link owns the next history entry. Clear only the preserved
+    // client state here; calling closePhoto() would race that navigation with
+    // history.back() and return to the still-open `?photo=` entry.
+    setActivePhotoId(null);
+  }, []);
   const selectPhoto = useCallback(
     (photoId: string) => {
       window.history.replaceState({}, "", pageUrl(filters, photoId));
@@ -651,6 +657,7 @@ export function GalleryShell({
         <Lightbox
           photo={activePhoto}
           onClose={closePhoto}
+          onMomentSearchNavigate={closePhotoForMomentSearch}
           position={activeIndex + 1}
           total={total}
           filmstrip={{ photos, onSelect: selectPhoto }}

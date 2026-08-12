@@ -6,6 +6,28 @@ import { Lightbox, setAvifSupportForTests } from "@/components/gallery/Lightbox"
 import { PhotoCard } from "@/components/gallery/PhotoCard";
 import type { ClientPhoto } from "@/lib/gallery/client-types";
 
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    onNavigate,
+  }: {
+    children: ReactNode;
+    href: string;
+    onNavigate?: () => void;
+  }) => (
+    <a
+      href={href}
+      onClick={(event) => {
+        event.preventDefault();
+        onNavigate?.();
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock("@/components/downloads/DownloadOriginalButton", () => ({
   DownloadOriginalButton: ({
     children,
@@ -165,10 +187,12 @@ describe("photo surfaces", () => {
     // /photos reads plain "q" as the Moment Search seed and runs it on load;
     // /my-weekend renders its search panel below the guest's whole gallery
     // with no scroll-to, so a chip pointed there appeared to do nothing.
+    const onMomentSearchNavigate = vi.fn();
     render(
       <Lightbox
         photo={{ ...photo("keyworded"), keywords: ["sunset kiss"] }}
         onClose={vi.fn()}
+        onMomentSearchNavigate={onMomentSearchNavigate}
       />,
     );
 
@@ -176,6 +200,8 @@ describe("photo surfaces", () => {
     expect(chip.getAttribute("href")).toBe(
       `/photos?q=${encodeURIComponent("sunset kiss")}`,
     );
+    fireEvent.click(chip);
+    expect(onMomentSearchNavigate).toHaveBeenCalledTimes(1);
   });
 
   it("pages on a horizontal touch swipe and ignores vertical or mouse drags", () => {

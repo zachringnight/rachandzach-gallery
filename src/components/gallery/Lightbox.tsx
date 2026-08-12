@@ -39,6 +39,8 @@ export interface LightboxFilmstrip {
 export interface LightboxProps {
   photo: ClientPhoto;
   onClose: () => void;
+  /** Close an owning same-route viewer before a keyword opens Moment Search. */
+  onMomentSearchNavigate?: () => void;
   onPrev?: () => void;
   onNext?: () => void;
   previousPhoto?: ClientPhoto;
@@ -194,6 +196,7 @@ function smallestPreview(photo: ClientPhoto) {
 export function Lightbox({
   photo,
   onClose,
+  onMomentSearchNavigate,
   onPrev,
   onNext,
   previousPhoto,
@@ -716,7 +719,10 @@ export function Lightbox({
             {photo.keywords.map((keyword) => (
               <li key={keyword}>
                 {featureFlags.momentSearch ? (
-                  <Link href={`/photos?q=${encodeURIComponent(keyword)}`}>
+                  <Link
+                    href={`/photos?q=${encodeURIComponent(keyword)}`}
+                    onNavigate={onMomentSearchNavigate}
+                  >
                     {keyword}
                   </Link>
                 ) : (
