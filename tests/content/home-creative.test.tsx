@@ -59,8 +59,10 @@ describe("homepage photo drift", () => {
 
     await user.click(button);
     expect(screen.getByRole("button", { name: "Play" })).toBe(button);
-    expect(button.getAttribute("aria-pressed")).toBe("true");
     expect(region.getAttribute("data-paused")).toBe("true");
+    // The changing name is the state. aria-pressed on top of it would
+    // announce "Play, pressed" while playback is stopped.
+    expect(button.hasAttribute("aria-pressed")).toBe(false);
 
     await user.click(button);
     expect(screen.getByRole("button", { name: "Pause" })).toBe(button);

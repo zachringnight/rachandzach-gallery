@@ -41,10 +41,17 @@ export function PhotoMarquee({ photos }: PhotoMarqueeProps) {
     >
       <div className="atlas-marquee-label">
         <span>A few from the weekend</span>
+        {/*
+          * No aria-pressed. This is an action button whose name changes with
+          * state ("Pause" while drifting, "Play" while stopped), the same
+          * pattern every media player uses. Pairing a changing name with
+          * aria-pressed announces "Play, pressed" the moment playback stops,
+          * which states the opposite of what is true. The name carries the
+          * state on its own.
+          */}
         <button
           type="button"
           className="atlas-marquee-toggle"
-          aria-pressed={motionPaused}
           disabled={prefersReducedMotion}
           onClick={() => setPaused((current) => !current)}
           title={prefersReducedMotion ? "Motion is off in your device settings" : undefined}
