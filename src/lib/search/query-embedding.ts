@@ -26,8 +26,12 @@ import "server-only";
 import {
   AutoTokenizer,
   CLIPTextModelWithProjection,
+  env,
   type PreTrainedTokenizer,
 } from "@huggingface/transformers";
+import { configureTransformersEnvironment } from "./transformers-environment";
+
+configureTransformersEnvironment(env);
 
 export const QUERY_EMBEDDING_MODEL_ID = "Xenova/clip-vit-base-patch32";
 export const QUERY_EMBEDDING_MODEL_REVISION =

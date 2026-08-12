@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-08-11 (PDT).
+Updated 2026-08-12 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -19,11 +19,11 @@ the pre-launch history and are not operational instructions.
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `f4f1090` -- in-gallery people tagging, automatic Preview builds for every non-`main` branch, and immutable caching for all public story images ([#23](https://github.com/zachringnight/rachandzach-gallery/pull/23), merged 2026-08-10). Preceding: [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22) reviewed face naming and durable metadata reconciliation, [#21](https://github.com/zachringnight/rachandzach-gallery/pull/21) public archive, [#20](https://github.com/zachringnight/rachandzach-gallery/pull/20) documentation corrections |
+| Latest release | `de7a1bf` -- creative-library upgrade and guest-copy cleanup ([#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), merged 2026-08-11). Preceding: `f4f1090` in-gallery people tagging and immutable public-story caching ([#23](https://github.com/zachringnight/rachandzach-gallery/pull/23), merged 2026-08-10) |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | PR [#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), branch `codex/creative-library-upgrade`, open and not deployed. It adds the homepage radial shortcut index and a user-visible pause control for the photo marquee, then strips the build-time "archive" vocabulary out of every guest-facing string and fixes the display typography (Fraunces' `WONK` axis dropped, heading tracking clamped to -0.025em, sub-0.9 line-heights raised) so headlines stop colliding. `npm run verify` passed locally: 1,134 Vitest tests with 17 documented skips, 182 E2E tests across all four Playwright projects with 106 documented skips, and 16 regenerated visual baselines. PR [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26) is merged in `main` at `2f7a517`. |
+| Current unmerged app work | PR [#28](https://github.com/zachringnight/rachandzach-gallery/pull/28), branch `codex/gallery-search-runtime-fix`, repairs Moment Search's Vercel runtime and adds privacy-safe structured stage logging. Exact Preview evidence is recorded below. |
 
 Production aliases are active for:
 
@@ -63,6 +63,34 @@ The production release includes:
 Photo-overlay labels were removed. The existing photo memories wall remains
 complete. `tsconfig.tsbuildinfo` was deleted from source control and
 `*.tsbuildinfo` is ignored when TypeScript regenerates its incremental cache.
+
+### Moment Search runtime repair (release candidate, 2026-08-12)
+
+Production's generic `/api/search` 500 was traced in a logging-only Preview to
+the missing Linux `libonnxruntime.so.1` dependency while importing
+`@huggingface/transformers`. PR #28 now traces both the native ONNX binding and
+its adjacent shared library into the search function. A second Preview then
+showed the model trying to create its default cache below read-only
+`/var/task/node_modules`; the current head redirects only Vercel's model cache
+to `/tmp/rachandzach-transformers-cache` and disables the inapplicable browser
+cache for this Node runtime.
+
+The route logs request, fallback stage, completion, deployment ID, commit SHA,
+duration, and embedding/keyword result counts without logging the query. The
+exact head `f005843645fff6e87c2dd9e5094a2272ab20edd7` is `READY` in Preview as
+deployment `dpl_9vxEZidmAsXf74sLjNJMgmHGKyGL`. Direct API checks returned:
+
+- `people dancing`: three results, all `matchType: embedding`, 7.5-second cold
+  request
+- `sunset portrait`: one `embedding` result
+- `champagne toast`: one `embedding` result, 1.5-second warm request
+
+The full local gate passed: Vercel config validation, typecheck, lint with zero
+errors and 18 existing warnings, 1,141 Vitest tests with 17 documented skips,
+production build, and 46 Chromium tests with 26 documented live-database
+skips. Production remains on the older broken search build until PR #28 merges;
+replace this release-candidate note with the exact Production deployment and
+stable-domain readback after promotion.
 
 ## Verification evidence
 
