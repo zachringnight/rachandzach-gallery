@@ -6,23 +6,26 @@ const onnxRuntimeTarget = `${process.platform}/${process.arch}`;
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  // onnxruntime-node loads its platform shared library from a computed path,
-  // which static output tracing can miss even when it finds the native
-  // binding. Keep the complete matching runtime directory with /api/search.
+  turbopack: {
+    root: process.cwd()
+  },
+  // onnxruntime-node resolves its native binding dynamically. Next's normal
+  // file trace found the .node binding but omitted the adjacent shared
+  // library, so Vercel failed to import @huggingface/transformers at runtime
+  // with `libonnxruntime.so.1: cannot open shared object file`. Keep this
+  // scoped to Moment Search and the current build target so no unrelated
+  // function or foreign platform runtime carries the native payload.
   outputFileTracingIncludes: {
     "/api/search": [
-      `node_modules/onnxruntime-node/bin/napi-v6/${onnxRuntimeTarget}/**/*`,
+      `./node_modules/onnxruntime-node/bin/napi-v6/${onnxRuntimeTarget}/**/*`,
     ],
   },
   // A developer's prewarmed fp32 model cache is local state, not a deploy
-  // artifact. Production fetches it into its writable /tmp cache instead.
+  // artifact. Production fetches the model into its writable /tmp cache.
   outputFileTracingExcludes: {
     "/api/search": [
-      "node_modules/@huggingface/transformers/.cache/**/*",
-    ],
-  },
-  turbopack: {
-    root: process.cwd()
+      "./node_modules/@huggingface/transformers/.cache/**/*",
+    ]
   },
   // Security headers for every response, including the static assets the
   // proxy matcher skips. proxy.ts applies the identical set to proxied

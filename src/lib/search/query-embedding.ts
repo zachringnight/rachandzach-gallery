@@ -1,6 +1,4 @@
 import "server-only";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 
 /**
  * Query-text embedding for Moment Search (packet 07). Runs in a Vercel Node
@@ -31,14 +29,9 @@ import {
   env,
   type PreTrainedTokenizer,
 } from "@huggingface/transformers";
+import { configureTransformersEnvironment } from "./transformers-environment";
 
-// Vercel's deployed function filesystem is read-only outside /tmp. The fp32
-// encoder is fetched lazily, so its warm-instance cache must live there.
-if (process.env.VERCEL) {
-  env.cacheDir = join(tmpdir(), "rachandzach-transformers-cache");
-  env.useFSCache = true;
-  env.allowLocalModels = false;
-}
+configureTransformersEnvironment(env);
 
 export const QUERY_EMBEDDING_MODEL_ID = "Xenova/clip-vit-base-patch32";
 export const QUERY_EMBEDDING_MODEL_REVISION =

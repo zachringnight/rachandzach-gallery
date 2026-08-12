@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-08-11 (PDT).
+Updated 2026-08-12 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -13,17 +13,17 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Deployed application release | `f4f1090f647036922c990afec36641b8f9d07735` |
+| Deployed application release | `7a336d83d34303b102bdd48d54ee626bb18a1c04` |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `f4f1090` -- in-gallery people tagging, automatic Preview builds for every non-`main` branch, and immutable caching for all public story images ([#23](https://github.com/zachringnight/rachandzach-gallery/pull/23), merged 2026-08-10). Preceding: [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22) reviewed face naming and durable metadata reconciliation, [#21](https://github.com/zachringnight/rachandzach-gallery/pull/21) public archive, [#20](https://github.com/zachringnight/rachandzach-gallery/pull/20) documentation corrections |
+| Latest release | `7a336d8` -- production Moment Search runtime repair and structured fallback diagnostics ([#28](https://github.com/zachringnight/rachandzach-gallery/pull/28), merged 2026-08-12). Preceding: `de7a1bf` creative-library upgrade and guest-copy cleanup ([#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), merged 2026-08-11) |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | PR [#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), branch `codex/creative-library-upgrade`, open and not deployed. It adds the homepage radial shortcut index and a user-visible pause control for the photo marquee, then strips the build-time "archive" vocabulary out of every guest-facing string and fixes the display typography (Fraunces' `WONK` axis dropped, heading tracking clamped to -0.025em, sub-0.9 line-heights raised) so headlines stop colliding. `npm run verify` passed locally: 1,134 Vitest tests with 17 documented skips, 182 E2E tests across all four Playwright projects with 106 documented skips, and 16 regenerated visual baselines. PR [#26](https://github.com/zachringnight/rachandzach-gallery/pull/26) is merged in `main` at `2f7a517`. |
+| Current unmerged app work | None. PR [#28](https://github.com/zachringnight/rachandzach-gallery/pull/28) merged and is verified on the stable Production domain. |
 
 Production aliases are active for:
 
@@ -63,6 +63,37 @@ The production release includes:
 Photo-overlay labels were removed. The existing photo memories wall remains
 complete. `tsconfig.tsbuildinfo` was deleted from source control and
 `*.tsbuildinfo` is ignored when TypeScript regenerates its incremental cache.
+
+### Moment Search runtime repair (shipped, 2026-08-12)
+
+Production's generic `/api/search` 500 was traced in a logging-only Preview to
+the missing Linux `libonnxruntime.so.1` dependency while importing
+`@huggingface/transformers`. PR #28 now traces both the native ONNX binding and
+its adjacent shared library into the search function. A second Preview then
+showed the model trying to create its default cache below read-only
+`/var/task/node_modules`; the current head redirects only Vercel's model cache
+to `/tmp/rachandzach-transformers-cache` and disables the inapplicable browser
+cache for this Node runtime.
+
+The route logs request, fallback stage, completion, deployment ID, commit SHA,
+duration, and embedding/keyword result counts without logging the query. The
+exact repair head `f005843645fff6e87c2dd9e5094a2272ab20edd7` was `READY` in Preview as
+deployment `dpl_9vxEZidmAsXf74sLjNJMgmHGKyGL`. Direct API checks returned:
+
+- `people dancing`: three results, all `matchType: embedding`, 7.5-second cold
+  request
+- `sunset portrait`: one `embedding` result
+- `champagne toast`: one `embedding` result, 1.5-second warm request
+
+The full local gate passed: Vercel config validation, typecheck, lint with zero
+errors and 18 existing warnings, 1,141 Vitest tests with 17 documented skips,
+production build, and 46 Chromium tests with 26 documented live-database
+skips. PR #28 merged as `7a336d83d34303b102bdd48d54ee626bb18a1c04`.
+Production deployment `dpl_H3jTUHyyChavAjpGhAS5PSrCDXpU` is `READY` with the
+apex, `www`, project, and `main` aliases attached. On `rachandzach.com`, the
+homepage returns `200` and `people dancing` returns three explicit
+`matchType: embedding` results with nonzero similarities. The post-smoke
+Production error-log query returned no runtime errors.
 
 ## Verification evidence
 
