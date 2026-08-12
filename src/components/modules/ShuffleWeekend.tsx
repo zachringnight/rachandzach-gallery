@@ -76,7 +76,7 @@ export function ShuffleWeekend({ photos }: ShuffleWeekendProps) {
         onClick={shuffle}
         className="inline-flex min-h-12 items-center justify-center rounded-[2px] bg-ink px-7 font-body text-sm font-medium text-cream hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
       >
-        {current ? "Shuffle again" : "Shuffle the archive"}
+        {current ? "Shuffle again" : "Shuffle the photos"}
       </button>
 
       {current ? (
@@ -109,7 +109,7 @@ export function ShuffleWeekend({ photos }: ShuffleWeekendProps) {
       {playing && slideshowPhotos.length > 0 ? (
         <Slideshow
           photos={slideshowPhotos}
-          modeLabel="Shuffle the archive"
+          modeLabel="Shuffle the photos"
           startIndex={0}
           onClose={() => setPlaying(false)}
         />

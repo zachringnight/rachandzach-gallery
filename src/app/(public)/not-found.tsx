@@ -18,7 +18,7 @@ export default function NotFound() {
             href="/"
             className="inline-flex min-h-12 items-center justify-center rounded-[2px] bg-ink px-7 font-body text-sm font-medium text-cream hover:bg-ink/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
           >
-            Archive home
+            Home
           </Link>
           <Link
             href="/photos"

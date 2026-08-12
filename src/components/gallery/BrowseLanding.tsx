@@ -142,8 +142,8 @@ export function BrowseLanding({
             Or open all {totalPhotos.toLocaleString()}.
           </span>
           <span className="atlas-browse-door-body">
-            The whole archive in one grid, with search, filters, favorites,
-            and original downloads. It is a long scroll on purpose.
+            Every photo in one grid, with search, filters, favorites, and
+            original downloads. It is a long scroll on purpose.
           </span>
           <span className="atlas-browse-door-meta">
             Photographer and guest photos

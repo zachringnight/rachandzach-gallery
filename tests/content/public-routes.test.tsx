@@ -202,10 +202,10 @@ describe("robots and sitemap", () => {
 });
 
 describe("not-found page", () => {
-  it("routes back to the working archive", () => {
+  it("routes back to the working site", () => {
     render(<NotFound />);
     expect(screen.getByRole("heading", { name: /out of frame/i })).toBeDefined();
-    const home = screen.getByRole("link", { name: /archive home/i });
+    const home = screen.getByRole("link", { name: /^home$/i });
     expect(home.getAttribute("href")).toBe("/");
   });
 });
