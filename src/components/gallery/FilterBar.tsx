@@ -24,31 +24,11 @@ export interface FilterBarProps {
   onStartSelection?: () => void;
   /** Optional Moment Search panel, toggled from the control bar. */
   momentSearchSlot?: React.ReactNode;
-}
-
-/**
- * Whether the page was opened with a Moment Search deep link.
- *
- * `MomentSearch` already seeds its query from `?q=` and auto-runs on mount
- * (see initialQueryFromUrl and the effect beside it), but it only mounts
- * when this panel is open, and the panel opened closed no matter how the
- * page was reached. So every `/photos?q=...` link -- the Lightbox keyword
- * chips, and the prompts on the browse landing -- mounted the grid,
- * dropped the query on the floor, and showed the unfiltered archive.
- * Verified before the fix: `?q=sunset kiss`, `?q=confetti` and `?all=1` all
- * returned the same 51 cards with the same first five photo IDs.
- *
- * Worth noting because docs/BACKLOG.md records this as fixed on 2026-08-05.
- * That change added `q` to GRID_PARAM_KEYS, which got the deep link as far
- * as the grid; the search itself never ran. Counting cards on the result
- * looks like success, which is presumably how it passed.
- *
- * Same `typeof window` guard and same URLSearchParams parsing as
- * initialQueryFromUrl, for the same reasons documented there.
- */
-function momentSearchDeepLinked(): boolean {
-  if (typeof window === "undefined") return false;
-  return (new URLSearchParams(window.location.search).get("q") ?? "") !== "";
+  /**
+   * Server-derived deep-link state. GalleryShell remounts this disclosure
+   * when a same-route Moment Search query changes.
+   */
+  initialMomentSearchOpen?: boolean;
 }
 
 const ORIENTATIONS: { value: ClientOrientation; label: string }[] = [
@@ -78,9 +58,10 @@ export function FilterBar({
   selectedCount = 0,
   onStartSelection,
   momentSearchSlot,
+  initialMomentSearchOpen = false,
 }: FilterBarProps) {
   const [open, setOpen] = useState(false);
-  const [momentOpen, setMomentOpen] = useState(momentSearchDeepLinked);
+  const [momentOpen, setMomentOpen] = useState(initialMomentSearchOpen);
 
   /**
    * Filter-group changes route through here so the panel can decide

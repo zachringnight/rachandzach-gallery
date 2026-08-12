@@ -78,9 +78,7 @@ describe("MomentSearch", () => {
   });
 
   it("still auto-runs a semantic-search deep link", async () => {
-    window.history.replaceState({}, "", "/photos?q=sunset+kiss");
-
-    render(<MomentSearch events={[]} />);
+    render(<MomentSearch events={[]} initialQuery="sunset kiss" />);
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith("/api/search?q=sunset+kiss");

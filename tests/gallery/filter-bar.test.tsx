@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FilterBar } from "@/components/gallery/FilterBar";
@@ -189,4 +190,23 @@ describe("gallery discovery controls", () => {
     expect(onChange).toHaveBeenCalledWith({ sort: "newest" });
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
   });
+
+  it("renders a server-derived Moment Search deep link open before hydration", () => {
+    const html = renderToString(
+      <FilterBar
+        facets={facets}
+        filters={emptyFilters}
+        total={1721}
+        onChange={vi.fn()}
+        onReset={vi.fn()}
+        initialMomentSearchOpen
+        momentSearchSlot={<p>Moment results</p>}
+      />,
+    );
+
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('data-open="true"');
+    expect(html).toContain("Moment results");
+  });
+
 });

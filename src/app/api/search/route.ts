@@ -29,6 +29,30 @@ const SEARCH_RATE_LIMIT = {
   windowSeconds: 60,
 } as const;
 
+type SearchFailureStage = "rate-limit" | "search";
+
+/**
+ * Keep production diagnostics useful without ever writing the guest's query,
+ * IP address, request URL, provider response, or signed media URL to logs.
+ * Stack frames omit their first line because JavaScript prefixes it with the
+ * error message, which can contain upstream request details.
+ */
+function logSearchFailure(stage: SearchFailureStage, error: unknown): void {
+  const failure = error instanceof Error ? error : null;
+  const cause = failure?.cause instanceof Error ? failure.cause : null;
+  const stackFrames = (value: Error | null): string[] | undefined => {
+    if (!value?.stack) return undefined;
+    return value.stack.split("\n").slice(1, 9).map((line) => line.trim());
+  };
+  console.error("[moment-search] request failed", {
+    stage,
+    errorName: failure?.name ?? "UnknownError",
+    errorStackFrames: stackFrames(failure),
+    causeName: cause?.name,
+    causeStackFrames: stackFrames(cause),
+  });
+}
+
 function clientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
@@ -55,6 +79,7 @@ export async function GET(request: NextRequest) {
       );
     }
   } catch (error) {
+    logSearchFailure("rate-limit", error);
     if (error instanceof GalleryAccessConfigError) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
@@ -79,6 +104,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof MomentSearchValidationError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }
+    logSearchFailure("search", error);
     return NextResponse.json({ error: "Search is unavailable right now." }, { status: 500 });
   }
 }

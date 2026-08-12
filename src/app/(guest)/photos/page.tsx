@@ -50,6 +50,10 @@ function first(value: string | string[] | undefined): string | null {
   return value ?? null;
 }
 
+function momentQueryFromParams(params: SearchParams): string {
+  return (first(params.q) ?? "").trim().replace(/\s+/g, " ");
+}
+
 /**
  * Any of these in the URL means the guest has already chosen how to enter the
  * archive (a chapter, a person, a search, a deep-linked photo, a restored
@@ -403,6 +407,7 @@ export default async function PhotosPage({
         facets={surfaceGalleryFacets(facets, overrides)}
         initialFilters={filterStateFromParams(params)}
         initialPhotoId={first(params.photo)}
+        initialMomentQuery={momentQueryFromParams(params)}
       />
     </section>
   );

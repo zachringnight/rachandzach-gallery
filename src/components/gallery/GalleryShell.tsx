@@ -39,6 +39,8 @@ export interface GalleryShellProps {
   facets: ClientGalleryFacets;
   initialFilters: GalleryFilterState;
   initialPhotoId: string | null;
+  /** Plain `?q=` Moment Search deep link, distinct from `gallery_q`. */
+  initialMomentQuery?: string;
   toolbarSlot?: React.ReactNode;
   /**
    * Page headline rendered as the single compact header above the control
@@ -138,6 +140,7 @@ export function GalleryShell({
   facets,
   initialFilters,
   initialPhotoId,
+  initialMomentQuery = "",
   toolbarSlot,
   heading,
 }: GalleryShellProps) {
@@ -529,6 +532,7 @@ export function GalleryShell({
       ) : null}
 
       <FilterBar
+        key={initialMomentQuery ? `moment:${initialMomentQuery}` : "gallery"}
         facets={facets}
         filters={filters}
         total={total}
@@ -537,9 +541,14 @@ export function GalleryShell({
         selecting={selection.selecting}
         selectedCount={selectedIds.length}
         onStartSelection={selection.start}
+        initialMomentSearchOpen={initialMomentQuery.trim().length > 0}
         momentSearchSlot={
           featureFlags.momentSearch ? (
-            <MomentSearch events={facets.events} />
+            <MomentSearch
+              key={initialMomentQuery || "moment-search"}
+              events={facets.events}
+              initialQuery={initialMomentQuery}
+            />
           ) : undefined
         }
       />
