@@ -20,10 +20,11 @@ the pre-launch history and are not operational instructions.
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
 | Latest release | `7a336d8` -- production Moment Search runtime repair and structured fallback diagnostics ([#28](https://github.com/zachringnight/rachandzach-gallery/pull/28), merged 2026-08-12). Preceding: `de7a1bf` creative-library upgrade and guest-copy cleanup ([#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), merged 2026-08-11) |
+| Current production head | `248571d` -- docs-only PR [#29](https://github.com/zachringnight/rachandzach-gallery/pull/29) on top of application release `7a336d8` |
 | Known unshipped work | `docs/BACKLOG.md` |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | None. PR [#28](https://github.com/zachringnight/rachandzach-gallery/pull/28) merged and is verified on the stable Production domain. |
+| Current unmerged app work | Local branch `codex/gallery-review-improvements`: Moment Search deep-link lifecycle repair, import-level fail-soft containment, portable runtime-trace assertion, and regression coverage. Local only; not pushed, previewed, or deployed. |
 
 Production aliases are active for:
 
@@ -40,7 +41,8 @@ merged. Do not continue new work from it. Start from `origin/main`.
 
 The production release includes:
 
-- Password-gated 1,721-photo gallery and personalized guest routes
+- Publicly reachable 1,721-photo gallery and personalized guest routes; admin
+  routes remain authenticated
 - Event, person, orientation, source, sorting, and text filters
 - Shareable current-view URLs; gallery text uses `gallery_q`, while semantic
   Moment Search keeps `q`
@@ -89,11 +91,42 @@ The full local gate passed: Vercel config validation, typecheck, lint with zero
 errors and 18 existing warnings, 1,141 Vitest tests with 17 documented skips,
 production build, and 46 Chromium tests with 26 documented live-database
 skips. PR #28 merged as `7a336d83d34303b102bdd48d54ee626bb18a1c04`.
-Production deployment `dpl_H3jTUHyyChavAjpGhAS5PSrCDXpU` is `READY` with the
-apex, `www`, project, and `main` aliases attached. On `rachandzach.com`, the
+Production deployment `dpl_H3jTUHyyChavAjpGhAS5PSrCDXpU` was `READY` with the
+apex, `www`, project, and `main` aliases attached when the application release
+shipped. The current docs-only Production deployment is
+`dpl_BLb5YNB7XkJggNsAAwoRM91hs57z`; application code remains `7a336d8`. On `rachandzach.com`, the
 homepage returns `200` and `people dancing` returns three explicit
 `matchType: embedding` results with nonzero similarities. The post-smoke
 Production error-log query returned no runtime errors.
+
+### Moment Search deep-link and fail-soft hardening (local, unshipped, 2026-08-12)
+
+The shipped runtime repair restored semantic API responses, but two lifecycle
+paths remained broken. A direct `/photos?q=...` request server-rendered the
+Moment disclosure closed and recovered after hydration with React error 418;
+a same-route link from `/photos` updated the URL but left the disclosure closed
+and never mounted the search. The local branch now normalizes `q` on the
+server, passes it through `PhotosPage` -> `GalleryShell` -> `FilterBar` and
+`MomentSearch`, and models the mutually exclusive Filters/Moments disclosure
+against the current query version. Only `MomentSearch` remounts when that query
+changes, so unrelated gallery-control state is not discarded.
+
+The branch also moves evaluation of `query-embedding` inside the existing
+embedding fallback boundary. A native encoder import failure therefore cannot
+bypass validation or turn an otherwise usable keyword search into a generic
+500. The ONNX trace is platform/architecture-specific, the local Transformers
+model cache is excluded, Node is pinned to the deployed `24.x` major, and a
+post-build assertion now checks that the native binding and adjacent shared
+library are present without bundling a local model.
+
+Safe-point verification is green: 71 focused Vitest checks, typecheck, Vercel
+configuration validation, lint with zero errors and 19 existing warnings,
+`git diff --check`, and local browser checks at desktop and 390px. The real
+`/photos` -> `sunset kiss` link returned 24 embedding matches; a direct reload
+kept the disclosure open with no hydration or console errors. The full build,
+runtime-trace assertion, complete `npm run verify`, Preview, and Production
+readback remain required before release. Nothing in this branch has been
+pushed or deployed.
 
 ## Verification evidence
 
@@ -612,7 +645,7 @@ That is enforced in code, not by convention.
 | DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
 | DONE (half) | Zach | 2026-08-07 | Of the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`, Zach confirmed the after-party face (sim 0.483). Applied as wave 14 to all four layers: additions manifest, catalog, the original's embedded metadata, and the live database (single-row upsert with pre-state backup, because the full sync is blocked; see the P1 name-drift row). The cocktail-hour face (sim 0.615, behind sunglasses) stays undecided and unapplied. |
 | DONE | Codex | 2026-08-08 | The six "live-name drifts" turned out to be the opposite of a drift: those names are `/admin/faces` corrections, which belong only in `rachandzach_person_overrides` and are applied over the catalog name at the data-source boundary. Something had copied them down into `rachandzach_people.display_name` between 2026-08-05T22:32Z and 2026-08-06T02:43Z, collapsing the two layers and tripping the sync guard. Restored the six base names to canonical (backup in `metadata/faces/sync-backups/`); no guest-visible name changed, since every override was verified present first. `write-additions-to-master.py` now resolves names through `person-overrides.json`, so it stopped wanting to put a second name for the same person into 29 originals; the one genuine pending write (a Joan Soskin tag) was applied and manifest-reconciled. The junk `"pa"` entry and the stale `By Person/pa` symlink folder are gone. Both guards pass; live sits at 5,100 tag rows. See `docs/BACKLOG.md` "Resolved 2026-08-08". |
-| DONE | Codex | 2026-08-05 | Shipped the whole `docs/BACKLOG.md` "Mobile and touch" and "Guest journey" sections in one pass: filter panel closes on selection, mobile filter chips, 44px touch targets, guest-scoped 404, scroll-away mobile chrome, sign-in lands on Find me, one download button, keyword chips deep-link that works, PersonPicker announces its real purpose. |
+| IN REVIEW | Codex | 2026-08-12 | The mobile/touch work remains shipped. The keyword-chip row was only half-fixed on 2026-08-05: it mounted the gallery but did not reliably open/run Moment Search. `codex/gallery-review-improvements` contains the server-derived deep-link and same-route lifecycle repair; close this row only after the full gate, Preview, merge, and stable-domain browser readback. |
 | P1 | Zach | After this deploys | Flip through `/photos` on a phone: filter a person, watch the chip row, scroll down and back up (chapter tab and Light Bar should step aside and return), favorite from a card, download from the viewer. The grid only renders against the live database, so this pass shipped on unit tests plus the data-free visual suite; this is the eyeball check that closes it. |
 | P2 | Rachel | Any time | Replace two correct-but-unflattering face crops in `/admin/faces`: `charlie-weisman`, `dee-burton`. Admin picks outrank the script. |
 | DONE | Codex | 2026-08-05 | AVIF fallback shipped in [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15): `preview-format.ts` orders previews most-compatible-first, `serialize.ts` signs a decodable companion per AVIF width, and `PhotoImage` renders `<picture>` so browsers negotiate natively. This row previously still read as open work and would have sent an engineer to rebuild it. |

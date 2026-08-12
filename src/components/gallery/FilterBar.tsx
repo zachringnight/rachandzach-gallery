@@ -25,10 +25,10 @@ export interface FilterBarProps {
   /** Optional Moment Search panel, toggled from the control bar. */
   momentSearchSlot?: React.ReactNode;
   /**
-   * Server-derived deep-link state. GalleryShell remounts this disclosure
-   * when a same-route Moment Search query changes.
+   * Normalized server-derived `?q=` value. A new query version opens the
+   * Moment panel synchronously without resetting the rest of the filter bar.
    */
-  initialMomentSearchOpen?: boolean;
+  momentSearchQuery?: string;
 }
 
 const ORIENTATIONS: { value: ClientOrientation; label: string }[] = [
@@ -58,10 +58,26 @@ export function FilterBar({
   selectedCount = 0,
   onStartSelection,
   momentSearchSlot,
-  initialMomentSearchOpen = false,
+  momentSearchQuery = "",
 }: FilterBarProps) {
-  const [open, setOpen] = useState(false);
-  const [momentOpen, setMomentOpen] = useState(initialMomentSearchOpen);
+  const normalizedMomentSearchQuery = momentSearchQuery
+    .trim()
+    .replace(/\s+/g, " ");
+  const [disclosure, setDisclosure] = useState<{
+    query: string;
+    panel: "filters" | "moment" | null;
+  }>(() => ({
+    query: normalizedMomentSearchQuery,
+    panel: normalizedMomentSearchQuery.length > 0 ? "moment" : null,
+  }));
+  const activePanel =
+    disclosure.query === normalizedMomentSearchQuery
+      ? disclosure.panel
+      : normalizedMomentSearchQuery.length > 0
+        ? "moment"
+        : null;
+  const momentOpen = activePanel === "moment";
+  const filtersOpen = activePanel === "filters";
 
   /**
    * Filter-group changes route through here so the panel can decide
@@ -74,7 +90,10 @@ export function FilterBar({
   const applyGroupChange = (patch: Partial<GalleryFilterState>) => {
     onChange(patch);
     if ("person" in patch || "event" in patch) {
-      setOpen(false);
+      setDisclosure({
+        query: normalizedMomentSearchQuery,
+        panel: null,
+      });
     }
   };
   const activeFilterCount = [
@@ -210,9 +229,9 @@ export function FilterBar({
             <button
               type="button"
               onClick={() => {
-                setMomentOpen((current) => {
-                  if (!current) setOpen(false);
-                  return !current;
+                setDisclosure({
+                  query: normalizedMomentSearchQuery,
+                  panel: momentOpen ? null : "moment",
                 });
               }}
               aria-expanded={momentOpen}
@@ -228,12 +247,12 @@ export function FilterBar({
           <button
             type="button"
             onClick={() => {
-              setOpen((current) => {
-                if (!current) setMomentOpen(false);
-                return !current;
+              setDisclosure({
+                query: normalizedMomentSearchQuery,
+                panel: filtersOpen ? null : "filters",
               });
             }}
-            aria-expanded={open}
+            aria-expanded={filtersOpen}
             aria-controls="gallery-filter-groups"
             aria-label={
               activeFilterCount > 0
@@ -277,7 +296,7 @@ export function FilterBar({
       <div
         id="gallery-filter-groups"
         className="atlas-filter-groups"
-        data-open={open ? "true" : "false"}
+        data-open={filtersOpen ? "true" : "false"}
       >
         <fieldset>
           <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">

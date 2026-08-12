@@ -532,7 +532,6 @@ export function GalleryShell({
       ) : null}
 
       <FilterBar
-        key={initialMomentQuery ? `moment:${initialMomentQuery}` : "gallery"}
         facets={facets}
         filters={filters}
         total={total}
@@ -541,7 +540,7 @@ export function GalleryShell({
         selecting={selection.selecting}
         selectedCount={selectedIds.length}
         onStartSelection={selection.start}
-        initialMomentSearchOpen={initialMomentQuery.trim().length > 0}
+        momentSearchQuery={initialMomentQuery}
         momentSearchSlot={
           featureFlags.momentSearch ? (
             <MomentSearch

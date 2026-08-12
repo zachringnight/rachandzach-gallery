@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, type ReactNode } from "react";
 import {
   cleanup,
   fireEvent,
@@ -20,8 +20,12 @@ let loadMoreFromGrid: (() => void) | undefined;
 vi.mock("@/components/gallery/FilterBar", () => ({
   FilterBar: ({
     onChange,
+    momentSearchQuery,
+    momentSearchSlot,
   }: {
     onChange: (patch: Partial<GalleryFilterState>) => void;
+    momentSearchQuery?: string;
+    momentSearchSlot?: ReactNode;
   }) => (
     <>
       <button type="button" onClick={() => onChange({ q: "flowers" })}>
@@ -36,6 +40,9 @@ vi.mock("@/components/gallery/FilterBar", () => ({
       >
         Apply search while the grid intersects
       </button>
+      {momentSearchQuery ? (
+        <section data-testid="moment-panel">{momentSearchSlot}</section>
+      ) : null}
     </>
   ),
 }));
@@ -59,7 +66,7 @@ vi.mock("@/components/gallery/useSelection", () => ({
 }));
 
 vi.mock("@/content/features", () => ({
-  featureFlags: { momentSearch: false },
+  featureFlags: { momentSearch: true },
 }));
 
 const initialPage: ClientGalleryPage = {
@@ -171,5 +178,53 @@ describe("GalleryShell filter commits", () => {
       "/api/gallery?q=flowers&sort=weekend&limit=60",
       { cache: "no-store" },
     );
+  });
+
+  it("mounts and runs a new same-route Moment Search query, then closes when removed", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ results: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const view = render(
+      <GalleryShell
+        initialPage={initialPage}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery=""
+      />,
+    );
+
+    expect(screen.queryByTestId("moment-panel")).toBeNull();
+
+    view.rerender(
+      <GalleryShell
+        initialPage={initialPage}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery="sunset kiss"
+      />,
+    );
+
+    expect(screen.getByTestId("moment-panel")).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/search?q=sunset+kiss");
+    });
+
+    view.rerender(
+      <GalleryShell
+        initialPage={initialPage}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery=""
+      />,
+    );
+    expect(screen.queryByTestId("moment-panel")).toBeNull();
   });
 });
