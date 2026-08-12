@@ -94,6 +94,21 @@ export interface MomentSearchResult {
   matchType: MomentMatchType;
 }
 
+export type MomentSearchFallbackStage =
+  | "feature_flag"
+  | "embedding"
+  | "vector_search"
+  | "no_embedding_matches";
+
+export interface MomentSearchFallbackEvent {
+  stage: MomentSearchFallbackStage;
+  error?: unknown;
+}
+
+export type MomentSearchFallbackReporter = (
+  event: MomentSearchFallbackEvent,
+) => void;
+
 export interface ClientMomentResult {
   photo: ClientPhoto;
   similarity: number;
@@ -299,25 +314,29 @@ export interface MomentSearchDeps {
 export async function searchMomentsWith(
   rawInput: MomentSearchInput,
   deps: MomentSearchDeps,
+  reportFallback?: MomentSearchFallbackReporter,
 ): Promise<MomentSearchResult[]> {
   const input = normalizeMomentSearchInput(rawInput);
 
   if (!deps.enabled) {
+    reportFallback?.({ stage: "feature_flag" });
     return keywordFallback(input, deps.dataSource);
   }
 
   let embedding: number[];
   try {
     embedding = await deps.embedText(input.query);
-  } catch {
+  } catch (error) {
     // Embedding service unavailable: degrade, never error (packet rule).
+    reportFallback?.({ stage: "embedding", error });
     return keywordFallback(input, deps.dataSource);
   }
 
   let matches: MomentVectorMatch[];
   try {
     matches = await deps.runVectorSearch(embedding, input.event, input.limit);
-  } catch {
+  } catch (error) {
+    reportFallback?.({ stage: "vector_search", error });
     return keywordFallback(input, deps.dataSource);
   }
 
@@ -342,6 +361,7 @@ export async function searchMomentsWith(
   }
 
   if (results.length === 0) {
+    reportFallback?.({ stage: "no_embedding_matches" });
     return keywordFallback(input, deps.dataSource);
   }
   return results;
@@ -399,7 +419,10 @@ async function runGalleryMomentsRpc(
  * the module docstring's "Import hygiene" note) so this is the ONLY function
  * in the file that ever triggers their evaluation.
  */
-export async function searchMoments(input: MomentSearchInput): Promise<MomentSearchResult[]> {
+export async function searchMoments(
+  input: MomentSearchInput,
+  reportFallback?: MomentSearchFallbackReporter,
+): Promise<MomentSearchResult[]> {
   const [{ createAdminClient }, { createSupabaseGalleryDataSource }, { embedText }] =
     await Promise.all([
       import("@/lib/supabase/admin"),
@@ -408,13 +431,17 @@ export async function searchMoments(input: MomentSearchInput): Promise<MomentSea
     ]);
   const client = createAdminClient();
   const dataSource = createSupabaseGalleryDataSource(client);
-  return searchMomentsWith(input, {
-    enabled: featureFlags.momentSearch,
-    embedText,
-    runVectorSearch: (embedding, eventSlug, limit) =>
-      runGalleryMomentsRpc(client, embedding, eventSlug, limit),
-    dataSource,
-  });
+  return searchMomentsWith(
+    input,
+    {
+      enabled: featureFlags.momentSearch,
+      embedText,
+      runVectorSearch: (embedding, eventSlug, limit) =>
+        runGalleryMomentsRpc(client, embedding, eventSlug, limit),
+      dataSource,
+    },
+    reportFallback,
+  );
 }
 
 // ---------------------------------------------------------------------------

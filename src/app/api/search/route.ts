@@ -13,6 +13,7 @@ import {
   MomentSearchValidationError,
   searchMoments,
   serializeMomentResults,
+  type MomentSearchFallbackEvent,
 } from "@/lib/search/moment-search";
 
 // Runs the CLIP text encoder: needs the Node runtime (onnxruntime-node), not
@@ -145,6 +146,23 @@ function clientIp(request: NextRequest): string {
   return request.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
+function logSearchFallback(
+  context: SearchRequestContext,
+  event: MomentSearchFallbackEvent,
+  forbiddenLogValues: string[],
+  startedAt: number,
+): void {
+  const fields: Record<string, unknown> = {
+    stage: event.stage,
+    outcome: "keyword_fallback",
+    durationMs: Date.now() - startedAt,
+  };
+  if (event.error !== undefined) {
+    fields.error = errorDetails(event.error, forbiddenLogValues);
+  }
+  writeSearchLog(event.error === undefined ? "info" : "error", context, fields);
+}
+
 export async function GET(request: NextRequest) {
   const startedAt = Date.now();
   const context = requestContext(request);
@@ -198,15 +216,23 @@ export async function GET(request: NextRequest) {
   const limit = limitParam ? Number(limitParam) : MOMENT_SEARCH_DEFAULT_LIMIT;
 
   try {
-    const results = await searchMoments({ query, event, limit });
+    const results = await searchMoments({ query, event, limit }, (fallback) =>
+      logSearchFallback(context, fallback, forbiddenLogValues, startedAt),
+    );
     const client = createAdminClient();
     const body = await serializeMomentResults(results, client);
+    const embeddingResultCount = body.filter(
+      (result) => result.matchType === "embedding",
+    ).length;
+    const keywordResultCount = body.length - embeddingResultCount;
     writeSearchLog("info", context, {
       stage: "search",
       outcome: "completed",
       status: 200,
       durationMs: Date.now() - startedAt,
       resultCount: body.length,
+      embeddingResultCount,
+      keywordResultCount,
     });
     return NextResponse.json({ results: body });
   } catch (error) {

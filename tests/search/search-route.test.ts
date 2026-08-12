@@ -139,4 +139,33 @@ describe("GET /api/search structured logging", () => {
     });
     expect(mocks.searchMoments).not.toHaveBeenCalled();
   });
+
+  it("records an embedding failure even when the route degrades to a 200 keyword response", async () => {
+    const query = "private first-dance phrase";
+    mocks.searchMoments.mockImplementation(async (_input, reportFallback) => {
+      reportFallback?.({
+        stage: "embedding",
+        error: new Error(`cache failed while embedding ${query}`),
+      });
+      return [];
+    });
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const response = await GET(request(query));
+
+    expect(response.status).toBe(200);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(parseLog(error)).toMatchObject({
+      stage: "embedding",
+      outcome: "keyword_fallback",
+    });
+    expect(String(error.mock.calls[0]?.[0])).not.toContain(query);
+    expect(parseLog(info, 1)).toMatchObject({
+      stage: "search",
+      outcome: "completed",
+      embeddingResultCount: 0,
+      keywordResultCount: 0,
+    });
+  });
 });
