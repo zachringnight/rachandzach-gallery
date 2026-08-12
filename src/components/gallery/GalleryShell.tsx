@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type {
   ClientGalleryFacets,
   ClientGalleryPage,
@@ -39,6 +40,8 @@ export interface GalleryShellProps {
   facets: ClientGalleryFacets;
   initialFilters: GalleryFilterState;
   initialPhotoId: string | null;
+  /** Plain `?q=` Moment Search deep link, distinct from `gallery_q`. */
+  initialMomentQuery?: string;
   toolbarSlot?: React.ReactNode;
   /**
    * Page headline rendered as the single compact header above the control
@@ -133,14 +136,30 @@ function filtersFromSearch(search: string): GalleryFilterState {
   };
 }
 
+function normalizeMomentQuery(value: string | null | undefined): string {
+  return (value ?? "").trim().replace(/\s+/g, " ");
+}
+
 export function GalleryShell({
   initialPage,
   facets,
   initialFilters,
   initialPhotoId,
+  initialMomentQuery = "",
   toolbarSlot,
   heading,
 }: GalleryShellProps) {
+  const routeSearchParams = useSearchParams();
+  // The server prop keeps the first render deterministic. After hydration,
+  // Next's search-param store is the source of truth: its patched native
+  // history API updates this hook when applyFilters/pageUrl removes `q`, and
+  // it also follows Link plus back/forward navigation. Reading the original
+  // prop forever would resurrect a Moment query no longer present in the URL.
+  const momentQuery = normalizeMomentQuery(
+    typeof window === "undefined"
+      ? initialMomentQuery
+      : routeSearchParams.get("q"),
+  );
   const [filters, setFilters] = useState<GalleryFilterState>(initialFilters);
   const [photos, setPhotos] = useState<ClientPhoto[]>(initialPage.photos);
   const [cursor, setCursor] = useState<string | null>(initialPage.nextCursor);
@@ -423,6 +442,12 @@ export function GalleryShell({
       setActivePhotoId(null);
     }
   }, [activePhotoId, filters]);
+  const closePhotoForMomentSearch = useCallback(() => {
+    // The keyword Link owns the next history entry. Clear only the preserved
+    // client state here; calling closePhoto() would race that navigation with
+    // history.back() and return to the still-open `?photo=` entry.
+    setActivePhotoId(null);
+  }, []);
   const selectPhoto = useCallback(
     (photoId: string) => {
       window.history.replaceState({}, "", pageUrl(filters, photoId));
@@ -537,9 +562,14 @@ export function GalleryShell({
         selecting={selection.selecting}
         selectedCount={selectedIds.length}
         onStartSelection={selection.start}
+        momentSearchQuery={momentQuery}
         momentSearchSlot={
           featureFlags.momentSearch ? (
-            <MomentSearch events={facets.events} />
+            <MomentSearch
+              key={momentQuery || "moment-search"}
+              events={facets.events}
+              initialQuery={momentQuery}
+            />
           ) : undefined
         }
       />
@@ -643,6 +673,7 @@ export function GalleryShell({
         <Lightbox
           photo={activePhoto}
           onClose={closePhoto}
+          onMomentSearchNavigate={closePhotoForMomentSearch}
           position={activeIndex + 1}
           total={total}
           filmstrip={{ photos, onSelect: selectPhoto }}

@@ -2,6 +2,7 @@ export const QUERY_EMBEDDING_VERCEL_CACHE_DIR =
   "/tmp/rachandzach-transformers-cache";
 
 interface TransformersEnvironment {
+  allowLocalModels: boolean;
   cacheDir: string | null;
   useBrowserCache: boolean;
   useFSCache: boolean;
@@ -18,6 +19,7 @@ export function configureTransformersEnvironment(
 ): void {
   runtimeEnv.useBrowserCache = false;
   if (isVercel) {
+    runtimeEnv.allowLocalModels = false;
     runtimeEnv.useFSCache = true;
     runtimeEnv.cacheDir = QUERY_EMBEDDING_VERCEL_CACHE_DIR;
   }

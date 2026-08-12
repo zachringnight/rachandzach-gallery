@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import nextConfig from "../../next.config";
 
 describe("Moment Search runtime packaging", () => {
-  it("traces the Linux ONNX native binding and its adjacent shared library", () => {
+  it("traces the current ONNX runtime directory and excludes local model caches", () => {
     expect(nextConfig.outputFileTracingIncludes?.["/api/search"]).toEqual([
-      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/onnxruntime_binding.node",
-      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime.so.1",
+      `./node_modules/onnxruntime-node/bin/napi-v6/${process.platform}/${process.arch}/**/*`,
+    ]);
+    expect(nextConfig.outputFileTracingExcludes?.["/api/search"]).toEqual([
+      "./node_modules/@huggingface/transformers/.cache/**/*",
     ]);
   });
 });

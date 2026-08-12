@@ -27,6 +27,8 @@ import {
 
 export interface MomentSearchProps {
   events: ClientGalleryFacets["events"];
+  /** Server-derived `?q=` value for SSR-safe deep links. */
+  initialQuery?: string;
 }
 
 interface MomentSearchResultDTO {
@@ -63,32 +65,6 @@ function columnsForWidth(width: number): number {
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-/**
- * Reads the "q" URL param for MomentSearch's initial query value, used
- * directly as its useState initializer below. Deriving the seed here, a
- * plain read during the first render, rather than via a post-mount
- * setState, is what keeps that hook clear of react-hooks/set-state-in-effect
- * (the earlier version set state inside a mount effect and suppressed the
- * rule; this removes the need for the suppression instead of silencing it).
- * Guards on `typeof window` because this component is server-rendered
- * first, where `window` does not exist, so the initializer returns "" on
- * the server. In the common case -- no "?q=" on the page -- that also
- * matches the client's first render exactly, no divergence at all. When a
- * "?q=" IS present (a deep link from a keyword chip elsewhere in the
- * gallery, per the effect below), the client's first render briefly
- * disagrees with the server's empty-string render; React recovers from that
- * the same way it recovers from any hydration mismatch, by re-rendering the
- * affected DOM to match the client, so the input still ends up showing the
- * right value. Parses window.location.search with URLSearchParams directly
- * rather than next/navigation's useSearchParams, the same parsing style
- * src/components/gallery/GalleryShell.tsx uses for its own URL-driven state
- * -- no Suspense boundary to wire up, and no new dependency.
- */
-function initialQueryFromUrl(): string {
-  if (typeof window === "undefined") return "";
-  return new URLSearchParams(window.location.search).get("q") ?? "";
-}
-
 function useSquareTileSize(
   active = true,
 ): [React.RefObject<HTMLDivElement | null>, number] {
@@ -123,8 +99,8 @@ function useSquareTileSize(
  * rendering this component server-side when the flag is off, so this check
  * is defense in depth, not the only gate.
  */
-export function MomentSearch({ events }: MomentSearchProps) {
-  const [query, setQuery] = useState<string>(initialQueryFromUrl);
+export function MomentSearch({ events, initialQuery = "" }: MomentSearchProps) {
+  const [query, setQuery] = useState(initialQuery);
   const [event, setEvent] = useState<string | null>(null);
   const [state, setState] = useState<SearchState>("idle");
   const [results, setResults] = useState<MomentSearchResultDTO[]>([]);
@@ -156,14 +132,10 @@ export function MomentSearch({ events }: MomentSearchProps) {
     [],
   );
 
-  // Runs the search for a "?q=" URL param -- the same one that seeded
-  // `query` above via initialQueryFromUrl -- so a keyword chip elsewhere in
-  // the gallery (Lightbox) can deep-link straight into a running search, not
-  // just a pre-filled box. Re-reads the URL here (rather than closing over
-  // the `query` state) so this effect's dependency array does not need
-  // `query` added to it. Mount only: `run` is stable (useCallback with no
-  // deps), so this fires once per mount and does not react to a later
-  // query-string-only navigation.
+  // Runs the server-derived deep-link query on mount so a keyword chip can
+  // open straight into results. GalleryShell keys this subtree by the deep
+  // link value, so a later same-route `?q=` navigation remounts it with the
+  // new query instead of retaining stale local input state.
   //
   // The queueMicrotask wrapper is load-bearing, not decoration: `run` sets
   // `state` to "loading" synchronously, before its first `await`, so calling
@@ -178,10 +150,9 @@ export function MomentSearch({ events }: MomentSearchProps) {
   // (resolves before the browser paints), so the deep-link search still
   // starts effectively immediately.
   useEffect(() => {
-    const initial = new URLSearchParams(window.location.search).get("q");
-    if (!initial) return;
-    queueMicrotask(() => void run(initial, null));
-  }, [run]);
+    if (!initialQuery) return;
+    queueMicrotask(() => void run(initialQuery, null));
+  }, [initialQuery, run]);
 
   const openIndex = useMemo(
     () => (openPhotoId ? results.findIndex((r) => r.photo.id === openPhotoId) : -1),

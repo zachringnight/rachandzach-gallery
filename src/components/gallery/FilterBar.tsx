@@ -24,31 +24,11 @@ export interface FilterBarProps {
   onStartSelection?: () => void;
   /** Optional Moment Search panel, toggled from the control bar. */
   momentSearchSlot?: React.ReactNode;
-}
-
-/**
- * Whether the page was opened with a Moment Search deep link.
- *
- * `MomentSearch` already seeds its query from `?q=` and auto-runs on mount
- * (see initialQueryFromUrl and the effect beside it), but it only mounts
- * when this panel is open, and the panel opened closed no matter how the
- * page was reached. So every `/photos?q=...` link -- the Lightbox keyword
- * chips, and the prompts on the browse landing -- mounted the grid,
- * dropped the query on the floor, and showed the unfiltered archive.
- * Verified before the fix: `?q=sunset kiss`, `?q=confetti` and `?all=1` all
- * returned the same 51 cards with the same first five photo IDs.
- *
- * Worth noting because docs/BACKLOG.md records this as fixed on 2026-08-05.
- * That change added `q` to GRID_PARAM_KEYS, which got the deep link as far
- * as the grid; the search itself never ran. Counting cards on the result
- * looks like success, which is presumably how it passed.
- *
- * Same `typeof window` guard and same URLSearchParams parsing as
- * initialQueryFromUrl, for the same reasons documented there.
- */
-function momentSearchDeepLinked(): boolean {
-  if (typeof window === "undefined") return false;
-  return (new URLSearchParams(window.location.search).get("q") ?? "") !== "";
+  /**
+   * Normalized server-derived `?q=` value. A new query version opens the
+   * Moment panel synchronously without resetting the rest of the filter bar.
+   */
+  momentSearchQuery?: string;
 }
 
 const ORIENTATIONS: { value: ClientOrientation; label: string }[] = [
@@ -78,9 +58,26 @@ export function FilterBar({
   selectedCount = 0,
   onStartSelection,
   momentSearchSlot,
+  momentSearchQuery = "",
 }: FilterBarProps) {
-  const [open, setOpen] = useState(false);
-  const [momentOpen, setMomentOpen] = useState(momentSearchDeepLinked);
+  const normalizedMomentSearchQuery = momentSearchQuery
+    .trim()
+    .replace(/\s+/g, " ");
+  const [disclosure, setDisclosure] = useState<{
+    query: string;
+    panel: "filters" | "moment" | null;
+  }>(() => ({
+    query: normalizedMomentSearchQuery,
+    panel: normalizedMomentSearchQuery.length > 0 ? "moment" : null,
+  }));
+  const activePanel =
+    disclosure.query === normalizedMomentSearchQuery
+      ? disclosure.panel
+      : normalizedMomentSearchQuery.length > 0
+        ? "moment"
+        : null;
+  const momentOpen = activePanel === "moment";
+  const filtersOpen = activePanel === "filters";
 
   /**
    * Filter-group changes route through here so the panel can decide
@@ -93,7 +90,10 @@ export function FilterBar({
   const applyGroupChange = (patch: Partial<GalleryFilterState>) => {
     onChange(patch);
     if ("person" in patch || "event" in patch) {
-      setOpen(false);
+      setDisclosure({
+        query: normalizedMomentSearchQuery,
+        panel: null,
+      });
     }
   };
   const activeFilterCount = [
@@ -229,9 +229,9 @@ export function FilterBar({
             <button
               type="button"
               onClick={() => {
-                setMomentOpen((current) => {
-                  if (!current) setOpen(false);
-                  return !current;
+                setDisclosure({
+                  query: normalizedMomentSearchQuery,
+                  panel: momentOpen ? null : "moment",
                 });
               }}
               aria-expanded={momentOpen}
@@ -247,12 +247,12 @@ export function FilterBar({
           <button
             type="button"
             onClick={() => {
-              setOpen((current) => {
-                if (!current) setMomentOpen(false);
-                return !current;
+              setDisclosure({
+                query: normalizedMomentSearchQuery,
+                panel: filtersOpen ? null : "filters",
               });
             }}
-            aria-expanded={open}
+            aria-expanded={filtersOpen}
             aria-controls="gallery-filter-groups"
             aria-label={
               activeFilterCount > 0
@@ -296,7 +296,7 @@ export function FilterBar({
       <div
         id="gallery-filter-groups"
         className="atlas-filter-groups"
-        data-open={open ? "true" : "false"}
+        data-open={filtersOpen ? "true" : "false"}
       >
         <fieldset>
           <legend className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">

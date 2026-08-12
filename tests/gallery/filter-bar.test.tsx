@@ -1,4 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { FilterBar } from "@/components/gallery/FilterBar";
@@ -189,4 +191,111 @@ describe("gallery discovery controls", () => {
     expect(onChange).toHaveBeenCalledWith({ sort: "newest" });
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
   });
+
+  it("renders a server-derived Moment Search deep link open before hydration", () => {
+    const html = renderToString(
+      <FilterBar
+        facets={facets}
+        filters={emptyFilters}
+        total={1721}
+        onChange={vi.fn()}
+        onReset={vi.fn()}
+        momentSearchQuery="sunset kiss"
+        momentSearchSlot={<p>Moment results</p>}
+      />,
+    );
+
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('data-open="true"');
+    expect(html).toContain("Moment results");
+  });
+
+  it("hydrates the server-open Moment panel without a recoverable mismatch", async () => {
+    const element = (
+      <FilterBar
+        facets={facets}
+        filters={emptyFilters}
+        total={1721}
+        onChange={vi.fn()}
+        onReset={vi.fn()}
+        momentSearchQuery="sunset kiss"
+        momentSearchSlot={<p>Moment results</p>}
+      />
+    );
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(element);
+    document.body.appendChild(container);
+    const onRecoverableError = vi.fn();
+    const root = hydrateRoot(container, element, { onRecoverableError });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    expect(
+      container.querySelector('[aria-label="Moment search"]')?.getAttribute(
+        "aria-expanded",
+      ),
+    ).toBe("true");
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  it("opens and closes Moment Search when a same-route query prop changes", () => {
+    const props = {
+      facets,
+      filters: emptyFilters,
+      total: 1721,
+      onChange: vi.fn(),
+      onReset: vi.fn(),
+      momentSearchSlot: <p>Moment results</p>,
+    };
+    const view = render(<FilterBar {...props} momentSearchQuery="" />);
+    const momentToggle = screen.getByRole("button", { name: "Moment search" });
+
+    expect(momentToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Moment results")).toBeNull();
+
+    view.rerender(
+      <FilterBar {...props} momentSearchQuery="sunset kiss" />,
+    );
+    expect(momentToggle.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("Moment results")).toBeTruthy();
+
+    view.rerender(<FilterBar {...props} momentSearchQuery="" />);
+    expect(momentToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Moment results")).toBeNull();
+  });
+
+  it("does not restore a stale Filters panel across Moment query versions", () => {
+    const props = {
+      facets,
+      filters: emptyFilters,
+      total: 1721,
+      onChange: vi.fn(),
+      onReset: vi.fn(),
+      momentSearchSlot: <p>Moment results</p>,
+    };
+    const view = render(<FilterBar {...props} momentSearchQuery="" />);
+    const filterToggle = screen.getByRole("button", { name: "Filters" });
+    const momentToggle = screen.getByRole("button", { name: "Moment search" });
+
+    fireEvent.click(filterToggle);
+    expect(filterToggle.getAttribute("aria-expanded")).toBe("true");
+
+    view.rerender(
+      <FilterBar {...props} momentSearchQuery="sunset kiss" />,
+    );
+    expect(filterToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(momentToggle.getAttribute("aria-expanded")).toBe("true");
+
+    fireEvent.click(momentToggle);
+    expect(momentToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(filterToggle.getAttribute("aria-expanded")).toBe("false");
+
+    view.rerender(<FilterBar {...props} momentSearchQuery="" />);
+    expect(filterToggle.getAttribute("aria-expanded")).toBe("false");
+  });
+
 });

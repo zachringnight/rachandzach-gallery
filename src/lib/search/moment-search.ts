@@ -423,19 +423,24 @@ export async function searchMoments(
   input: MomentSearchInput,
   reportFallback?: MomentSearchFallbackReporter,
 ): Promise<MomentSearchResult[]> {
-  const [{ createAdminClient }, { createSupabaseGalleryDataSource }, { embedText }] =
-    await Promise.all([
-      import("@/lib/supabase/admin"),
-      import("@/lib/gallery/supabase-source"),
-      import("@/lib/search/query-embedding"),
-    ]);
+  const [{ createAdminClient }, { createSupabaseGalleryDataSource }] = await Promise.all([
+    import("@/lib/supabase/admin"),
+    import("@/lib/gallery/supabase-source"),
+  ]);
   const client = createAdminClient();
   const dataSource = createSupabaseGalleryDataSource(client);
   return searchMomentsWith(
     input,
     {
       enabled: featureFlags.momentSearch,
-      embedText,
+      // Keep module evaluation inside searchMomentsWith's guarded embed step.
+      // A serverless bundle can fail while importing the native ONNX backend
+      // before embedText itself exists; loading it above that guard turned a
+      // degradable visual-search outage into a route-level 500.
+      embedText: async (query) => {
+        const { embedText } = await import("@/lib/search/query-embedding");
+        return embedText(query);
+      },
       runVectorSearch: (embedding, eventSlug, limit) =>
         runGalleryMomentsRpc(client, embedding, eventSlug, limit),
       dataSource,

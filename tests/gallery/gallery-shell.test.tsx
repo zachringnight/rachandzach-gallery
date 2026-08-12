@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, type ReactNode } from "react";
 import {
   cleanup,
   fireEvent,
@@ -17,11 +17,22 @@ import type {
 
 let loadMoreFromGrid: (() => void) | undefined;
 
+vi.mock("next/navigation", () => ({
+  // Next patches pushState/replaceState into its search-param store. Reading
+  // the live URL on each test render models that contract without mounting
+  // the full App Router.
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock("@/components/gallery/FilterBar", () => ({
   FilterBar: ({
     onChange,
+    momentSearchQuery,
+    momentSearchSlot,
   }: {
     onChange: (patch: Partial<GalleryFilterState>) => void;
+    momentSearchQuery?: string;
+    momentSearchSlot?: ReactNode;
   }) => (
     <>
       <button type="button" onClick={() => onChange({ q: "flowers" })}>
@@ -36,6 +47,9 @@ vi.mock("@/components/gallery/FilterBar", () => ({
       >
         Apply search while the grid intersects
       </button>
+      {momentSearchQuery ? (
+        <section data-testid="moment-panel">{momentSearchSlot}</section>
+      ) : null}
     </>
   ),
 }));
@@ -45,6 +59,20 @@ vi.mock("@/components/gallery/VirtualPhotoGrid", () => ({
     loadMoreFromGrid = onLoadMore;
     return <div>Photo grid</div>;
   },
+}));
+
+vi.mock("@/components/gallery/Lightbox", () => ({
+  Lightbox: ({
+    onMomentSearchNavigate,
+  }: {
+    onMomentSearchNavigate?: () => void;
+  }) => (
+    <div role="dialog" aria-label="Photo viewer">
+      <button type="button" onClick={onMomentSearchNavigate}>
+        Search this keyword
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock("@/components/gallery/useSelection", () => ({
@@ -59,7 +87,7 @@ vi.mock("@/components/gallery/useSelection", () => ({
 }));
 
 vi.mock("@/content/features", () => ({
-  featureFlags: { momentSearch: false },
+  featureFlags: { momentSearch: true },
 }));
 
 const initialPage: ClientGalleryPage = {
@@ -171,5 +199,152 @@ describe("GalleryShell filter commits", () => {
       "/api/gallery?q=flowers&sort=weekend&limit=60",
       { cache: "no-store" },
     );
+  });
+
+  it("mounts and runs a new same-route Moment Search query, then closes when removed", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ results: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const view = render(
+      <GalleryShell
+        initialPage={initialPage}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery=""
+      />,
+    );
+
+    expect(screen.queryByTestId("moment-panel")).toBeNull();
+
+    window.history.replaceState({}, "", "/photos?q=sunset+kiss");
+    view.rerender(
+      <GalleryShell
+        initialPage={initialPage}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery="sunset kiss"
+      />,
+    );
+
+    expect(screen.getByTestId("moment-panel")).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/search?q=sunset+kiss");
+    });
+
+    window.history.replaceState({}, "", "/photos?all=1");
+    view.rerender(
+      <GalleryShell
+        initialPage={initialPage}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery=""
+      />,
+    );
+    expect(screen.queryByTestId("moment-panel")).toBeNull();
+  });
+
+  it("closes a preserved gallery lightbox before a keyword opens Moment Search", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ results: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const pageWithPhoto = {
+      ...initialPage,
+      photos: [photo],
+      total: 1,
+    };
+    const view = render(
+      <GalleryShell
+        initialPage={pageWithPhoto}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={photo.id}
+        initialMomentQuery=""
+      />,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Photo viewer" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Search this keyword" }));
+    expect(screen.queryByRole("dialog", { name: "Photo viewer" })).toBeNull();
+
+    window.history.replaceState({}, "", "/photos?q=ceremony");
+    view.rerender(
+      <GalleryShell
+        initialPage={pageWithPhoto}
+        facets={{ events: [], people: [] }}
+        initialFilters={initialFilters}
+        initialPhotoId={null}
+        initialMomentQuery="ceremony"
+      />,
+    );
+
+    expect(screen.getByTestId("moment-panel")).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/search?q=ceremony");
+    });
+    expect(screen.queryByRole("dialog", { name: "Photo viewer" })).toBeNull();
+  });
+
+  it("clears a stale Moment seed when gallery filters remove q from the URL", async () => {
+    window.history.replaceState({}, "", "/photos?q=sunset");
+    const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const url = String(input);
+      const body = url.startsWith("/api/search")
+        ? { results: [] }
+        : initialPage;
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const props = {
+      initialPage,
+      facets: { events: [], people: [] },
+      initialFilters,
+      initialPhotoId: null,
+      initialMomentQuery: "sunset",
+    };
+    const view = render(<GalleryShell {...props} />);
+
+    expect(screen.getByTestId("moment-panel")).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/search?q=sunset");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Apply search" }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/gallery?q=flowers&sort=weekend&limit=60",
+        { cache: "no-store" },
+      );
+    });
+    expect(window.location.search).toBe("?gallery_q=flowers");
+    expect(screen.queryByTestId("moment-panel")).toBeNull();
+
+    // A parent render with the unchanged server seed must not resurrect a
+    // query that the current client URL no longer contains.
+    view.rerender(<GalleryShell {...props} />);
+    expect(screen.queryByTestId("moment-panel")).toBeNull();
+
+    window.history.pushState({}, "", "/photos?q=sunset");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    await waitFor(() => expect(screen.getByTestId("moment-panel")).toBeTruthy());
+    expect(fetchMock).toHaveBeenCalledWith("/api/search?q=sunset");
   });
 });

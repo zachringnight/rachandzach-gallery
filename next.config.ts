@@ -2,22 +2,30 @@ import type { NextConfig } from "next";
 import { securityHeaderEntries } from "./src/lib/auth/security-headers";
 import { legacyRedirects } from "./src/lib/redirects";
 
+const onnxRuntimeTarget = `${process.platform}/${process.arch}`;
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   turbopack: {
-    root: process.cwd()
+    root: process.cwd(),
   },
   // onnxruntime-node resolves its native binding dynamically. Next's normal
   // file trace found the .node binding but omitted the adjacent shared
   // library, so Vercel failed to import @huggingface/transformers at runtime
   // with `libonnxruntime.so.1: cannot open shared object file`. Keep this
-  // scoped to Moment Search so no unrelated function carries the native
-  // runtime payload.
+  // scoped to Moment Search and the current build target so no unrelated
+  // function or foreign platform runtime carries the native payload.
   outputFileTracingIncludes: {
     "/api/search": [
-      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/onnxruntime_binding.node",
-      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime.so.1"
-    ]
+      `./node_modules/onnxruntime-node/bin/napi-v6/${onnxRuntimeTarget}/**/*`,
+    ],
+  },
+  // A developer's prewarmed fp32 model cache is local state, not a deploy
+  // artifact. Production fetches the model into its writable /tmp cache.
+  outputFileTracingExcludes: {
+    "/api/search": [
+      "./node_modules/@huggingface/transformers/.cache/**/*",
+    ],
   },
   // Security headers for every response, including the static assets the
   // proxy matcher skips. proxy.ts applies the identical set to proxied
