@@ -148,6 +148,30 @@ reports `tail`'s exit code, not npm's. When ESLint 10 crashed, the chain
 stopped at `lint` and the piped command still looked like a pass. Read the end
 of the output, or run `npm run verify` unpiped, before believing a green run.
 
+## Audit 2026-08-17: what a full sweep did and did not find
+
+A pass over error handling, secrets, upload validation, deploy config, CI, and
+the test and lint suites. Most of it came back clean, which is worth recording
+so the next audit does not redo it.
+
+**Clean, checked, no action.** Every one of the 14 genuinely empty `catch`
+bodies in `src/` is deliberate and carries a comment saying why (localStorage
+quota, retry fall-through, best-effort notification, denied fullscreen); the
+one real silent failure this pass found was in an offline script, not app
+code. Nothing secret is tracked: `.env.example` is the only env file in git,
+`.gitignore` covers `.env` and `.env.cloud`, and no credential-shaped string
+appears in a tracked file. Guest uploads take their media type from magic
+bytes rather than the client's claim, behind a size cap. `robots.ts` and
+`sitemap.ts` agree: everything disallowed except `/nyc` and `/marathon`, and
+the sitemap lists only `/nyc`. All 17 unit skips and 26 e2e skips are
+credential-gated and announce themselves in the run output.
+
+| Item | Where | Why it matters |
+|---|---|---|
+| **`noUncheckedIndexedAccess` is off, and turning it on costs 383 errors** | `tsconfig.json` | `strict` is on, which covers `noImplicitAny` and `strictNullChecks`, but not this. Measured, not guessed: `tsc --noEmit --noUncheckedIndexedAccess` reports 383 errors, heavily in tests where fixture indexing is assumed safe. Real bugs hide in that class, so it is worth doing eventually, but it is its own project and not an audit-fix pass. |
+| **Local Node drifts from the version this project declares** | `package.json` `engines`, `.github/workflows/ci.yml` | `engines` pins `24.x` and CI pins Node 24 deliberately, with a comment tying it to the Supabase realtime client's use of native WebSocket. The workstation used for this pass runs Node 26, so `npm install` prints `EBADENGINE` and every local `npm run verify` runs on a major the project does not claim to support. CI is the authority and it passed on 24, but a local-only failure or pass should be read with that in mind. |
+| **A notification failure leaves a `queued` row and tells no one** | `approve/route.ts:215`, `reject/route.ts:120` | Correctly swallowed, so a Resend outage cannot fail an approval. The trace survives as a `rachandzach_notification_log` row that never leaves `queued`. Nothing reads that, so a silent, permanent email outage would look exactly like normal operation. A periodic check of stale `queued` rows would close it. |
+
 ## Resolved 2026-08-17: both npm advisories closed with overrides
 
 `npm audit` reported 4 high-severity findings, both rooted in transitive
