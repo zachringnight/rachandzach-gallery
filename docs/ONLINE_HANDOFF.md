@@ -50,7 +50,7 @@ The production release includes:
 - Media viewer with adjacent-image preload, keyboard/swipe navigation, and
   quiet photo-first chrome
 - Favorites, per-photo sharing, downloads, selection, ZIP export, slideshow,
-  TV mode, and native Apple sharing
+  and native Apple sharing
 - Guest uploads, moderation, and durable approved uploader-note captions
 - Admin catalog table, search, filters, bulk selection, tagging, and viewer
 - Public Rachel Runs NYC story, Team for Kids context, and donation links at
@@ -61,6 +61,14 @@ The production release includes:
   me, search, favorites, original saves, and guest uploads
 - Forward-looking archive and Rachel Runs NYC content; the public weekend recap
   was removed and `/weekend` now redirects to `/photos`
+
+TV mode is gone and this document listed it as shipped until 2026-08-17.
+`src/app/(guest)/tv/` was deleted in `f5731e9` (PR
+[#11](https://github.com/zachringnight/rachandzach-gallery/pull/11)), and
+`https://rachandzach.com/tv` has 404'd ever since. The in-gallery slideshow is
+unaffected and still ships. `docs/HANDOFF_CURRENT.md` still describes TV mode
+and an open "TV-mode nav decision"; that file is explicitly historical and was
+true when written, so it is left alone. Nothing is pending there.
 
 Photo-overlay labels were removed. The existing photo memories wall remains
 complete. `tsconfig.tsbuildinfo` was deleted from source control and
