@@ -24,7 +24,7 @@ the pre-launch history and are not operational instructions.
 | Known unshipped work | `docs/BACKLOG.md`; current branch `codex/gallery-ops-closeout` (admin session refresh, landing Moment Search, NYC totals, archive-writer gates) |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | `codex/gallery-ops-closeout`: persist rotated admin auth cookies from the proxy, send the `/photos` landing search to Moment Search `q`, refresh NYC totals from NYRR, and gate remaining master writers. Unmerged. Preview `OPEN_ACCESS` is still set; magic-link redirect URLs are still not listed on the shared Supabase project. |
+| Current unmerged app work | `codex/gallery-ops-closeout` / [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31): persist rotated admin auth cookies from the proxy, send the `/photos` landing search to Moment Search `q`, refresh NYC totals from NYRR, and gate remaining master writers. Gallery callback URLs are now on the shared Auth allowlist. Preview `OPEN_ACCESS` is still set. |
 
 Production aliases are active for:
 
@@ -635,11 +635,15 @@ That is enforced in code, not by convention.
 
 **Retirement, required before this is considered finished:**
 
-- [ ] Add the gallery URLs to Supabase → Authentication → Redirect URLs
-      (`https://rachandzach.com/auth/callback`, the `www` variant, the preview
-      origin, `http://localhost:4319/auth/callback`). No gallery URL is
-      currently listed, which is *why* magic links land on the unrelated NWSL
-      project. **Do not change Site URL** -- it belongs to that other product.
+- [x] Add the gallery URLs to Supabase → Authentication → Redirect URLs
+      (`https://rachandzach.com/auth/callback`, the `www` variant,
+      `https://rachandzach-gallery.vercel.app/**`, `http://localhost:4319/**`).
+      Done 2026-08-17. Site URL is still `https://www.nothingbutbet.com` and
+      was not changed. Team-scoped Vercel previews were already covered by
+      `https://*-zach-soskins-projects-95c2533d.vercel.app/**`. Dashboard
+      "send magic link" still defaults to Site URL; use
+      `scripts/preview-magic-link.mjs` with an explicit gallery origin, or
+      pass `redirect_to` to `/auth/callback`.
 - [ ] Remove the `OPEN_ACCESS` variable from Vercel Preview and delete
       `src/lib/auth/open-access.ts` along with its three call sites.
 - [ ] Re-enable `ssoProtection` (`all_except_custom_domains`).
@@ -655,7 +659,7 @@ That is enforced in code, not by convention.
 | DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
 | DONE (half) | Zach | 2026-08-07 | Of the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`, Zach confirmed the after-party face (sim 0.483). Applied as wave 14 to all four layers: additions manifest, catalog, the original's embedded metadata, and the live database (single-row upsert with pre-state backup, because the full sync is blocked; see the P1 name-drift row). The cocktail-hour face (sim 0.615, behind sunglasses) stays undecided and unapplied. |
 | DONE | Codex | 2026-08-08 | The six "live-name drifts" turned out to be the opposite of a drift: those names are `/admin/faces` corrections, which belong only in `rachandzach_person_overrides` and are applied over the catalog name at the data-source boundary. Something had copied them down into `rachandzach_people.display_name` between 2026-08-05T22:32Z and 2026-08-06T02:43Z, collapsing the two layers and tripping the sync guard. Restored the six base names to canonical (backup in `metadata/faces/sync-backups/`); no guest-visible name changed, since every override was verified present first. `write-additions-to-master.py` now resolves names through `person-overrides.json`, so it stopped wanting to put a second name for the same person into 29 originals; the one genuine pending write (a Joan Soskin tag) was applied and manifest-reconciled. The junk `"pa"` entry and the stale `By Person/pa` symlink folder are gone. Both guards pass; live sits at 5,100 tag rows. See `docs/BACKLOG.md` "Resolved 2026-08-08". |
-| P0 | Zach + Codex | Before retiring Preview open-admin | Add gallery callback URLs to Supabase Auth Redirect URLs without changing Site URL. Then remove `OPEN_ACCESS` from Vercel Preview and restore `ssoProtection`. The proxy now persists rotated admin cookies, but magic links still land on the shared NWSL project until those URLs exist. |
+| DONE | Codex | 2026-08-17 | Gallery callback URLs added to the shared project's Auth Redirect URLs. Site URL left on `nothingbutbet.com`. `OPEN_ACCESS` and `ssoProtection` left as-is. |
 | P1 | Zach | After this deploys | Flip through `/photos` on a phone: filter a person, watch the chip row, scroll down and back up (chapter tab and Light Bar should step aside and return), favorite from a card, download from the viewer. The grid only renders against the live database, so this pass shipped on unit tests plus the data-free visual suite; this is the eyeball check that closes it. |
 | P2 | Rachel | Any time | Replace two correct-but-unflattering face crops in `/admin/faces`: `charlie-weisman`, `dee-burton`. Admin picks outrank the script. |
 | DONE | Codex | 2026-08-05 | AVIF fallback shipped in [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15): `preview-format.ts` orders previews most-compatible-first, `serialize.ts` signs a decodable companion per AVIF width, and `PhotoImage` renders `<picture>` so browsers negotiate natively. This row previously still read as open work and would have sent an engineer to rebuild it. |
