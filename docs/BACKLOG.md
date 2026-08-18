@@ -136,7 +136,7 @@ existing semver ranges (Next 16.2.9 -> 16.3.1, React 19.2.7 -> 19.2.8,
 `@supabase/supabase-js` 2.110.8 -> 2.112.3, Playwright 1.61.1 -> 1.62.1, and
 the rest), and `@types/node` 24 -> 26 plus `jsdom` 29 -> 30 were taken as
 majors. `npm run verify` is green on all of it. Two majors were attempted and
-put back, for reasons that are external to this repository.
+put back, for reasons that are external to this repository. All of it is in [#32](https://github.com/zachringnight/rachandzach-gallery/pull/32).
 
 | Item | Where | Why it matters |
 |---|---|---|
