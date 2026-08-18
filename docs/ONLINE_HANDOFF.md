@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-08-12 (PDT).
+Updated 2026-08-17 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -13,18 +13,18 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Deployed application release | `7a336d83d34303b102bdd48d54ee626bb18a1c04` |
+| Deployed application release | `3756ac2e87e633d19fc2e7a6582ed4acca951077` |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `7a336d8` -- production Moment Search runtime repair and structured fallback diagnostics ([#28](https://github.com/zachringnight/rachandzach-gallery/pull/28), merged 2026-08-12). Preceding: `de7a1bf` creative-library upgrade and guest-copy cleanup ([#27](https://github.com/zachringnight/rachandzach-gallery/pull/27), merged 2026-08-11) |
-| Current production head | `248571d` -- docs-only PR [#29](https://github.com/zachringnight/rachandzach-gallery/pull/29) on top of application release `7a336d8` |
-| Known unshipped work | `docs/BACKLOG.md` |
+| Latest release | `3756ac2` -- Moment Search deep-link lifecycle repair, Lightbox keyword-navigation closure, import-level fail-soft containment, and runtime-trace assertion ([#30](https://github.com/zachringnight/rachandzach-gallery/pull/30), merged 2026-08-12). Preceding application release: `7a336d8` production Moment Search runtime repair ([#28](https://github.com/zachringnight/rachandzach-gallery/pull/28)) |
+| Current production head | `3756ac2` -- merge of PR [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30). Production deployment `dpl_AX5fzRcTa1ZuUaN6Gc7gkQb9Skko` is `READY` with the apex, `www`, project, and `main` aliases attached. Live `people dancing` returns embedding matches. |
+| Known unshipped work | `docs/BACKLOG.md`; current branch `codex/gallery-ops-closeout` (admin session refresh, landing Moment Search, NYC totals, archive-writer gates) |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | Ready-for-review PR [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) from `codex/gallery-review-improvements`: Moment Search deep-link lifecycle repair, Lightbox keyword-navigation closure, import-level fail-soft containment, portable runtime-trace assertion, and regression coverage. Unmerged and not deployed to Production. |
+| Current unmerged app work | `codex/gallery-ops-closeout` / [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31): persist rotated admin auth cookies from the proxy, send the `/photos` landing search to Moment Search `q`, refresh NYC totals from NYRR, and gate remaining master writers. Gallery callback URLs are now on the shared Auth allowlist. Preview `OPEN_ACCESS` is still set. |
 
 Production aliases are active for:
 
@@ -99,13 +99,19 @@ homepage returns `200` and `people dancing` returns three explicit
 `matchType: embedding` results with nonzero similarities. The post-smoke
 Production error-log query returned no runtime errors.
 
-### Moment Search deep-link and fail-soft hardening (PR #30, unshipped, 2026-08-12)
+### Moment Search deep-link and fail-soft hardening (shipped, 2026-08-12)
+
+PR #30 merged as `3756ac2e87e633d19fc2e7a6582ed4acca951077` and is the current
+Production application head. Direct `/photos?q=...` loads, same-route Moment
+links, Lightbox keyword navigation, URL-rewrite sync, and encoder import
+fail-soft are in that release. A 2026-08-17 production check of
+`people dancing` returned embedding matches from `GET /api/search`.
 
 The shipped runtime repair restored semantic API responses, but two lifecycle
 paths remained broken. A direct `/photos?q=...` request server-rendered the
 Moment disclosure closed and recovered after hydration with React error 418;
 a same-route link from `/photos` updated the URL but left the disclosure closed
-and never mounted the search. The PR branch now normalizes `q` on the
+and never mounted the search. The merged PR normalizes `q` on the
 server, passes it through `PhotosPage` -> `GalleryShell` -> `FilterBar` and
 `MomentSearch`, and models the mutually exclusive Filters/Moments disclosure
 against the current query version. Only `MomentSearch` remounts when that query
@@ -126,15 +132,10 @@ model cache is excluded, Node is pinned to the deployed `24.x` major, and a
 post-build assertion now checks that the native binding and adjacent shared
 library are present without bundling a local model.
 
-Safe-point verification is green: 83 focused Vitest checks, typecheck, Vercel
-configuration validation, lint with zero errors and 19 existing warnings,
-`git diff --check`, and local browser checks at desktop and 390px. The real
-`/photos` -> `sunset kiss` link returned 24 embedding matches; a direct reload
-kept the disclosure open with no hydration or console errors. PR #30's initial
-head `185bbb6` passed the complete GitHub `npm run verify` check and produced a
-`READY` Vercel Preview. The review-fix head must retain both green gates before
-merge; stable-domain Production readback remains required after release. The
-PR is not merged or deployed to Production.
+Safe-point verification was green before merge. PR #30's review-fix head
+passed GitHub `npm run verify` and produced a `READY` Vercel Preview, then
+merged. Production `dpl_AX5fzRcTa1ZuUaN6Gc7gkQb9Skko` is `READY` on that
+commit.
 
 ## Verification evidence
 
@@ -634,11 +635,15 @@ That is enforced in code, not by convention.
 
 **Retirement, required before this is considered finished:**
 
-- [ ] Add the gallery URLs to Supabase → Authentication → Redirect URLs
-      (`https://rachandzach.com/auth/callback`, the `www` variant, the preview
-      origin, `http://localhost:4319/auth/callback`). No gallery URL is
-      currently listed, which is *why* magic links land on the unrelated NWSL
-      project. **Do not change Site URL** -- it belongs to that other product.
+- [x] Add the gallery URLs to Supabase → Authentication → Redirect URLs
+      (`https://rachandzach.com/auth/callback`, the `www` variant,
+      `https://rachandzach-gallery.vercel.app/**`, `http://localhost:4319/**`).
+      Done 2026-08-17. Site URL is still `https://www.nothingbutbet.com` and
+      was not changed. Team-scoped Vercel previews were already covered by
+      `https://*-zach-soskins-projects-95c2533d.vercel.app/**`. Dashboard
+      "send magic link" still defaults to Site URL; use
+      `scripts/preview-magic-link.mjs` with an explicit gallery origin, or
+      pass `redirect_to` to `/auth/callback`.
 - [ ] Remove the `OPEN_ACCESS` variable from Vercel Preview and delete
       `src/lib/auth/open-access.ts` along with its three call sites.
 - [ ] Re-enable `ssoProtection` (`all_except_custom_domains`).
@@ -649,11 +654,12 @@ That is enforced in code, not by convention.
 |---|---|---|---|
 | P0 | Rachel | Next session | Name the 16 clear stacks covering 95 faces in `metadata/faces/stack-sheets/`; then run the post-session commands in `docs/FACE_TAGGING_TOOL.md`. Nine stacks / 19 faces with no clear view remain held out unless `--include-blurry` is chosen deliberately. |
 | DONE | Zach + Codex | 2026-08-10 | Applied and verified the 27 live reviewed joins, then safely merged Joan Soskin into Joan AuWerter. The final read-only plans report 996/996 tags present and zero pending joins or merges. |
-| P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 46 real names and their messages. Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
+| P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 53 real names and their messages as of 2026-08-17 ($5,182 of $10,000). Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
+| DONE | Codex | 2026-08-12 | Moment Search deep-link and fail-soft hardening merged in [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) and is live on Production `3756ac2`. |
 | DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
 | DONE (half) | Zach | 2026-08-07 | Of the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`, Zach confirmed the after-party face (sim 0.483). Applied as wave 14 to all four layers: additions manifest, catalog, the original's embedded metadata, and the live database (single-row upsert with pre-state backup, because the full sync is blocked; see the P1 name-drift row). The cocktail-hour face (sim 0.615, behind sunglasses) stays undecided and unapplied. |
 | DONE | Codex | 2026-08-08 | The six "live-name drifts" turned out to be the opposite of a drift: those names are `/admin/faces` corrections, which belong only in `rachandzach_person_overrides` and are applied over the catalog name at the data-source boundary. Something had copied them down into `rachandzach_people.display_name` between 2026-08-05T22:32Z and 2026-08-06T02:43Z, collapsing the two layers and tripping the sync guard. Restored the six base names to canonical (backup in `metadata/faces/sync-backups/`); no guest-visible name changed, since every override was verified present first. `write-additions-to-master.py` now resolves names through `person-overrides.json`, so it stopped wanting to put a second name for the same person into 29 originals; the one genuine pending write (a Joan Soskin tag) was applied and manifest-reconciled. The junk `"pa"` entry and the stale `By Person/pa` symlink folder are gone. Both guards pass; live sits at 5,100 tag rows. See `docs/BACKLOG.md` "Resolved 2026-08-08". |
-| IN REVIEW | Codex | 2026-08-12 | The mobile/touch work remains shipped. The keyword-chip row was only half-fixed on 2026-08-05: it mounted the gallery but did not reliably open/run Moment Search. `codex/gallery-review-improvements` contains the server-derived deep-link and same-route lifecycle repair; close this row only after the full gate, Preview, merge, and stable-domain browser readback. |
+| DONE | Codex | 2026-08-17 | Gallery callback URLs added to the shared project's Auth Redirect URLs. Site URL left on `nothingbutbet.com`. `OPEN_ACCESS` and `ssoProtection` left as-is. |
 | P1 | Zach | After this deploys | Flip through `/photos` on a phone: filter a person, watch the chip row, scroll down and back up (chapter tab and Light Bar should step aside and return), favorite from a card, download from the viewer. The grid only renders against the live database, so this pass shipped on unit tests plus the data-free visual suite; this is the eyeball check that closes it. |
 | P2 | Rachel | Any time | Replace two correct-but-unflattering face crops in `/admin/faces`: `charlie-weisman`, `dee-burton`. Admin picks outrank the script. |
 | DONE | Codex | 2026-08-05 | AVIF fallback shipped in [#15](https://github.com/zachringnight/rachandzach-gallery/pull/15): `preview-format.ts` orders previews most-compatible-first, `serialize.ts` signs a decodable companion per AVIF width, and `PhotoImage` renders `<picture>` so browsers negotiate natively. This row previously still read as open work and would have sent an engineer to rebuild it. |

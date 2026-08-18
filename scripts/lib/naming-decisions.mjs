@@ -59,6 +59,55 @@ export async function writeJsonAtomic(path, value) {
   }
 }
 
+/**
+ * Write several JSON files as one unit: stage every temp file first, then
+ * rename. If a later rename fails, restore every path from `snapshots`
+ * (the on-disk bytes from before this call) so a partial set cannot linger.
+ */
+export async function writeJsonAtomicSet(files, snapshots) {
+  const staged = [];
+  try {
+    for (const { path, value } of files) {
+      await fs.mkdir(dirname(path), { recursive: true });
+      const temporary = `${path}.tmp-${process.pid}-${Date.now()}-${staged.length}`;
+      const handle = await fs.open(temporary, "w");
+      try {
+        await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, "utf8");
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      staged.push({ path, temporary });
+    }
+    for (const { path, temporary } of staged) {
+      await fs.rename(temporary, path);
+    }
+  } catch (error) {
+    await Promise.all(
+      staged.map(({ temporary }) => fs.unlink(temporary).catch(() => {})),
+    );
+    await Promise.all(
+      files.map(async ({ path }, index) => {
+        const snapshot = snapshots[index];
+        if (snapshot == null) {
+          await fs.unlink(path).catch(() => {});
+          return;
+        }
+        await fs.mkdir(dirname(path), { recursive: true });
+        await fs.writeFile(path, snapshot);
+      }),
+    );
+    throw error;
+  }
+  for (const { path } of files) {
+    const directory = await fs.open(dirname(path), "r").catch(() => null);
+    if (directory) {
+      await directory.sync().catch(() => {});
+      await directory.close();
+    }
+  }
+}
+
 export function paths(repoRoot) {
   return {
     additions: join(repoRoot, "metadata", "reviewed-face-tag-additions.json"),
@@ -271,9 +320,7 @@ export class NamingSession {
       // rejected while the files on disk are still the old, valid ones.
       this.#validate();
 
-      await writeJsonAtomic(this.paths.additions, this.additions);
-      await writeJsonAtomic(this.paths.removals, this.removals);
-      await writeJsonAtomic(this.paths.ledger, this.ledger);
+      await this.#persistDecisionFiles();
     } catch (error) {
       this.additions = before.additions;
       this.removals = before.removals;
@@ -294,9 +341,7 @@ export class NamingSession {
     this.removals = last.removals ?? this.removals;
     this.ledger = last.ledger;
     this.#validate();
-    await writeJsonAtomic(this.paths.additions, this.additions);
-    await writeJsonAtomic(this.paths.removals, this.removals);
-    await writeJsonAtomic(this.paths.ledger, this.ledger);
+    await this.#persistDecisionFiles();
     const decided = {};
     for (const key of last.keys) decided[key] = (this.ledger.entries || {})[key] ?? null;
     return {
@@ -305,6 +350,25 @@ export class NamingSession {
       reverted: last.keys.length,
       focusKey: last.keys[0],
     };
+  }
+
+  async #persistDecisionFiles() {
+    const files = [
+      { path: this.paths.additions, value: this.additions },
+      { path: this.paths.removals, value: this.removals },
+      { path: this.paths.ledger, value: this.ledger },
+    ];
+    const snapshots = await Promise.all(
+      files.map(async ({ path }) => {
+        try {
+          return await fs.readFile(path);
+        } catch (error) {
+          if (error.code === "ENOENT") return null;
+          throw error;
+        }
+      }),
+    );
+    await writeJsonAtomicSet(files, snapshots);
   }
 
   #tag(items, personSlugs) {

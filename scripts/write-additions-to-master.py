@@ -70,7 +70,15 @@ def read_current(paths: list[Path]) -> dict[Path, dict]:
             capture_output=True, text=True,
         )
         if result.returncode != 0:
-            raise RuntimeError(result.stderr.strip() or "exiftool read failed")
+            # A missing original must not abort the rest of the run. exiftool
+            # still prints JSON for the files it could open.
+            try:
+                recs = json.loads(result.stdout) if result.stdout.strip() else []
+            except json.JSONDecodeError:
+                recs = []
+            for rec in recs:
+                records[Path(rec["SourceFile"])] = rec
+            continue
         for rec in json.loads(result.stdout):
             records[Path(rec["SourceFile"])] = rec
         print(f"  read {batch_index}/{-(-len(paths)//160)} "

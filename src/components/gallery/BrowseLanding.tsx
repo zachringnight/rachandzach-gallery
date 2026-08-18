@@ -3,9 +3,10 @@ import Link from "next/link";
 import { ArrowUpRight, Search } from "lucide-react";
 
 import { Reveal } from "@/components/motion/Reveal";
-import { GALLERY_SEARCH_URL_PARAM } from "@/lib/gallery/client-types";
-import { MAX_GALLERY_SEARCH_LENGTH } from "@/lib/gallery/query";
-import { MOMENT_SEARCH_EXAMPLES } from "@/lib/search/contracts";
+import {
+  MOMENT_SEARCH_EXAMPLES,
+  MOMENT_SEARCH_MAX_QUERY_LENGTH,
+} from "@/lib/search/contracts";
 
 /**
  * The browse landing: what /photos renders when a guest arrives with NO
@@ -156,13 +157,11 @@ export function BrowseLanding({
       </nav>
 
       {/*
-       * Search is one of the four named guest jobs, and until now it only
-       * existed once the grid had mounted: a guest who arrived knowing they
-       * wanted "the sunset kiss" had to open all 1,721 photographs first and
-       * find the field inside. This is a plain GET form, so it works with no
-       * JavaScript and lands directly on the filtered grid -- gallery_q is
-       * already in GRID_PARAM_KEYS, so the URL mounts the grid rather than
-       * bouncing back to this landing.
+       * Search is one of the four named guest jobs. The landing field submits
+       * Moment Search's `q` (already in GRID_PARAM_KEYS) so "sunset kiss"
+       * does the same thing as the prompt chips below. Catalog text search
+       * (gallery_q: names, events, tags) still lives on the mounted grid.
+       * This is a plain GET form so it works with no JavaScript.
        */}
       <section className="atlas-browse-search" aria-labelledby="atlas-browse-search-title">
         <h2 id="atlas-browse-search-title" className="atlas-kicker">
@@ -170,23 +169,17 @@ export function BrowseLanding({
         </h2>
         <form action="/photos" method="get" role="search">
           <label htmlFor="atlas-browse-search-input">
-            Search names, events, tags
+            Describe a moment
           </label>
           <div className="atlas-browse-search-field">
             <Search aria-hidden="true" size={16} strokeWidth={1.6} />
             <input
               id="atlas-browse-search-input"
               type="search"
-              name={GALLERY_SEARCH_URL_PARAM}
-              placeholder="Search names, events, tags"
+              name="q"
+              placeholder="sunset kiss, champagne toast"
               autoComplete="off"
-              /* Same cap as the in-grid field and as parseGalleryQuery.
-                 Without it the browser happily submits a longer value, the
-                 server throws GalleryQueryError, and the catch falls back to
-                 the unfiltered gallery while initialFilters clears the
-                 query -- so a submission that looked fine returns the whole
-                 archive with no indication why. */
-              maxLength={MAX_GALLERY_SEARCH_LENGTH}
+              maxLength={MOMENT_SEARCH_MAX_QUERY_LENGTH}
             />
             <button type="submit">Search</button>
           </div>
@@ -197,7 +190,7 @@ export function BrowseLanding({
            * from the surface guests actually land on. Plain `q` is Moment
            * Search's param and is also in GRID_PARAM_KEYS. */
           <div className="atlas-browse-prompts">
-            <p>Or describe a moment:</p>
+            <p>Or try one of these:</p>
             <ul>
               {LANDING_MOMENT_PROMPTS.map((prompt) => (
                 <li key={prompt}>

@@ -484,6 +484,15 @@ def main() -> int:
         )
     )
 
+    write = "--write" in sys.argv
+    if not write:
+        print(
+            "DRY RUN -- would build a new clean master at "
+            f"{OUTPUT_ROOT} from {len(canonical_records)} unique photos. "
+            "Re-run with --write to apply. Nothing was written."
+        )
+        return 0
+
     OUTPUT_ROOT.mkdir(parents=True)
     metadata_dir = OUTPUT_ROOT / "_Metadata"
     metadata_dir.mkdir()
