@@ -4,9 +4,9 @@ Known, deliberately unshipped work. Everything here was found by a real audit
 or review and verified against the code, not speculation. Each item says what
 is wrong, why it matters, and where to look.
 
-Last updated 2026-08-17. Production application release `3756ac2` (PR #30) is
-public. Local branch `codex/gallery-ops-closeout` contains unshipped admin
-cookie refresh, landing Moment Search, NYC totals, and archive-writer gates.
+Last updated 2026-08-17. Production application release `4cefe66` (PR #31) is
+public. Nothing is held back on a branch: the admin cookie refresh, landing
+Moment Search, NYC totals, and archive-writer gates all shipped in it.
 
 ## Mobile and touch
 
@@ -118,16 +118,79 @@ needs a decision or more room than an audit-fix pass should take.
 
 | Item | Where | Why it matters |
 |---|---|---|
-| **Admin is locked out roughly an hour after each magic link** | `src/lib/supabase/server.ts`, `src/proxy.ts` | Proxy now calls `getUser()` and persists rotated cookies. Gallery callback URLs are on the shared project's allowlist as of 2026-08-17. `OPEN_ACCESS` is still Preview-only until someone chooses to retire it. |
+| ~~**Admin is locked out roughly an hour after each magic link**~~ **SHIPPED 2026-08-17 (#31), end-to-end sign-in still unconfirmed** | `src/lib/supabase/server.ts`, `src/proxy.ts`, `src/lib/auth/supabase-auth-refresh.ts` | The proxy calls `getUser()` and writes rotated cookies back, and gallery callback URLs are on the shared project's allowlist as of 2026-08-17. What is proven is the code path: a live user reaches `/admin`, a rotation survives both the admin route and the guest-cookie mint, and an unreachable auth service fails closed on `/admin` and soft on guest routes (`tests/auth/route-protection.test.ts`). What is not proven is a real magic link followed by an hour of admin use; that needs Zach's own session. `OPEN_ACCESS` is still Preview-only until someone chooses to retire it. |
 | ~~**Signed-URL renewal fails permanently and silently**~~ **RESOLVED 2026-08-08 (#19)** | `src/components/gallery/GalleryShell.tsx:457-474`, `:731-745` | One renewal timer, keyed on `[expiresAt, photos, filters]`. A single failed or thrown `/api/gallery` call returns without applying, so no state changes, the effect never re-runs, and there is no retry and no message. When the 8-hour TTL lapses the whole grid goes blank until a reload. **Fixed:** the renewal now reports success, and a failure backs off 15s doubling to a 5-minute cap and keeps retrying. |
 | ~~**Open access collapsed every visitor onto one identity**~~ **RESOLVED 2026-08-09** | former guest-session bypass | Guest routes are intentionally public and now issue normal per-browser guest sessions for favorites and uploads. `OPEN_ACCESS` no longer supplies the guest identity; its remaining Preview-only admin bypass is the separate temporary risk documented in `ONLINE_HANDOFF.md`. |
 | ~~**Nothing tested the one line keeping the site private**~~ **RESOLVED / SUPERSEDED 2026-08-09** | `src/lib/auth/open-access.ts` | The guest site is intentionally public, the retired access-login route is gone, and the remaining Preview-only admin guard has explicit production-denial coverage. The current admin-session refresh defect is tracked separately above. |
-| ~~**`sync-gallery-catalog.mjs` resume state lies in three ways**~~ **IN `codex/gallery-ops-closeout`** | that script | Checkpointed photos are skipped on resume; preview records with empty hash or `bytes: 0` fail the storage gate; a verify-counts failure no longer records the batch as catalog-complete. |
-| ~~**The naming tool's three-file write is not transactional**~~ **IN `codex/gallery-ops-closeout`** | `scripts/lib/naming-decisions.mjs` | The three decision files are staged, then renamed as a set; a later failure restores the pre-write bytes. |
-| ~~**Three more master writers have no dry-run gate**~~ **IN `codex/gallery-ops-closeout`** | `apply-contact-name-matches.py`, `reconcile-clean-master-aliases.py`, `prepare-clean-master.py` | Each now defaults to dry-run; `--write` is required before any metadata, symlink, or clean-master output is touched. |
-| ~~**`write-additions-to-master.py`'s MISSING FILE branch is unreachable**~~ **IN `codex/gallery-ops-closeout`** | that script | A missing original no longer aborts the whole read; remaining files continue and the missing path is reported per file. |
+| ~~**`sync-gallery-catalog.mjs` resume state lies in three ways**~~ **SHIPPED 2026-08-17 (#31)** | that script | Checkpointed photos are skipped on resume; preview records with empty hash or `bytes: 0` fail the storage gate; a verify-counts failure no longer records the batch as catalog-complete. |
+| ~~**The naming tool's three-file write is not transactional**~~ **SHIPPED 2026-08-17 (#31)** | `scripts/lib/naming-decisions.mjs` | The three decision files are staged, then renamed as a set; a later failure restores the pre-write bytes. |
+| ~~**Three more master writers have no dry-run gate**~~ **SHIPPED 2026-08-17 (#31)** | `apply-contact-name-matches.py`, `reconcile-clean-master-aliases.py`, `prepare-clean-master.py` | Each now defaults to dry-run; `--write` is required before any metadata, symlink, or clean-master output is touched. |
+| ~~**`write-additions-to-master.py`'s MISSING FILE branch is unreachable**~~ **SHIPPED 2026-08-17 (#31)** | that script | A missing original no longer aborts the whole read; remaining files continue and the missing path is reported per file. |
 | **Untested paths with the largest blast radius** | see `tests/` | The three live `describe.skipIf` suites are the only proof of add/remove-person atomicity and of RLS actually denying the anon key, and all are skipped without database credentials, so the FK-cascade regression that once destroyed a committed face tag is currently uncatchable. Moderation visibility (a rejected upload surfacing) is proven only against fixtures, never over HTTP. Every admin write route is untested at the route layer. |
 | **Docs that are wrong rather than merely stale** | `README.md:127`, `:7`, `:86-91`; `AGENTS.md:84`, `:114-123`; `docs/ONLINE_HANDOFF.md:22`, `:316-321`, `:437` | README says "nothing in this repo ever writes to" the master, which three scripts do and `AGENTS.md:49-64` explicitly permits; README and the AGENTS code map still describe a public marketing homepage that the password gate made unreachable; the handoff's release state stops at #13 and its cluster counts (93/388/247) contradict the generated report (91/381/244); the AGENTS per-change command list omits `verify:vercel`, which `npm run verify` runs first. Two "Next actions" also point at gitignored paths that exist only on this Mac. |
+
+## Dependency holds, found 2026-08-17 in a full upgrade pass
+
+Nineteen of the twenty-three outdated packages moved to current inside their
+existing semver ranges (Next 16.2.9 -> 16.3.1, React 19.2.7 -> 19.2.8,
+`@supabase/supabase-js` 2.110.8 -> 2.112.3, Playwright 1.61.1 -> 1.62.1, and
+the rest), and `@types/node` 24 -> 26 plus `jsdom` 29 -> 30 were taken as
+majors. `npm run verify` is green on all of it. Two majors were attempted and
+put back, for reasons that are external to this repository. All of it is in [#32](https://github.com/zachringnight/rachandzach-gallery/pull/32).
+
+| Item | Where | Why it matters |
+|---|---|---|
+| **TypeScript 7.0.2 held at 5.9.3** | `package.json` | `typescript-eslint@8.67.0`, the newest published version, declares `peerDependencies.typescript: ">=4.8.4 <6.1.0"`. TypeScript 7 is outside that range, so taking it means linting with an unsupported combination. Revisit when typescript-eslint ships TS 7 support. Nothing in the app needs a TS 7 feature. |
+| **ESLint 10.8.1 held at 9.39.5** | `package.json` | Attempted and reverted. `eslint-config-next` bundles an `eslint-plugin-react` that calls `contextOrFilename.getFilename`, removed in ESLint 10, so `eslint .` dies loading `react/display-name` with a `TypeError` before it lints anything. Revisit when `eslint-config-next` ships a plugin set built for ESLint 10. |
+
+**A trap this pass walked into, worth knowing about.** `npm run verify | tail`
+reports `tail`'s exit code, not npm's. When ESLint 10 crashed, the chain
+stopped at `lint` and the piped command still looked like a pass. Read the end
+of the output, or run `npm run verify` unpiped, before believing a green run.
+
+## Audit 2026-08-17: what a full sweep did and did not find
+
+A pass over error handling, secrets, upload validation, deploy config, CI, and
+the test and lint suites. Most of it came back clean, which is worth recording
+so the next audit does not redo it.
+
+**Clean, checked, no action.** Every one of the 14 genuinely empty `catch`
+bodies in `src/` is deliberate and carries a comment saying why (localStorage
+quota, retry fall-through, best-effort notification, denied fullscreen); the
+one real silent failure this pass found was in an offline script, not app
+code. Nothing secret is tracked: `.env.example` is the only env file in git,
+`.gitignore` covers `.env` and `.env.cloud`, and no credential-shaped string
+appears in a tracked file. Guest uploads take their media type from magic
+bytes rather than the client's claim, behind a size cap. `robots.ts` and
+`sitemap.ts` agree: everything disallowed except `/nyc` and `/marathon`, and
+the sitemap lists only `/nyc`. All 17 unit skips and 26 e2e skips are
+credential-gated and announce themselves in the run output.
+
+| Item | Where | Why it matters |
+|---|---|---|
+| **`noUncheckedIndexedAccess` is off, and turning it on costs 383 errors** | `tsconfig.json` | `strict` is on, which covers `noImplicitAny` and `strictNullChecks`, but not this. Measured, not guessed: `tsc --noEmit --noUncheckedIndexedAccess` reports 383 errors, heavily in tests where fixture indexing is assumed safe. Real bugs hide in that class, so it is worth doing eventually, but it is its own project and not an audit-fix pass. |
+| **Local Node drifts from the version this project declares** | `package.json` `engines`, `.github/workflows/ci.yml` | `engines` pins `24.x` and CI pins Node 24 deliberately, with a comment tying it to the Supabase realtime client's use of native WebSocket. The workstation used for this pass runs Node 26, so `npm install` prints `EBADENGINE` and every local `npm run verify` runs on a major the project does not claim to support. CI is the authority and it passed on 24, but a local-only failure or pass should be read with that in mind. |
+| **A notification failure leaves a `queued` row and tells no one** | `approve/route.ts:215`, `reject/route.ts:120` | Correctly swallowed, so a Resend outage cannot fail an approval. The trace survives as a `rachandzach_notification_log` row that never leaves `queued`. Nothing reads that, so a silent, permanent email outage would look exactly like normal operation. A periodic check of stale `queued` rows would close it. |
+
+## Resolved 2026-08-17: both npm advisories closed with overrides
+
+`npm audit` reported 4 high-severity findings, both rooted in transitive
+dependencies of `@huggingface/transformers@4.2.0`, the Moment Search encoder.
+npm called both "No fix available", which means no fix inside the depending
+package's declared range, not that no fixed version exists. Both had one. Two
+`overrides` entries in `package.json` close them; `npm audit` now reports 0
+vulnerabilities.
+
+| Item | What it was | What closed it |
+|---|---|---|
+| **sharp <0.35.0 inherits four libvips CVEs** | `@huggingface/transformers` pins `sharp@^0.34.5`, so a second sharp and a second libvips were installed beside the application's own 0.35.3, and Next's build trace showed 25 of those files being deployed into the `/api/search` function. The application's own image work was never affected: `process-approved-photo.ts:346` dynamic-imports the top-level sharp, so the one path that decodes untrusted guest uploads was always on the patched copy. | `overrides.sharp: ^0.35.3`. All three consumers dedupe onto one sharp, and the duplicate libvips leaves the deployed function. |
+| **adm-zip 0.5.18, crafted ZIP triggers a 4GB allocation** | Reached through `onnxruntime-node@1.24.3`, which pins `^0.5`. adm-zip 0.6.0 exists and is not affected. Exposure was install-time only: adm-zip unpacks onnxruntime-node's own binaries, from an archive the runtime fetches rather than anything a guest supplies, and the build trace showed zero adm-zip files in the deployed function. | `overrides.adm-zip: ^0.6.0`. |
+
+Both entries pin a dependency past its own stated range, so both need
+re-checking whenever `@huggingface/transformers` or `onnxruntime-node` moves.
+The standing guard is `npm run verify:search-runtime`, which fails the build if
+the ONNX binding or its shared library stops being traced into the search
+function.
 
 ## Waiting on a person, not an engineer
 
@@ -211,8 +274,9 @@ measuring rather than looking.
 ### Resolved 2026-08-12: `/photos?q=` lifecycle repair shipped in #30
 
 PR [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) merged
-as `3756ac2` and is live on Production. Direct loads, same-route links, and
-Lightbox keyword navigation open and run Moment Search.
+as `3756ac2`, which was the Production head until #31 (`4cefe66`) superseded
+it on 2026-08-17. The behavior is still live: direct loads, same-route links,
+and Lightbox keyword navigation open and run Moment Search.
 
 ### Resolved 2026-08-11: the /nyc supporters wall is current
 

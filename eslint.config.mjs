@@ -34,5 +34,9 @@ export default defineConfig([
     // living inside it, so linting them reports every finding twice (and
     // reports a sibling branch's in-progress code as if it were ours).
     ".claude/worktrees/**",
+    // Session scratch and handoff buffers written by the remember plugin.
+    // Gitignored, machine-written, and sometimes TypeScript, so lint walks
+    // in and reports on a file no one here wrote or maintains.
+    ".remember/**",
   ]),
 ]);

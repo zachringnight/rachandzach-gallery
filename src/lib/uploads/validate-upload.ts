@@ -219,7 +219,6 @@ function fileExtension(filename: string): string | null {
  */
 export function normalizeDisplayFilename(name: string): string {
   const base = name.split(/[\\/]/).pop() ?? "";
-  // eslint-disable-next-line no-control-regex
   const stripped = base.replace(/[\u0000-\u001f\u007f]/g, "");
   const cleaned = stripped.replace(/^\.+/, "").trim();
   return cleaned.slice(0, 255) || "photo";

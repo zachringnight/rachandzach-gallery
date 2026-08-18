@@ -13,18 +13,18 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Deployed application release | `3756ac2e87e633d19fc2e7a6582ed4acca951077` |
+| Deployed application release | `4cefe66daf7167ff146b1763ad8fd46134b27e54` |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `3756ac2` -- Moment Search deep-link lifecycle repair, Lightbox keyword-navigation closure, import-level fail-soft containment, and runtime-trace assertion ([#30](https://github.com/zachringnight/rachandzach-gallery/pull/30), merged 2026-08-12). Preceding application release: `7a336d8` production Moment Search runtime repair ([#28](https://github.com/zachringnight/rachandzach-gallery/pull/28)) |
-| Current production head | `3756ac2` -- merge of PR [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30). Production deployment `dpl_AX5fzRcTa1ZuUaN6Gc7gkQb9Skko` is `READY` with the apex, `www`, project, and `main` aliases attached. Live `people dancing` returns embedding matches. |
-| Known unshipped work | `docs/BACKLOG.md`; current branch `codex/gallery-ops-closeout` (admin session refresh, landing Moment Search, NYC totals, archive-writer gates) |
+| Latest release | `4cefe66` -- admin session refresh in the proxy, the `/photos` landing search wired to Moment Search `q`, the 2026-08-17 NYC totals, and `--write` gates on the remaining master writers ([#31](https://github.com/zachringnight/rachandzach-gallery/pull/31), merged 2026-08-17). Preceding application release: `3756ac2` Moment Search deep-link lifecycle repair ([#30](https://github.com/zachringnight/rachandzach-gallery/pull/30), merged 2026-08-12) |
+| Current production head | `4cefe66` -- merge of PR [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31). Production deployment `dpl_G7T71Z1KHwWGpNMNhJJ9xnjoc6o3` is `READY` with the apex, `www`, project, and `main` aliases attached. Verified live on 2026-08-17: `/`, `/photos`, and `/nyc` all 200, `/nyc` reads $5,182, the `/photos` landing field submits `q`, and `/admin` still 307s an anonymous request. |
+| Known unshipped work | `docs/BACKLOG.md` only. No branch is holding application work back: `codex/gallery-ops-closeout` merged as [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31) and was deleted. |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | `codex/gallery-ops-closeout` / [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31): persist rotated admin auth cookies from the proxy, send the `/photos` landing search to Moment Search `q`, refresh NYC totals from NYRR, and gate remaining master writers. Gallery callback URLs are now on the shared Auth allowlist. Preview `OPEN_ACCESS` is still set. |
+| Current unmerged app work | None; [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31) merged 2026-08-17 and carried the rotated-admin-cookie fix, the landing Moment Search hand-off, the refreshed NYC totals, and the master-writer `--write` gates. Gallery callback URLs are on the shared Auth allowlist. Preview `OPEN_ACCESS` is still set. |
 
 Production aliases are active for:
 
@@ -50,7 +50,7 @@ The production release includes:
 - Media viewer with adjacent-image preload, keyboard/swipe navigation, and
   quiet photo-first chrome
 - Favorites, per-photo sharing, downloads, selection, ZIP export, slideshow,
-  TV mode, and native Apple sharing
+  and native Apple sharing
 - Guest uploads, moderation, and durable approved uploader-note captions
 - Admin catalog table, search, filters, bulk selection, tagging, and viewer
 - Public Rachel Runs NYC story, Team for Kids context, and donation links at
@@ -61,6 +61,14 @@ The production release includes:
   me, search, favorites, original saves, and guest uploads
 - Forward-looking archive and Rachel Runs NYC content; the public weekend recap
   was removed and `/weekend` now redirects to `/photos`
+
+TV mode is gone and this document listed it as shipped until 2026-08-17.
+`src/app/(guest)/tv/` was deleted in `f5731e9` (PR
+[#11](https://github.com/zachringnight/rachandzach-gallery/pull/11)), and
+`https://rachandzach.com/tv` has 404'd ever since. The in-gallery slideshow is
+unaffected and still ships. `docs/HANDOFF_CURRENT.md` still describes TV mode
+and an open "TV-mode nav decision"; that file is explicitly historical and was
+true when written, so it is left alone. Nothing is pending there.
 
 Photo-overlay labels were removed. The existing photo memories wall remains
 complete. `tsconfig.tsbuildinfo` was deleted from source control and
@@ -101,8 +109,9 @@ Production error-log query returned no runtime errors.
 
 ### Moment Search deep-link and fail-soft hardening (shipped, 2026-08-12)
 
-PR #30 merged as `3756ac2e87e633d19fc2e7a6582ed4acca951077` and is the current
-Production application head. Direct `/photos?q=...` loads, same-route Moment
+PR #30 merged as `3756ac2e87e633d19fc2e7a6582ed4acca951077`, which was the
+Production application head until #31 superseded it on 2026-08-17. Direct
+`/photos?q=...` loads, same-route Moment
 links, Lightbox keyword navigation, URL-rewrite sync, and encoder import
 fail-soft are in that release. A 2026-08-17 production check of
 `people dancing` returned embedding matches from `GET /api/search`.
@@ -655,7 +664,9 @@ That is enforced in code, not by convention.
 | P0 | Rachel | Next session | Name the 16 clear stacks covering 95 faces in `metadata/faces/stack-sheets/`; then run the post-session commands in `docs/FACE_TAGGING_TOOL.md`. Nine stacks / 19 faces with no clear view remain held out unless `--include-blurry` is chosen deliberately. |
 | DONE | Zach + Codex | 2026-08-10 | Applied and verified the 27 live reviewed joins, then safely merged Joan Soskin into Joan AuWerter. The final read-only plans report 996/996 tags present and zero pending joins or merges. |
 | P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 53 real names and their messages as of 2026-08-17 ($5,182 of $10,000). Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
-| DONE | Codex | 2026-08-12 | Moment Search deep-link and fail-soft hardening merged in [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) and is live on Production `3756ac2`. |
+| OPEN | Zach | Review and merge | [#32](https://github.com/zachringnight/rachandzach-gallery/pull/32): dependency refresh (19 in-range, plus `@types/node` 26 and `jsdom` 30), exiftool failures now report their reason in `write-additions-to-master.py`, and seven tests that drive the #31 session refresh through `proxy()` itself. TypeScript 7 and ESLint 10 are held with reasons in `docs/BACKLOG.md`. |
+| DONE | Zach + Cursor | 2026-08-17 | Admin session refresh, landing Moment Search, NYC totals, and master-writer `--write` gates merged in [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31) and are live on Production `4cefe66`. The proxy now requires a live Supabase user for `/admin` rather than a cookie whose name matches. |
+| DONE | Codex | 2026-08-12 | Moment Search deep-link and fail-soft hardening merged in [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) and was live on Production `3756ac2` until #31 superseded it. |
 | DONE | Zach + Codex | 2026-08-05 | The 21 rebuild candidates were confirmed (wave 12), the six stale visual baselines were regenerated after page inspection, and the Brenda Wasserman spelling was remapped across all four layers. `npm run verify` is fully green. |
 | DONE (half) | Zach | 2026-08-07 | Of the two Jeff Rush candidates in `metadata/faces/review-2026-08-05-b/sheet-001.jpg`, Zach confirmed the after-party face (sim 0.483). Applied as wave 14 to all four layers: additions manifest, catalog, the original's embedded metadata, and the live database (single-row upsert with pre-state backup, because the full sync is blocked; see the P1 name-drift row). The cocktail-hour face (sim 0.615, behind sunglasses) stays undecided and unapplied. |
 | DONE | Codex | 2026-08-08 | The six "live-name drifts" turned out to be the opposite of a drift: those names are `/admin/faces` corrections, which belong only in `rachandzach_person_overrides` and are applied over the catalog name at the data-source boundary. Something had copied them down into `rachandzach_people.display_name` between 2026-08-05T22:32Z and 2026-08-06T02:43Z, collapsing the two layers and tripping the sync guard. Restored the six base names to canonical (backup in `metadata/faces/sync-backups/`); no guest-visible name changed, since every override was verified present first. `write-additions-to-master.py` now resolves names through `person-overrides.json`, so it stopped wanting to put a second name for the same person into 29 originals; the one genuine pending write (a Joan Soskin tag) was applied and manifest-reconciled. The junk `"pa"` entry and the stale `By Person/pa` symlink folder are gone. Both guards pass; live sits at 5,100 tag rows. See `docs/BACKLOG.md` "Resolved 2026-08-08". |
