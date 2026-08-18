@@ -148,16 +148,25 @@ reports `tail`'s exit code, not npm's. When ESLint 10 crashed, the chain
 stopped at `lint` and the piped command still looked like a pass. Read the end
 of the output, or run `npm run verify` unpiped, before believing a green run.
 
-## Known advisories with no upstream fix (2026-08-17)
+## Resolved 2026-08-17: both npm advisories closed with overrides
 
-`npm audit` reports 4 high-severity findings, both roots transitive under
-`@huggingface/transformers@4.2.0`, the Moment Search encoder. npm reports "No
-fix available" for both: there is no newer version to take.
+`npm audit` reported 4 high-severity findings, both rooted in transitive
+dependencies of `@huggingface/transformers@4.2.0`, the Moment Search encoder.
+npm called both "No fix available", which means no fix inside the depending
+package's declared range, not that no fixed version exists. Both had one. Two
+`overrides` entries in `package.json` close them; `npm audit` now reports 0
+vulnerabilities.
 
-| Item | Where | Why it matters |
+| Item | What it was | What closed it |
 |---|---|---|
-| **sharp <0.35.0 inherits four libvips CVEs** | `@huggingface/transformers@4.2.0 -> sharp@0.34.5` | The application's own `sharp` is already 0.35.3, and Next 16.3.1 dedupes onto it; only the encoder's nested copy is affected. The candidate fix is an npm `overrides` entry pinning `sharp` to `^0.35.3` so the nested copy dedupes too. It is not applied here because that package's native stack (ONNX runtime, libvips) already caused two production Moment Search outages (#28), and nothing local exercises it: it needs a Preview deploy and a live `GET /api/search` before it can be trusted. |
-| **adm-zip 0.5.18, crafted ZIP triggers a 4GB allocation** | `@huggingface/transformers -> onnxruntime-node@1.24.3 -> adm-zip` | No fix published. Reachable only where onnxruntime-node unpacks its own model archive, from an archive the runtime fetches rather than one a guest supplies, so there is no guest-reachable path to it. Watch for an onnxruntime-node release that moves off adm-zip. |
+| **sharp <0.35.0 inherits four libvips CVEs** | `@huggingface/transformers` pins `sharp@^0.34.5`, so a second sharp and a second libvips were installed beside the application's own 0.35.3, and Next's build trace showed 25 of those files being deployed into the `/api/search` function. The application's own image work was never affected: `process-approved-photo.ts:346` dynamic-imports the top-level sharp, so the one path that decodes untrusted guest uploads was always on the patched copy. | `overrides.sharp: ^0.35.3`. All three consumers dedupe onto one sharp, and the duplicate libvips leaves the deployed function. |
+| **adm-zip 0.5.18, crafted ZIP triggers a 4GB allocation** | Reached through `onnxruntime-node@1.24.3`, which pins `^0.5`. adm-zip 0.6.0 exists and is not affected. Exposure was install-time only: adm-zip unpacks onnxruntime-node's own binaries, from an archive the runtime fetches rather than anything a guest supplies, and the build trace showed zero adm-zip files in the deployed function. | `overrides.adm-zip: ^0.6.0`. |
+
+Both entries pin a dependency past its own stated range, so both need
+re-checking whenever `@huggingface/transformers` or `onnxruntime-node` moves.
+The standing guard is `npm run verify:search-runtime`, which fails the build if
+the ONNX binding or its shared library stops being traced into the search
+function.
 
 ## Waiting on a person, not an engineer
 
