@@ -12,6 +12,9 @@
  *   - a forged cookie is still not honoured (identity, not permission);
  *   - /admin and /api/admin are the exception and are still gated, and a
  *     guest cookie still grants nothing there;
+ *   - a live Supabase user does get through that gate, and a session rotated
+ *     on the way past is written to the browser rather than consumed and
+ *     dropped -- on admin routes and on guest routes alike;
  *   - the security headers ride every response.
  *
  * requireAdmin is proven against a mocked Supabase server client (no live
@@ -44,6 +47,51 @@ const { getUserMock } = vi.hoisted(() => ({ getUserMock: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({
   createServerClient: vi.fn(async () => ({ auth: { getUser: getUserMock } })),
 }));
+
+/**
+ * The proxy's own Supabase client, separate from the one requireAdmin uses.
+ * `rotation.cookies` stands in for a refresh: @supabase/ssr calls setAll()
+ * from inside getUser() when it renews a session, which is the exact moment
+ * the old cookie-name check used to consume a refresh token and throw the
+ * replacement away.
+ */
+const { proxyGetUser, rotation } = vi.hoisted(() => ({
+  proxyGetUser: vi.fn(),
+  rotation: { cookies: [] as { name: string; value: string; options?: object }[] },
+}));
+
+vi.mock("@supabase/ssr", () => ({
+  createServerClient: vi.fn(
+    (
+      _url: string,
+      _key: string,
+      options: {
+        cookies: {
+          getAll: () => { name: string; value: string }[];
+          setAll: (
+            cookies: { name: string; value: string; options?: object }[],
+          ) => void;
+        };
+      },
+    ) => ({
+      auth: {
+        getUser: async () => {
+          if (rotation.cookies.length > 0) options.cookies.setAll(rotation.cookies);
+          return proxyGetUser();
+        },
+      },
+    }),
+  ),
+}));
+
+/** Point the proxy at a configured Supabase project for one test. */
+function withSupabaseConfigured() {
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+}
+
+const ADMIN_USER = { data: { user: { id: "admin-1" } }, error: null };
+const NO_USER = { data: { user: null }, error: null };
 
 function makeRequest(
   path: string,
@@ -91,6 +139,9 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
   getUserMock.mockReset();
+  proxyGetUser.mockReset();
+  proxyGetUser.mockResolvedValue(NO_USER);
+  rotation.cookies = [];
 });
 
 afterEach(() => {
@@ -244,6 +295,83 @@ describe("proxy: admin routes are still gated", () => {
     const response = await proxy(makeRequest("/admin"));
     expectPassThrough(response, "/admin with OPEN_ACCESS");
     expect(issuedToken(response)).toBeNull();
+  });
+});
+
+const AUTH_COOKIE = "sb-rnfvmqflktghriqefatc-auth-token";
+
+describe("proxy: Supabase sessions survive the round trip", () => {
+  it("lets a live Supabase user reach /admin", async () => {
+    withSupabaseConfigured();
+    proxyGetUser.mockResolvedValue(ADMIN_USER);
+    const response = await proxy(
+      makeRequest("/admin", { [AUTH_COOKIE]: "live" }),
+    );
+    expectPassThrough(response, "/admin with a live session");
+    expectSecurityHeaders(response);
+    expect(issuedToken(response)).toBeNull();
+  });
+
+  it("lets a live Supabase user reach /api/admin", async () => {
+    withSupabaseConfigured();
+    proxyGetUser.mockResolvedValue(ADMIN_USER);
+    const response = await proxy(
+      makeRequest("/api/admin/moderation", { [AUTH_COOKIE]: "live" }),
+    );
+    expectPassThrough(response, "/api/admin with a live session");
+  });
+
+  it("writes a rotated session back to the browser on an admin route", async () => {
+    withSupabaseConfigured();
+    proxyGetUser.mockResolvedValue(ADMIN_USER);
+    rotation.cookies = [{ name: AUTH_COOKIE, value: "rotated", options: { path: "/" } }];
+    const response = await proxy(
+      makeRequest("/admin", { [AUTH_COOKIE]: "stale" }),
+    );
+    expectPassThrough(response, "/admin with a rotated session");
+    expect(response.cookies.get(AUTH_COOKIE)?.value).toBe("rotated");
+  });
+
+  it("keeps a rotated session when a guest cookie is minted on the same request", async () => {
+    withSupabaseConfigured();
+    proxyGetUser.mockResolvedValue(ADMIN_USER);
+    rotation.cookies = [{ name: AUTH_COOKIE, value: "rotated", options: { path: "/" } }];
+    const response = await proxy(
+      makeRequest("/photos", { [AUTH_COOKIE]: "stale" }),
+    );
+    expectPassThrough(response, "/photos with a rotated session");
+    // The regression this guards: minting the guest cookie used to start from
+    // a fresh NextResponse.next(), discarding the refresh that just happened.
+    expect(response.cookies.get(AUTH_COOKIE)?.value).toBe("rotated");
+    const token = issuedToken(response);
+    expect(token).not.toBeNull();
+    await expect(verifyGuestSession(token as string)).resolves.not.toBeNull();
+  });
+
+  it("still refuses /admin when Supabase reports no user", async () => {
+    withSupabaseConfigured();
+    proxyGetUser.mockResolvedValue(NO_USER);
+    const response = await proxy(
+      makeRequest("/admin", { [AUTH_COOKIE]: "expired" }),
+    );
+    expect(response.status).toBe(307);
+  });
+
+  it("refuses /admin when getUser throws rather than failing open", async () => {
+    withSupabaseConfigured();
+    proxyGetUser.mockRejectedValue(new Error("auth service unreachable"));
+    const response = await proxy(
+      makeRequest("/admin", { [AUTH_COOKIE]: "live" }),
+    );
+    expect(response.status).toBe(307);
+  });
+
+  it("serves guest routes when the Supabase auth service is unreachable", async () => {
+    withSupabaseConfigured();
+    proxyGetUser.mockRejectedValue(new Error("auth service unreachable"));
+    const response = await proxy(makeRequest("/photos"));
+    expectPassThrough(response, "/photos with auth down");
+    expect(issuedToken(response)).not.toBeNull();
   });
 });
 

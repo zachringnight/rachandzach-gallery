@@ -59,6 +59,7 @@ def chunks(values: list, size: int = 160):
 
 def read_current(paths: list[Path]) -> dict[Path, dict]:
     records: dict[Path, dict] = {}
+    total_batches = -(-len(paths) // 160)
     for batch_index, batch in enumerate(chunks(paths), 1):
         result = subprocess.run(
             [
@@ -69,20 +70,35 @@ def read_current(paths: list[Path]) -> dict[Path, dict]:
             ],
             capture_output=True, text=True,
         )
+        recovered = None
         if result.returncode != 0:
-            # A missing original must not abort the rest of the run. exiftool
-            # still prints JSON for the files it could open.
+            # A missing or unreadable original must not abort the rest of the
+            # run: exiftool still prints JSON for every file it could open, and
+            # main() reports the ones it could not as MISSING FILE. But the
+            # reason has to reach the operator, or a batch that half failed
+            # prints the same progress line as one that read cleanly.
+            detail = result.stderr.strip() or f"exiftool exited {result.returncode}"
+            for line in detail.splitlines():
+                print(f"  exiftool batch {batch_index}: {line}",
+                      file=sys.stderr, flush=True)
             try:
                 recs = json.loads(result.stdout) if result.stdout.strip() else []
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as error:
+                print(f"  exiftool batch {batch_index}: unreadable JSON ({error}); "
+                      f"all {len(batch)} file(s) in this batch dropped",
+                      file=sys.stderr, flush=True)
                 recs = []
-            for rec in recs:
-                records[Path(rec["SourceFile"])] = rec
-            continue
-        for rec in json.loads(result.stdout):
+            recovered = len(recs)
+        else:
+            recs = json.loads(result.stdout)
+        for rec in recs:
             records[Path(rec["SourceFile"])] = rec
-        print(f"  read {batch_index}/{-(-len(paths)//160)} "
-              f"({min(batch_index*160, len(paths))}/{len(paths)})", flush=True)
+        suffix = (
+            "" if recovered is None
+            else f" -- only {recovered}/{len(batch)} readable in this batch"
+        )
+        print(f"  read {batch_index}/{total_batches} "
+              f"({min(batch_index*160, len(paths))}/{len(paths)}){suffix}", flush=True)
     return records
 
 
