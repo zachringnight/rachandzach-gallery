@@ -316,11 +316,16 @@ def main() -> int:
         row for row in manifest if any(name in REMAP for name in original_people[row["output_path"]])
     ]
 
+    write = "--write" in sys.argv
     print(
-        f"Applying {len(MATCHES)} confirmed name mappings to {len(affected)} newly affected photos "
+        f"{'Applying' if write else 'DRY RUN -- would apply'} {len(MATCHES)} confirmed name mappings "
+        f"to {len(affected)} newly affected photos "
         f"({len(historically_affected)} reconciled overall)",
         flush=True,
     )
+    if not write:
+        print("Re-run with --write to apply. Nothing was written.")
+        return 0
     results: list[dict] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(reconcile_photo, row) for row in affected]

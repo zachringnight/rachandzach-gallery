@@ -6,7 +6,7 @@
  * THIS IS NO LONGER A GATE FOR GUESTS (2026-08-09). The shared password, the
  * /enter door and the PUBLIC_ROUTES default-deny allowlist were removed: every
  * page and API of this site now answers an anonymous request. What is left
- * here is two things.
+ * here is three things.
  *
  *   1. Security headers on every response (unchanged).
  *   2. Issuing the guest identity cookie. It is not a permission -- see
@@ -16,10 +16,15 @@
  *      GALLERY_SESSION_SECRET; if that is missing the request is served
  *      anyway, because a misconfigured secret must cost a guest their
  *      favorites and not cost everyone the site.
+ *   3. Refreshing Supabase Auth cookies. Admin sessions rotate; the server
+ *      client cannot persist that rotation from a Server Component, so this
+ *      proxy calls getUser() and writes the new cookies onto the response.
  *
  * /admin and /api/admin are the exception and are still gated: they require a
- * Supabase auth cookie here, and the real requireAdmin() check in the admin
- * server layer. A guest cookie never grants admin access.
+ * live Supabase user here (not merely a cookie whose name matches), and the
+ * real requireAdmin() check in the admin server layer. A guest cookie never
+ * grants admin access. OPEN_ACCESS remains a Preview-only bypass until the
+ * magic-link redirect allowlist is confirmed.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import {
@@ -29,10 +34,12 @@ import {
   guestSessionCookieOptions,
   verifyGuestSession,
 } from "@/lib/auth/guest-session";
+import { isOpenAccess } from "@/lib/auth/open-access";
 import { applySecurityHeaders } from "@/lib/auth/security-headers";
-
-/** @supabase/ssr auth cookie: sb-<ref>-auth-token, possibly chunked (.0, .1). */
-const SUPABASE_AUTH_COOKIE = /^sb-[^=]+-auth-token(\.\d+)?$/;
+import {
+  applySupabaseAuthRefresh,
+  copyResponseCookies,
+} from "@/lib/auth/supabase-auth-refresh";
 
 function isApiPath(pathname: string): boolean {
   return pathname === "/api" || pathname.startsWith("/api/");
@@ -67,8 +74,14 @@ function denyAdmin(request: NextRequest): NextResponse {
  * the same session id the browser will send on the next one -- without that,
  * a guest's first page load would file favorites under an id that is thrown
  * away a moment later.
+ *
+ * Starts from `authResponse` so a Supabase refresh on the same request is
+ * not discarded when a guest cookie is minted.
  */
-async function withGuestSession(request: NextRequest): Promise<NextResponse> {
+async function withGuestSession(
+  request: NextRequest,
+  authResponse: NextResponse,
+): Promise<NextResponse> {
   const existing = request.cookies.get(GUEST_SESSION_COOKIE)?.value;
 
   let token: string | null = null;
@@ -79,39 +92,39 @@ async function withGuestSession(request: NextRequest): Promise<NextResponse> {
   } catch (error) {
     if (!(error instanceof GalleryAccessConfigError)) throw error;
     // Unconfigured secret: serve the page without an identity cookie.
-    return applySecurityHeaders(NextResponse.next());
+    return applySecurityHeaders(authResponse);
   }
 
   if (!token) {
-    return applySecurityHeaders(NextResponse.next());
+    return applySecurityHeaders(authResponse);
   }
 
   request.cookies.set(GUEST_SESSION_COOKIE, token);
-  const response = NextResponse.next({ request });
+  const response = copyResponseCookies(
+    authResponse,
+    NextResponse.next({ request }),
+  );
   response.cookies.set(GUEST_SESSION_COOKIE, token, guestSessionCookieOptions());
   return applySecurityHeaders(response);
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
+  const { response: authResponse, hasUser } =
+    await applySupabaseAuthRefresh(request);
 
   if (isAdminPath(pathname)) {
     // Guest cookies are deliberately ignored here: a guest session never
-    // grants admin access. This is only a cheap structural gate; the admin
-    // server layer must call requireAdmin() on every request.
-    const hasSupabaseAuthCookie = request.cookies
-      .getAll()
-      .some(
-        (cookie) =>
-          SUPABASE_AUTH_COOKIE.test(cookie.name) && cookie.value.length > 0,
-      );
-    if (!hasSupabaseAuthCookie) {
+    // grants admin access. A cookie whose name merely looks like a Supabase
+    // auth token is not enough; getUser() has to succeed, unless the
+    // Preview-only open-access bypass is on.
+    if (!hasUser && !isOpenAccess()) {
       return denyAdmin(request);
     }
-    return applySecurityHeaders(NextResponse.next());
+    return applySecurityHeaders(authResponse);
   }
 
-  return withGuestSession(request);
+  return withGuestSession(request, authResponse);
 }
 
 export const config = {

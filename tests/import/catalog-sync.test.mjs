@@ -244,8 +244,8 @@ describe("mocked execution", () => {
 
     const second = await syncGalleryCatalog(executeCatalogOptions(), deps);
     expect(second.failed).toEqual([]);
-    expect(second.catalogRowsUpserted).toBe(29);
     expect(second.skippedExisting).toBe(3); // previously checkpointed photos
+    expect(second.catalogRowsUpserted).toBe(4); // events + people only; photos skipped
     const photos = mock.rows("rachandzach_photos");
     expect(photos).toHaveLength(3);
     expect(photos.map((row) => row.id).sort()).toEqual(idsFirst);
@@ -309,6 +309,27 @@ describe("partitionByStorageReadiness", () => {
     expect(ready).toEqual([]);
     expect(gated).toHaveLength(3);
     expect(gated[0].failure.reason).toMatch(/sync-gallery-storage/);
+  });
+
+  it("refuses a preview checkpoint that exists but has no hash or bytes", async () => {
+    await prepareStorageState();
+    const state = await loadSyncState(statePath);
+    const staleKey = `${PREVIEWS_BUCKET}/previews/${HASH_1}/480.avif`;
+    state.objects[staleKey] = {
+      ...state.objects[staleKey],
+      fileSha256: "",
+      bytes: 0,
+    };
+    await saveSyncState(statePath, state);
+
+    const { ready, gated } = partitionByStorageReadiness(
+      parseSyncCatalog(JSON.parse(await fs.readFile(CATALOG_PATH, "utf8"))),
+      await loadSyncState(statePath),
+    );
+    expect(gated.some((entry) => entry.photo.imageDataHash === HASH_1)).toBe(true);
+    expect(ready.map((photo) => photo.imageDataHash).sort()).toEqual(
+      [HASH_2, HASH_3].sort(),
+    );
   });
 });
 

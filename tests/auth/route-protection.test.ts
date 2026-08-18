@@ -88,6 +88,8 @@ function expectSecurityHeaders(response: Response) {
 
 beforeEach(() => {
   vi.stubEnv("GALLERY_SESSION_SECRET", TEST_SECRET);
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
   getUserMock.mockReset();
 });
 
@@ -219,21 +221,29 @@ describe("proxy: admin routes are still gated", () => {
     expect(response.status).toBe(401);
   });
 
-  it("never hands an admin path a guest cookie on the way out", async () => {
+  it("does not treat a cookie that only looks like a Supabase session as admin", async () => {
     const response = await proxy(
       makeRequest("/admin", { "sb-rnfvmqflktghriqefatc-auth-token": "opaque" }),
     );
-    expectPassThrough(response, "/admin with sb cookie");
+    expect(response.status).toBe(307);
     expect(issuedToken(response)).toBeNull();
   });
 
-  it("recognizes chunked Supabase auth cookies", async () => {
+  it("does not treat a chunked opaque cookie as a live admin session", async () => {
     const response = await proxy(
       makeRequest("/admin", {
         "sb-rnfvmqflktghriqefatc-auth-token.0": "part0",
       }),
     );
-    expectPassThrough(response, "/admin with chunked sb cookie");
+    expect(response.status).toBe(307);
+  });
+
+  it("lets Preview open-access through without a live Supabase user", async () => {
+    vi.stubEnv("OPEN_ACCESS", "1");
+    vi.stubEnv("VERCEL_ENV", "preview");
+    const response = await proxy(makeRequest("/admin"));
+    expectPassThrough(response, "/admin with OPEN_ACCESS");
+    expect(issuedToken(response)).toBeNull();
   });
 });
 

@@ -131,7 +131,9 @@ export function partitionByStorageReadiness(catalog, state) {
     }
     for (const preview of photo.previewObjects) {
       const record = state?.objects?.[objectKey(PREVIEWS_BUCKET, preview.objectPath)];
-      if (!record) missing.push(`${PREVIEWS_BUCKET}/${preview.objectPath}`);
+      if (!record || !record.fileSha256 || record.bytes <= 0) {
+        missing.push(`${PREVIEWS_BUCKET}/${preview.objectPath}`);
+      }
     }
     if (missing.length === 0) {
       ready.push(photo);
@@ -210,9 +212,8 @@ export async function syncGalleryCatalog(rawOptions, deps = {}) {
 
   const { ready, gated } = partitionByStorageReadiness(catalog, state);
   for (const { failure } of gated) result.failed.push(failure);
-  result.skippedExisting = ready.filter(
-    (photo) => state?.catalog?.[photo.imageDataHash],
-  ).length;
+  const pending = ready.filter((photo) => !state?.catalog?.[photo.imageDataHash]);
+  result.skippedExisting = ready.length - pending.length;
 
   const counts = plannedRowCounts(catalog, ready);
   result.planned = counts.total;
@@ -225,7 +226,8 @@ export async function syncGalleryCatalog(rawOptions, deps = {}) {
       `[dry-run] catalog plan: ${counts.events} events, ${counts.people} people, ` +
         `${counts.photos} photos, ${counts.previews} previews, ${counts.joins} people joins, ` +
         `${counts.keywords} keywords (${counts.total} rows); ` +
-        `${gated.length} photo(s) blocked by the storage gate; 0 database writes.`,
+        `${gated.length} photo(s) blocked by the storage gate; ` +
+        `${result.skippedExisting} already checkpointed; 0 database writes.`,
     );
   } else {
     const credentials = await readCredentialsFromEnvFile(options.envFilePath ?? "");
@@ -286,7 +288,9 @@ export async function syncGalleryCatalog(rawOptions, deps = {}) {
     const personIdBySlug = new Map(personRows.map((row) => [row.slug, row.id]));
 
     // 2) Photos and their children in bounded, verified batches.
-    for (const [batchIndex, batch] of chunk(ready, options.catalogBatchSize).entries()) {
+    // Checkpointed hashes are skipped here so a resume does not re-upsert
+    // everything it already reported as skippedExisting.
+    for (const [batchIndex, batch] of chunk(pending, options.catalogBatchSize).entries()) {
       const batchOk = await upsertPhotoBatch({
         client,
         batch,
@@ -298,6 +302,7 @@ export async function syncGalleryCatalog(rawOptions, deps = {}) {
         verification,
         catalog,
         totalReadyCount: ready.length,
+        alreadyCheckpointed: result.skippedExisting,
       });
       await saveSyncState(options.resumeStatePath, state);
       if (!batchOk) {
@@ -343,6 +348,7 @@ async function upsertPhotoBatch({
   verification,
   catalog,
   totalReadyCount,
+  alreadyCheckpointed,
 }) {
   const fail = (stage, reason, imageDataHash = null, objectPath = null) => {
     result.failed.push({ stage, imageDataHash, objectPath, reason });
@@ -484,7 +490,9 @@ async function upsertPhotoBatch({
   // Event counts have no column; compare against the catalog only after the
   // final batch (earlier batches legitimately trail the catalog totals), and
   // only when every catalog photo was storage-ready in this run.
-  const processed = verification.batches.reduce((sum, entry) => sum + entry.photos, 0);
+  const processed =
+    alreadyCheckpointed +
+    verification.batches.reduce((sum, entry) => sum + entry.photos, 0);
   if (processed >= totalReadyCount && totalReadyCount === catalog.photos.length) {
     for (const event of catalog.events) {
       const actual = verification.eventCounts[event.slug];
@@ -501,10 +509,14 @@ async function upsertPhotoBatch({
     }
   }
 
+  const countsFailed = result.failed.some(
+    (failure) => failure.stage === "verify-counts",
+  );
+  if (countsFailed) return false;
   for (const photo of batch) {
     recordCatalogRow(state, photo.imageDataHash);
   }
-  return result.failed.every((failure) => failure.stage !== "verify-counts");
+  return true;
 }
 
 async function createRealClient(credentials) {

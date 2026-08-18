@@ -4,10 +4,9 @@ Known, deliberately unshipped work. Everything here was found by a real audit
 or review and verified against the code, not speculation. Each item says what
 is wrong, why it matters, and where to look.
 
-Last updated 2026-08-12. Production application release `7a336d8` is public at
-the guest routes and retains authentication only for admin surfaces. Local
-branch `codex/gallery-review-improvements` contains unshipped Moment Search
-deep-link and fail-soft hardening.
+Last updated 2026-08-17. Production application release `3756ac2` (PR #30) is
+public. Local branch `codex/gallery-ops-closeout` contains unshipped admin
+cookie refresh, landing Moment Search, NYC totals, and archive-writer gates.
 
 ## Mobile and touch
 
@@ -36,7 +35,7 @@ deploy rather than in a local harness.
 |---|---|
 | Sign-in landed on the full archive | `DEFAULT_DESTINATION` is `/my-weekend` in both the enter page and the login route; sanitized `?next=` deep links still win, so shared URLs are unaffected. |
 | The download button wall | One Download and one Save regardless of count; the signing loop was already sequential per 50 under the hood, so the wall was pure UI. Multi-batch runs read "Preparing 2 of 4" on the one button. The orphaned `weekend-download-batches` module is deleted. |
-| Lightbox keyword chips deep-linked somewhere that hid the result | The 2026-08-05 change made `/photos?q=…` mount the grid, but it did not reliably open or run Moment Search. The remaining direct-load and same-route lifecycle defect is repaired locally on `codex/gallery-review-improvements` and stays open until release verification. |
+| Lightbox keyword chips deep-linked somewhere that hid the result | Shipped in [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30). Direct `/photos?q=` loads, same-route links, and Lightbox keyword navigation open and run Moment Search. |
 | `PersonPicker` announced the wrong purpose on Find me | The Find me variant says "Choose your name" / "Find your name"; the gallery filter variant keeps "Filter by person" / "People". |
 
 ## Technical debt
@@ -119,14 +118,14 @@ needs a decision or more room than an audit-fix pass should take.
 
 | Item | Where | Why it matters |
 |---|---|---|
-| **Admin is locked out roughly an hour after each magic link** | `src/lib/supabase/server.ts:29-38`, `src/proxy.ts:71-80` | The cookie writer swallows writes, saying "session refresh is handled by middleware", but the proxy only regex-matches the auth cookie's *name* and never calls `supabase.auth.getUser()`. Nothing persists rotated tokens, so the refresh happens and its cookies are discarded; the next load replays a consumed refresh token and `requireAdmin()` 401s. Only a fresh magic link recovers. Needs a real refresh path, which is a design call. |
+| **Admin is locked out roughly an hour after each magic link** | `src/lib/supabase/server.ts`, `src/proxy.ts` | **In `codex/gallery-ops-closeout`:** the proxy now calls `getUser()` and persists rotated cookies. Still needs gallery callback URLs on the shared Supabase project before `OPEN_ACCESS` can come off Preview. |
 | ~~**Signed-URL renewal fails permanently and silently**~~ **RESOLVED 2026-08-08 (#19)** | `src/components/gallery/GalleryShell.tsx:457-474`, `:731-745` | One renewal timer, keyed on `[expiresAt, photos, filters]`. A single failed or thrown `/api/gallery` call returns without applying, so no state changes, the effect never re-runs, and there is no retry and no message. When the 8-hour TTL lapses the whole grid goes blank until a reload. **Fixed:** the renewal now reports success, and a failure backs off 15s doubling to a 5-minute cap and keeps retrying. |
 | ~~**Open access collapsed every visitor onto one identity**~~ **RESOLVED 2026-08-09** | former guest-session bypass | Guest routes are intentionally public and now issue normal per-browser guest sessions for favorites and uploads. `OPEN_ACCESS` no longer supplies the guest identity; its remaining Preview-only admin bypass is the separate temporary risk documented in `ONLINE_HANDOFF.md`. |
 | ~~**Nothing tested the one line keeping the site private**~~ **RESOLVED / SUPERSEDED 2026-08-09** | `src/lib/auth/open-access.ts` | The guest site is intentionally public, the retired access-login route is gone, and the remaining Preview-only admin guard has explicit production-denial coverage. The current admin-session refresh defect is tracked separately above. |
-| **`sync-gallery-catalog.mjs` resume state lies in three ways** | `:213-215`+`:289`, `:132-135`+`:396`, `:504-507`+`:302` | `skippedExisting` is counted and then ignored, so a resumed run re-upserts everything it reported skipping; the preview half of the storage gate checks only that a record exists, not its hash, and a stale record writes `bytes: 0`; and a batch that fails verification is still recorded as catalog-complete, so the rerun treats unverified rows as verified. |
-| **The naming tool's three-file write is not transactional** | `scripts/lib/naming-decisions.mjs:274-282` | On a failure of the second or third write the catch restores memory from a snapshot, but the first file is already on disk. Rachel is told "nothing was changed" while an addition is persisted; the next successful save writes the rolled-back memory over it, deleting a tag that really was stored. |
-| **Three more master writers have no dry-run gate** | `apply-contact-name-matches.py:239`, `reconcile-clean-master-aliases.py:151`, `prepare-clean-master.py:354,393` | Same footgun just closed in `normalize-clean-master-metadata.py`, and `apply-contact-name-matches.py` has the same destructive `PersonInImage` replacement. The alias reconciler additionally unlinks symlinks, rmdirs directories, and rewrites the master's README in the same ungated run. |
-| **`write-additions-to-master.py`'s MISSING FILE branch is unreachable** | `:71-72` vs `:143-147` | `read_current()` raises on any nonzero exiftool exit, and exiftool exits 1 when a file is missing, so a moved original aborts the whole run with raw stderr instead of the intended per-file report. |
+| ~~**`sync-gallery-catalog.mjs` resume state lies in three ways**~~ **IN `codex/gallery-ops-closeout`** | that script | Checkpointed photos are skipped on resume; preview records with empty hash or `bytes: 0` fail the storage gate; a verify-counts failure no longer records the batch as catalog-complete. |
+| ~~**The naming tool's three-file write is not transactional**~~ **IN `codex/gallery-ops-closeout`** | `scripts/lib/naming-decisions.mjs` | The three decision files are staged, then renamed as a set; a later failure restores the pre-write bytes. |
+| ~~**Three more master writers have no dry-run gate**~~ **IN `codex/gallery-ops-closeout`** | `apply-contact-name-matches.py`, `reconcile-clean-master-aliases.py`, `prepare-clean-master.py` | Each now defaults to dry-run; `--write` is required before any metadata, symlink, or clean-master output is touched. |
+| ~~**`write-additions-to-master.py`'s MISSING FILE branch is unreachable**~~ **IN `codex/gallery-ops-closeout`** | that script | A missing original no longer aborts the whole read; remaining files continue and the missing path is reported per file. |
 | **Untested paths with the largest blast radius** | see `tests/` | The three live `describe.skipIf` suites are the only proof of add/remove-person atomicity and of RLS actually denying the anon key, and all are skipped without database credentials, so the FK-cascade regression that once destroyed a committed face tag is currently uncatchable. Moderation visibility (a rejected upload surfacing) is proven only against fixtures, never over HTTP. Every admin write route is untested at the route layer. |
 | **Docs that are wrong rather than merely stale** | `README.md:127`, `:7`, `:86-91`; `AGENTS.md:84`, `:114-123`; `docs/ONLINE_HANDOFF.md:22`, `:316-321`, `:437` | README says "nothing in this repo ever writes to" the master, which three scripts do and `AGENTS.md:49-64` explicitly permits; README and the AGENTS code map still describe a public marketing homepage that the password gate made unreachable; the handoff's release state stops at #13 and its cluster counts (93/388/247) contradict the generated report (91/381/244); the AGENTS per-change command list omits `verify:vercel`, which `npm run verify` runs first. Two "Next actions" also point at gitignored paths that exist only on this Mac. |
 
@@ -209,45 +208,20 @@ measuring rather than looking.
   (820px) lands. The collapse now runs to 1040px, the breakpoint the filter
   rail and Light Bar already switch at.
 
-### Open 2026-08-12: `/photos?q=` lifecycle repair is local, not shipped
+### Resolved 2026-08-12: `/photos?q=` lifecycle repair shipped in #30
 
-The "Guest journey (shipped 2026-08-05)" table above says the Lightbox
-keyword chips were fixed by adding plain `q` to the photos page's
-`GRID_PARAM_KEYS`, so that "the deep link actually mounts the grid and runs
-Moment Search". Half of that was true. It mounted the grid. The search never
-ran, because `FilterBar` initialised `momentOpen` to `false` and only mounts
-`MomentSearch` when the panel is open, and `MomentSearch` is what reads `?q=`
-and executes the query.
-
-So from 2026-08-05 every keyword chip in the viewer could land a
-guest on the unfiltered archive. Measured before the fix: `?q=sunset kiss`,
-`?q=confetti` and `?all=1` all returned the same 51 cards with the same first
-five photo IDs. Counting cards on the result looks like success, which is
-presumably how it passed review the first time.
-
-[PR #26](https://github.com/zachringnight/rachandzach-gallery/pull/26) seeded
-`momentOpen` from `window.location`, which made a client-only test pass but did
-not close the defect. On a direct load the server still rendered the panel
-closed and hydration recovered with React error 418. On a same-route Next link,
-the component could initialize before the destination URL was visible and
-stayed closed, so `MomentSearch` never mounted.
-
-Local branch `codex/gallery-review-improvements` derives the normalized query
-on the server, passes it through the gallery shell, versions disclosure state
-against that prop, and remounts only `MomentSearch` for a new query. Unit
-coverage now exercises SSR/hydration, no-query -> query -> no-query rerenders,
-and the production shell wiring. Local browser verification covers the real
-link, direct reload, semantic results, and 390px layout without console or
-hydration errors. Keep this item open until the full gate, Preview, merge, and
-stable-domain readback pass.
+PR [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) merged
+as `3756ac2` and is live on Production. Direct loads, same-route links, and
+Lightbox keyword navigation open and run Moment Search.
 
 ### Resolved 2026-08-11: the /nyc supporters wall is current
 
-The fundraiser totals were refreshed to 2026-08-11 ($5,032 of $10,000, 52
-donors) and the supporters wall now carries all 52 names, up from the 46
-seeded on 2026-07-27. The six who gave in between are Tatiana Jovic, Alicia
-Garrity, Jessie Long, LunarEpic, Kaitlyn Young and Vanguard, listed newest
-first as NYRR lists them.
+The fundraiser totals were refreshed again on 2026-08-17 ($5,182 of $10,000,
+53 named supporters) from live NYRR. The 2026-08-11 snapshot was $5,032 / 52
+names, up from the 46 seeded on 2026-07-27. The six who gave between 07-27
+and 08-11 are Tatiana Jovic, Alicia Garrity, Jessie Long, LunarEpic,
+Kaitlyn Young and Vanguard, listed newest first as NYRR lists them. Linda
+Willey is the 53rd named supporter as of 2026-08-17.
 
 They were held back on the first pass because `SupportersContent.approved`
 said only Rachel could approve, and only after reading each name. Zach

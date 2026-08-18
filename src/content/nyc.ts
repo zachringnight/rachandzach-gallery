@@ -85,19 +85,19 @@ export const nycFundraiser = {
    */
   progress: {
     /*
-     * Read off https://fundraisers.nyrr.org/rachel-casciano on 2026-08-11.
+     * Read off https://fundraisers.nyrr.org/rachel-casciano on 2026-08-17.
      *
-     * Cross-checked rather than eyeballed: the Supporters tab listed 52
-     * donations whose amounts sum to exactly $5,032.00, matching the total
-     * the page displays, with no pagination left to load and no repeated
-     * donor names. So `supporters: 52` is 52 distinct people, not 52
-     * donations from a smaller set.
+     * Cross-checked rather than eyeballed: the Supporters tab listed 53
+     * named donations whose displayed total is $5,182.00, matching the
+     * amount the page header shows, with no pagination left to load.
+     * `supporters: 53` is 53 distinct named people. NYRR's countdown read
+     * "Only 51 days remaining" on the same visit (Oct 7 from Aug 17).
      */
-    raised: 5032,
+    raised: 5182,
     goal: 10000,
-    supporters: 52,
-    asOf: "August 11, 2026",
-    asOfISO: "2026-08-11",
+    supporters: 53,
+    asOf: "August 17, 2026",
+    asOfISO: "2026-08-17",
   },
   /**
    * The Team for Kids numbers quoted in Rachel's own NYRR story below. Kept
@@ -339,15 +339,18 @@ export interface SupportersContent {
 
 export const nycSupporters: SupportersContent = {
   approved: true,
-  seededOn: "August 11, 2026",
+  seededOn: "August 17, 2026",
   note: null,
   /*
-   * Newest first, matching the order NYRR lists them in. The six above
-   * "Melody Attila" gave between 2026-07-27 and 2026-08-11 and were added
-   * on the later read; the 46 below were the original seed and all still
-   * appear on NYRR.
+   * Newest first, matching the order NYRR lists them in. Linda Willey gave
+   * between 2026-08-11 and 2026-08-17. Standing approval covers later donors
+   * on the same fundraiser.
    */
   people: [
+    {
+      name: "Linda Willey",
+      message: "Rachel, you are an amazing runner! Aunt Linda and Uncle Paul",
+    },
     { name: "Tatiana Jovic", message: null },
     { name: "Alicia Garrity", message: "my gal. so proud of you!" },
     {

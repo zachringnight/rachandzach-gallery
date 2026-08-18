@@ -33,7 +33,9 @@ export async function createServerClient(): Promise<SupabaseClient<Database>> {
           }
         } catch {
           // setAll was called from a Server Component, where cookies are
-          // read-only. Session refresh is handled by middleware instead.
+          // read-only. Session refresh is handled by src/proxy.ts via
+          // applySupabaseAuthRefresh(); this catch must stay, or every
+          // Server Component that reads the user throws.
         }
       },
     },

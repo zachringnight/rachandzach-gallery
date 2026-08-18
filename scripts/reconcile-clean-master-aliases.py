@@ -192,6 +192,10 @@ def main() -> int:
             row[field] = joined(row[field])
 
     print(f"Reconciling {len(affected)} photos", flush=True)
+    write = "--write" in sys.argv
+    if not write:
+        print("DRY RUN -- nothing will be written. Re-run with --write to apply.")
+        return 0
     results: list[dict] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [executor.submit(reconcile_photo, row) for row in affected]
