@@ -21,7 +21,7 @@ Inspect `git status --short` before editing and preserve unrelated work.
 1. Start from current `main` on one branch for the coherent objective.
 2. Use targeted tests while implementing.
 3. Commit coherent changes and maintain one draft PR. Avoid serial checkpoint commits and review-only PRs.
-4. Keep browser previews for runtime changes. Documentation-only changes should not build or deploy.
+4. Every non-main branch receives a runnable Vercel Preview by explicit repository policy. Documentation-only changes skip GitHub CI but still receive that Preview.
 5. Prefer squash merge after required checks and conversations are complete.
 
 ## Verification

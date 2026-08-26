@@ -22,8 +22,8 @@ Do not load the entire documentation folder by default.
 ## Review and release behavior
 
 - Use one branch and one draft PR per coherent objective.
-- Runtime branches retain Vercel previews because rendered review is important for this product.
-- Documentation-only changes should skip CI and Vercel builds.
+- Every non-main branch receives a runnable Vercel Preview because rendered review is a repository invariant.
+- Documentation-only changes skip GitHub CI but still receive that Preview.
 - Use targeted checks during implementation and `npm run verify` before a runtime PR is ready.
 - Merge, deployment, provider writes, production mutation, and external communication require explicit authorization.
 
