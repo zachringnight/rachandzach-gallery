@@ -1,6 +1,6 @@
 # Rach & Zach gallery: production handoff
 
-Updated 2026-08-17 (PDT).
+Updated 2026-10-05 (PDT).
 
 This is the canonical current-state and continuation document. The site is
 live. `docs/HANDOFF_CURRENT.md` and `docs/0719_Launch_Checklist_v1.md` preserve
@@ -13,18 +13,18 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Deployed application release | `4cefe66daf7167ff146b1763ad8fd46134b27e54` |
+| Deployed application release | `0f663276dad5b42482dc6baa87af2e922f1f8b69` (PR #32); verified 2026-10-05 before this refresh |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | `4cefe66` -- admin session refresh in the proxy, the `/photos` landing search wired to Moment Search `q`, the 2026-08-17 NYC totals, and `--write` gates on the remaining master writers ([#31](https://github.com/zachringnight/rachandzach-gallery/pull/31), merged 2026-08-17). Preceding application release: `3756ac2` Moment Search deep-link lifecycle repair ([#30](https://github.com/zachringnight/rachandzach-gallery/pull/30), merged 2026-08-12) |
-| Current production head | `4cefe66` -- merge of PR [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31). Production deployment `dpl_G7T71Z1KHwWGpNMNhJJ9xnjoc6o3` is `READY` with the apex, `www`, project, and `main` aliases attached. Verified live on 2026-08-17: `/`, `/photos`, and `/nyc` all 200, `/nyc` reads $5,182, the `/photos` landing field submits `q`, and `/admin` still 307s an anonymous request. |
-| Known unshipped work | `docs/BACKLOG.md` only. No branch is holding application work back: `codex/gallery-ops-closeout` merged as [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31) and was deleted. |
+| Latest release | PR [#32](https://github.com/zachringnight/rachandzach-gallery/pull/32), merged 2026-08-17 PDT: dependency maintenance, Node type alignment, and removal of the obsolete TV-mode claim. |
+| Current production head | `0f66327`, deployment `dpl_7XchtLBiqT78FWPEJ68UeDE7L4yH`, `READY` with apex, `www`, project, and main aliases. Commit and aliases verified 2026-10-05. |
+| Known unshipped work | NYC October refresh on `codex/nyc-october-refresh`; draft PR [#33](https://github.com/zachringnight/rachandzach-gallery/pull/33) retained separately pending CI and handoff repair. `docs/BACKLOG.md` is not automatically active scope. |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | None; [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31) merged 2026-08-17 and carried the rotated-admin-cookie fix, the landing Moment Search hand-off, the refreshed NYC totals, and the master-writer `--write` gates. Gallery callback URLs are on the shared Auth allowlist. Preview `OPEN_ACCESS` is still set. |
+| Current unmerged app work | NYC snapshot refresh: $8,770.50, 81 donations, October 5 as-of date, cents preserved, existing supporter wall explicitly dated August 17. Verification and release pending. |
 
 Production aliases are active for:
 
@@ -36,6 +36,45 @@ Production aliases are active for:
 
 The former continuation branch, `codex/wedding-premium-overhaul`, has been
 merged. Do not continue new work from it. Start from `origin/main`.
+
+## October 5 worktree review and NYC refresh
+
+- Keep canonical checkout and `main`. Both local and remote started at `0f66327`;
+  no pre-existing tracked or untracked changes needed committing.
+- Archive the clean detached handoff checkout at `4cefe66`: moved from
+  `.claude/worktrees/github-pr-handoff-docs-ab2205` to
+  `/Users/zsoskin/Codex/archives/rachandzach-gallery/2026-10-05/handoff-4cefe66`.
+  It has no unique commits, tracked edits, untracked files, or ignored files.
+  It remains registered with Git and its local branch is retained, so the
+  move is reversible without reconstruction or data loss.
+- Keep PR #33 as a separate draft, not merge-ready. Its `pull_request`
+  `paths-ignore` would omit the required `npm run verify` check for docs-only
+  PRs. Live branch protection still requires that exact check plus `Vercel`.
+  Replace workflow-level skipping with an always-reported check before merging.
+  Its shortened handoff also needs a current release/evidence record rather
+  than only routing to historical documents. No PR #33 changes are included here.
+- Refresh only the NYC fundraising information and its display. NYRR's public
+  fundraiser was read on October 5: 81 displayed donations total $8,770.50,
+  matching the header's $10,000 goal and 88% rounded progress. Its countdown
+  reads 2 days, consistent with the existing October 7 deadline. Donations
+  include repeat and anonymous gifts and must not be called unique people.
+- Preserve Rachel's story, design, race date, donation destination, and the
+  existing approved 53-entry supporter wall. The wall's August 17 snapshot is
+  dated separately; no new donor identities or messages were republished.
+- PASS on the NYC refresh working tree: focused content tests 39/39;
+  `npm run verify` with Node 24: Vercel schema, typecheck, lint (0 errors,
+  16 existing warnings), 1,163 Vitest passes / 17 documented skips, build,
+  ONNX runtime trace, and 48 Chromium passes / 26 documented skips.
+  `git diff --check` passed. New browser coverage checks desktop and 390px
+  mobile totals, donation semantics, links, no overflow, reload, and JS errors.
+  Desktop 1440px and mobile 390px screenshots were inspected in the browser;
+  the new amounts fit cleanly, and the NYC page emitted no console errors.
+- Existing dependency debt: `npm audit` reports 16 advisories (1 critical,
+  12 high, 3 moderate), including installed Next 16.3.1. The dependency lockfile
+  is unchanged. Prioritize a separate patched-Next maintenance release;
+  advisories were recorded, not repaired by this fundraising content change.
+- Release pending on `codex/nyc-october-refresh`. Rollback is a scoped revert
+  of this refresh; no migrations, credentials, or media were changed.
 
 ## Current release
 
