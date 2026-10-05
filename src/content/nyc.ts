@@ -7,7 +7,7 @@
  * progress.
  *
  * HAND-ENTERED VALUES DRIFT. Anything read off the NYRR page (the raised
- * total, the supporter count) carries an `asOf` date that the UI renders next
+ * total, the donation count) carries an `asOf` date that the UI renders next
  * to it, so a stale number reads as a dated snapshot rather than as a live
  * one. When you update a number, update its `asOf` in the same edit.
  */
@@ -80,24 +80,23 @@ export const nycFundraiser = {
    * computed from them (see fundraiserProgressPercent / fundraiserRawPercent),
    * never hardcoded, so the two can never disagree.
    *
-   * `supporters` is a COUNT ONLY, on purpose. Individual donor names are not
-   * republished here: see nycSupporters below for why.
+   * `donations` counts contributions, not unique people. Repeat and anonymous
+   * gifts count toward the total without inferring anyone's identity.
    */
   progress: {
     /*
-     * Read off https://fundraisers.nyrr.org/rachel-casciano on 2026-08-17.
+     * Read off https://fundraisers.nyrr.org/rachel-casciano on 2026-10-05.
      *
-     * Cross-checked rather than eyeballed: the Supporters tab listed 53
-     * named donations whose displayed total is $5,182.00, matching the
-     * amount the page header shows, with no pagination left to load.
-     * `supporters: 53` is 53 distinct named people. NYRR's countdown read
-     * "Only 51 days remaining" on the same visit (Oct 7 from Aug 17).
+     * The Supporters tab listed 81 donations totaling $8,770.50, matching
+     * the page header, with no pagination left to load. This includes repeat
+     * and anonymous gifts; it is not a unique-person count. NYRR's countdown
+     * read "Only 2 days remaining" on the same visit (Oct 7 from Oct 5).
      */
-    raised: 5182,
+    raised: 8770.50,
     goal: 10000,
-    supporters: 53,
-    asOf: "August 17, 2026",
-    asOfISO: "2026-08-17",
+    donations: 81,
+    asOf: "October 5, 2026",
+    asOfISO: "2026-10-05",
   },
   /**
    * The Team for Kids numbers quoted in Rachel's own NYRR story below. Kept

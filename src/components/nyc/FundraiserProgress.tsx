@@ -11,11 +11,13 @@ import {
   nycFundraisingDeadline,
 } from "@/content/nyc";
 
-const usd = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
+const usd = (amount: number) =>
+  amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
 
 /**
  * The fundraising total, as a dated snapshot rather than a live widget.
@@ -52,17 +54,17 @@ export function FundraiserProgress() {
         // Clamped: aria-valuenow must stay within min/max even after she
         // passes the goal. The exact figures live in aria-valuetext.
         aria-valuenow={Math.min(progress.raised, progress.goal)}
-        aria-valuetext={`${usd.format(progress.raised)} raised of ${usd.format(progress.goal)}`}
+        aria-valuetext={`${usd(progress.raised)} raised of ${usd(progress.goal)}`}
       >
         <span style={{ "--atlas-progress": `${barPercent}%` } as CSSProperties} />
       </div>
       <div className="atlas-nyc-progress-numbers">
         <p>
-          <strong>{usd.format(progress.raised)}</strong>
+          <strong>{usd(progress.raised)}</strong>
           <span>raised</span>
         </p>
         <p>
-          <strong>{usd.format(progress.goal)}</strong>
+          <strong>{usd(progress.goal)}</strong>
           <span>goal</span>
         </p>
       </div>
@@ -70,9 +72,9 @@ export function FundraiserProgress() {
       <p className="atlas-nyc-progress-human">
         {goalMet
           ? `Goal met, and every dollar past it still goes to ${nycFundraiser.charityName}.`
-          : `${usd.format(remaining)} to go.`}{" "}
+          : `${usd(remaining)} to go.`}{" "}
         <span>
-          {progress.supporters} people have already chipped in.
+          {progress.donations} donations so far.
         </span>
       </p>
 
