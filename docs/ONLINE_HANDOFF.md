@@ -13,18 +13,18 @@ the pre-launch history and are not operational instructions.
 | Production | <https://rachandzach.com> |
 | GitHub | <https://github.com/zachringnight/rachandzach-gallery> |
 | Default branch | `main` |
-| Deployed application release | `0f663276dad5b42482dc6baa87af2e922f1f8b69` (PR #32); verified 2026-10-05 before this refresh |
+| Deployed application release | `4f68ecf6e659f70bb6f3352bcf7ad2804a79aea6` (PR #34); verified 2026-10-05 |
 | Premium archive redesign | `ca367e38bab16d2ee72060790e17f54901298ac7` |
 | Application feature merge | `4455ba95d15259ef210ebd64f8283bc80fe005da` |
 | Feature pull request | [#2](https://github.com/zachringnight/rachandzach-gallery/pull/2), merged 2026-07-24 at 19:54 CDT |
 | Vercel | `main` auto-deploys to Production; every other Git branch auto-deploys to Preview; current production status is `READY` |
 | Supabase project | `rnfvmqflktghriqefatc` |
-| Latest release | PR [#32](https://github.com/zachringnight/rachandzach-gallery/pull/32), merged 2026-08-17 PDT: dependency maintenance, Node type alignment, and removal of the obsolete TV-mode claim. |
-| Current production head | `0f66327`, deployment `dpl_7XchtLBiqT78FWPEJ68UeDE7L4yH`, `READY` with apex, `www`, project, and main aliases. Commit and aliases verified 2026-10-05. |
-| Known unshipped work | NYC October refresh on `codex/nyc-october-refresh`; draft PR [#33](https://github.com/zachringnight/rachandzach-gallery/pull/33) retained separately pending CI and handoff repair. `docs/BACKLOG.md` is not automatically active scope. |
+| Latest release | PR [#34](https://github.com/zachringnight/rachandzach-gallery/pull/34), merged 2026-10-05: current NYC fundraising snapshot, accurate cents and donation wording, independently dated supporter wall. PR #32 maintenance is included. |
+| Verified application deployment | `4f68ecf`, deployment `dpl_6qcW4QofuJj7FkBXDQcDViFvWFfo`, `READY` with apex, `www`, project, and main aliases. Verified 2026-10-05; later documentation-only deployments may supersede this deployment ID without changing application code. |
+| Known unshipped work | Draft PR [#33](https://github.com/zachringnight/rachandzach-gallery/pull/33) retained separately pending CI and handoff repair. `docs/BACKLOG.md` is not automatically active scope. |
 | Face naming tool | `npm run tag` -> <http://127.0.0.1:4310/> (local only, `docs/FACE_TAGGING_TOOL.md`) |
 | Current unmerged face work | None; the 996-tag naming and reconciliation pass merged in [#22](https://github.com/zachringnight/rachandzach-gallery/pull/22), and its live joins plus Joan cleanup were verified before merge |
-| Current unmerged app work | NYC snapshot refresh: $8,770.50, 81 donations, October 5 as-of date, cents preserved, existing supporter wall explicitly dated August 17. Verification and release pending. |
+| Current unmerged app work | None. NYC refresh #34 is merged and verified in Production. |
 
 Production aliases are active for:
 
@@ -40,7 +40,8 @@ merged. Do not continue new work from it. Start from `origin/main`.
 ## October 5 worktree review and NYC refresh
 
 - Keep canonical checkout and `main`. Both local and remote started at `0f66327`;
-  no pre-existing tracked or untracked changes needed committing.
+  no pre-existing tracked or untracked changes needed committing. No stashes
+  existed. Ignored local environment and media-processing files were preserved.
 - Archive the clean detached handoff checkout at `4cefe66`: moved from
   `.claude/worktrees/github-pr-handoff-docs-ab2205` to
   `/Users/zsoskin/Codex/archives/rachandzach-gallery/2026-10-05/handoff-4cefe66`.
@@ -73,8 +74,21 @@ merged. Do not continue new work from it. Start from `origin/main`.
   12 high, 3 moderate), including installed Next 16.3.1. The dependency lockfile
   is unchanged. Prioritize a separate patched-Next maintenance release;
   advisories were recorded, not repaired by this fundraising content change.
-- Release pending on `codex/nyc-october-refresh`. Rollback is a scoped revert
-  of this refresh; no migrations, credentials, or media were changed.
+- PR [#34](https://github.com/zachringnight/rachandzach-gallery/pull/34)
+  merged as `4f68ecf6e659f70bb6f3352bcf7ad2804a79aea6` after required
+  verification passed on `0aea59b`. CI run `37386430052` passed; exact-head
+  Preview `dpl_4U2TDJ7QNHv4LDsjZYaKsWQHukKa` was READY, displayed the new
+  snapshot in-browser, and returned zero runtime errors. Rollback is a scoped
+  revert of #34; no migrations, credentials, or media were changed.
+- Production verification on October 5: deployment
+  `dpl_6qcW4QofuJj7FkBXDQcDViFvWFfo` was READY for merge `4f68ecf`, with
+  custom-domain aliases attached. `/`, `/photos`, and `/nyc` returned 200;
+  `/admin` and `/admin/catalog` redirected anonymous visitors (307), and
+  `/marathon` redirected to `/nyc` (308). The live NYC page displayed $8,770.50,
+  $1,229.50 remaining, 81 donations, and the October 5 as-of date. Browser
+  console and the post-smoke runtime-error query returned zero errors.
+- This follow-up changes only this release record. The last full verification
+  applies to identical application code; `git diff --check` also passes.
 
 ## Current release
 
@@ -702,7 +716,7 @@ That is enforced in code, not by convention.
 |---|---|---|---|
 | P0 | Rachel | Next session | Name the 16 clear stacks covering 95 faces in `metadata/faces/stack-sheets/`; then run the post-session commands in `docs/FACE_TAGGING_TOOL.md`. Nine stacks / 19 faces with no clear view remain held out unless `--include-blurry` is chosen deliberately. |
 | DONE | Zach + Codex | 2026-08-10 | Applied and verified the 27 live reviewed joins, then safely merged Joan Soskin into Joan AuWerter. The final read-only plans report 996/996 tags present and zero pending joins or merges. |
-| P1 | Rachel | Before the supporters wall is announced | The `/nyc` supporters wall is LIVE with 53 real names and their messages as of 2026-08-17 ($5,182 of $10,000). Confirm the list reads the way she wants; `approved: false` in `src/content/nyc.ts` takes it straight back down. |
+| P1 | Rachel | Before the supporters wall is announced | The approved 53-entry supporter wall remains the August 17 snapshot and is now dated visibly. The fundraising total is a separate October 5 snapshot ($8,770.50, 81 donations). `approved: false` in `src/content/nyc.ts` takes the wall down. |
 | OPEN | Zach | Review and merge | [#32](https://github.com/zachringnight/rachandzach-gallery/pull/32): dependency refresh (19 in-range, plus `@types/node` 26 and `jsdom` 30), exiftool failures now report their reason in `write-additions-to-master.py`, and seven tests that drive the #31 session refresh through `proxy()` itself. TypeScript 7 and ESLint 10 are held with reasons in `docs/BACKLOG.md`. |
 | DONE | Zach + Cursor | 2026-08-17 | Admin session refresh, landing Moment Search, NYC totals, and master-writer `--write` gates merged in [#31](https://github.com/zachringnight/rachandzach-gallery/pull/31) and are live on Production `4cefe66`. The proxy now requires a live Supabase user for `/admin` rather than a cookie whose name matches. |
 | DONE | Codex | 2026-08-12 | Moment Search deep-link and fail-soft hardening merged in [#30](https://github.com/zachringnight/rachandzach-gallery/pull/30) and was live on Production `3756ac2` until #31 superseded it. |
