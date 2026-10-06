@@ -18,8 +18,11 @@ Historical plans and unchecked backlog items are not automatically active work.
   aliases on October 5. Public routes returned 200; admin routes redirected
   anonymous visitors; runtime-error queries were empty. Recheck Vercel for
   the current deployment ID rather than treating this dated record as live.
-- The 1,721-photo archive and guest routes are public; admin routes require
-  authentication. Private originals leave through short-lived signed URLs.
+- The 1,721-photo archive and guest routes are public; Production admin routes
+  require authentication. Preview has an existing `OPEN_ACCESS` exception;
+  Preview responses are not proof of the Production authentication boundary.
+  Do not remove or expand that exception without separately authorized review.
+  Private originals leave through short-lived signed URLs.
   Gallery text uses `gallery_q`; semantic Moment Search uses `q`.
 - Google Drive and Dropbox identifiers are configured in Production and
   Preview (`NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID`, `NEXT_PUBLIC_DROPBOX_APP_KEY`).

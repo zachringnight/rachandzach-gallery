@@ -26,7 +26,7 @@ Inspect `git status --short` before editing and preserve unrelated work.
 
 ## Product and release invariants
 
-- The public 1,721-photo archive and guest routes stay public; admin routes remain authenticated. Originals and private guest data stay protected. `/weekend` redirects to `/photos`.
+- The public 1,721-photo archive and guest routes stay public; Production admin routes remain authenticated. See the handoff for the existing Preview-only `OPEN_ACCESS` exception. Originals and private guest data stay protected. `/weekend` redirects to `/photos`.
 - Preserve the warm cream, wheat, sand, espresso, muted olive, and restrained terracotta design. Fraunces is display, Inter is body/controls, and IBM Plex Mono is archive data; Rachel's `/nyc` letter deliberately uses display type.
 - `main` deploys to Production at `rachandzach.com`. Required PR checks are `npm run verify` and `Vercel`; the latter must identify a READY Preview for the exact head.
 - After a production merge, verify the commit is READY, custom-domain aliases are attached, public pages return 200, admin routes still gate, and recent runtime errors are empty. Keep the canonical handoff current and distinguish deployed from accepted.
