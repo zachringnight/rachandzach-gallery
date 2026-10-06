@@ -6,20 +6,15 @@ name: CI
       - main
       - staging
     paths-ignore:
-      - "docs/**"
+      - "docs/**/*.md"
       - "AGENTS.md"
       - "CLAUDE.md"
       - "README.md"
       - "design-qa.md"
       - ".github/pull_request_template.md"
+  # Required by branch protection, including documentation-only PRs.
+  # Skip only duplicate documentation push runs above, never this check.
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "AGENTS.md"
-      - "CLAUDE.md"
-      - "README.md"
-      - "design-qa.md"
-      - ".github/pull_request_template.md"
   workflow_dispatch: {}
 
 permissions:

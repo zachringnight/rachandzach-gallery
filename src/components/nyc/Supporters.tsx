@@ -16,8 +16,8 @@ import {
  * The data is a hand-seeded list in src/content/nyc.ts, read once from NYRR
  * and reviewed by a person. Nothing here fetches anything at runtime, and no
  * donation amounts exist in the data model at all. See that file's header for
- * the full reasoning, including why approving this wall also switches /nyc to
- * noindex.
+ * the approval and privacy rules. The section uses data-nosnippet while the
+ * fundraiser page remains indexable.
  */
 export function Supporters() {
   if (!hasSupporters()) return null;
@@ -70,7 +70,8 @@ export function Supporters() {
         <Reveal>
           <p className="atlas-nyc-supporters-note">
             {nycSupporters.note ??
-              `Messages left on ${nycFundraiser.charityName} fundraising page, shared with thanks. Donation amounts are not shown.`}
+              `Messages left on ${nycFundraiser.charityName} fundraising page, shared with thanks. Donation amounts are not shown.`}{" "}
+            Supporter wall as of {nycSupporters.seededOn}.
           </p>
         </Reveal>
       </div>

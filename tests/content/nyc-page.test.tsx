@@ -76,14 +76,17 @@ describe("/nyc page", () => {
   it("shows a dated, hand-entered total rather than implying a live one", () => {
     const { container } = render(<NycPage />);
     const text = container.textContent ?? "";
-    expect(text).toContain(
-      `$${nycFundraiser.progress.raised.toLocaleString("en-US")}`,
-    );
+    expect(text).toContain("$8,770.50");
+    expect(text).toContain("$1,229.50 to go.");
     expect(text).toContain("$10,000");
     expect(text).toContain(nycFundraiser.progress.asOf);
     expect(text).toMatch(/entered by hand/i);
     expect(text).toContain(
-      `${visibleSupporters().length} people have already chipped in`,
+      `${nycFundraiser.progress.donations} donations so far`,
+    );
+    expect(text).not.toMatch(/\d+ people have already chipped in/);
+    expect(screen.getByRole("progressbar").getAttribute("aria-valuetext")).toBe(
+      "$8,770.50 raised of $10,000",
     );
   });
 
@@ -181,10 +184,10 @@ describe("/nyc supporters privacy", () => {
     ]);
   });
 
-  it("shows the aggregate count instead, which identifies nobody", () => {
+  it("dates the supporter wall separately from the latest donation total", () => {
     const { container } = render(<NycPage />);
     expect(container.textContent).toContain(
-      String(nycFundraiser.progress.supporters),
+      `Supporter wall as of ${nycSupporters.seededOn}`,
     );
   });
 
