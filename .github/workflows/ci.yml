@@ -1,34 +1,25 @@
 name: CI
 
-# This workflow verifies source changes only. Nothing here deploys, publishes,
-# or sends anything -- it only runs the local verify suite (packet 12, task step
-# "Add npm run verify to execute typecheck, lint, unit tests, build, and the
-# bounded Playwright suite").
-#
-# Vercel's Git integration creates a Preview deployment for every non-main
-# branch and a Production deployment for main. The pull_request trigger is
-# deliberately unfiltered so every deployable review commit also runs this
-# complete verification suite before merge.
-#
-# Quoted "on" deliberately: unquoted `on:` parses as the boolean `true` under
-# YAML 1.1 (the "Norway problem"). GitHub Actions' own parser tolerates the
-# unquoted form, but quoting removes the ambiguity for every other YAML tool
-# that touches this file (linters, editors, this repo's own JSON/YAML checks).
 "on":
   push:
     branches:
       - main
       - staging
-      - "preview/**"
+    paths-ignore:
+      - "docs/**/*.md"
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "README.md"
+      - "design-qa.md"
+      - ".github/pull_request_template.md"
+  # Required by branch protection, including documentation-only PRs.
+  # Skip only duplicate documentation push runs above, never this check.
   pull_request:
   workflow_dispatch: {}
 
 permissions:
   contents: read
 
-# Keyed on the pull request number when there is one, so a rapid series of
-# pushes to the same PR cancels its own superseded runs without touching the
-# push-triggered run for the branch it merges into.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -44,21 +35,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          # The installed Supabase realtime client relies on Node's native
-          # WebSocket implementation. Node 24 is the current supported LTS
-          # line and also matches the repository's @types/node generation.
           node-version: "24"
           cache: "npm"
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers (chromium only)
-        # Matches the bounded suite both workstreams use verbatim:
-        #   npx playwright test tests/e2e --project=chromium
-        # A fresh runner has no browsers installed; webkit/firefox are not
-        # needed here because npm run verify only runs the chromium project.
+      - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run verify (typecheck, lint, unit tests, build, bounded Playwright suite)
+      - name: Run complete runtime verification
         run: npm run verify
