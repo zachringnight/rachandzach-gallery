@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUpRight, Check, Copy, Footprints, MapPin, RefreshCw, Tr
 import { BIB, COURSE_MAP, DEFAULT_SETTINGS, NYRR_APP, STOPS, STORAGE_KEY, finishMinutes, itineraryText, mapLinks, nyTime, paceLabel, sightingTime, validStart, RACE_DISTANCE } from "@/lib/cheer/plan";
 import { ROUTES, STALE_AFTER_MS, type TransitSnapshot } from "@/lib/cheer/transit";
 import styles from "./cheer.module.css";
+import { TrainArrivals } from "./TrainArrivals";
 
 const defaults = JSON.stringify(DEFAULT_SETTINGS);
 let memorySettings = defaults;
@@ -136,6 +137,7 @@ export function CheerCompanion() {
         <ExternalLink href={NYRR_APP}>Track in the NYRR app</ExternalLink>
         <button onClick={() => void copy(itineraryText(settings.start, duration), "Itinerary")}><Copy size={16} aria-hidden="true" /> Copy group plan</button>
         <a href="#itinerary">Full itinerary <ArrowDown size={15} aria-hidden="true" /></a>
+        <a href="#trains">Train times <ArrowDown size={15} aria-hidden="true" /></a>
         <a href="#subway">Subway status <ArrowDown size={15} aria-hidden="true" /></a>
       </div>
       <p className={styles.copyStatus} role="status">{copyStatus}</p>
@@ -185,6 +187,8 @@ export function CheerCompanion() {
           </section>
         </div>
 
+        <div className={styles.rail}>
+        <TrainArrivals />
         <aside id="subway" className={styles.transit} aria-labelledby="transit-heading">
           <div className={styles.transitHeading}><h2 id="transit-heading"><TrainFront size={22} aria-hidden="true" />Subway check</h2><button onClick={() => { setLoading(true); void refreshTransit(); }} disabled={loading} aria-label="Refresh subway alerts"><RefreshCw size={18} aria-hidden="true" />{loading ? "Checking" : "Refresh"}</button></div>
           <p className={styles.note}>N to Brooklyn → N or D to Atlantic–Barclays → Q to 96th.</p>
@@ -209,6 +213,7 @@ export function CheerCompanion() {
           </div>
           <div className={styles.backup}><strong>If the trains slow you down</strong><p>If you can’t reach First Avenue before Rach, go directly to Fifth Avenue & 96th. That later sighting is your backup.</p></div>
         </aside>
+        </div>
       </div>
 
       <section id="itinerary" className={styles.itinerary} aria-labelledby="itinerary-heading">
