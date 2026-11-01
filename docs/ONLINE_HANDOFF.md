@@ -1,7 +1,40 @@
 # Rach & Zach gallery: online handoff
 
-Updated 2026-10-06 (PDT). This is the canonical current-state record.
+Updated 2026-11-01 (EST). This is the canonical current-state record.
 Historical plans and unchecked backlog items are not automatically active work.
+
+## November 1 marathon companion
+
+- Authorized release: `codex/marathon-cheer`, based on freshly verified main
+  `07a8f6ed82b051bafc542aaef11b1ff0e5775ec0`. Adds the unlisted, noindex
+  `/cheer` page for bib 10378, Orange Wave 1, default 09:10 start and 3:25 goal.
+  The three stops include exact sidewalk/corner instructions, walking distances,
+  map pins, copyable directions, and editable timing saved on each device.
+- `/api/cheer/transit` reads only the official MTA public N/D/Q alert feed.
+  It filters current/next-three-hour alerts, caches upstream for 60 seconds,
+  and labels unavailable or older-than-ten-minute data explicitly. The page
+  checks every five minutes while visible. The separate 30-minute personal
+  monitor remains outside this application. No live runner tracking is claimed;
+  the NYRR app link provides that handoff.
+- PASS against the release working tree under Node 24: `npm run verify`
+  (Vercel config, typecheck, lint with 0 errors / 16 existing warnings,
+  1,175 unit tests / 17 existing skips, production build, search runtime trace,
+  52 Chromium tests / 26 existing skips). All 12 new unit and four new browser
+  tests passed. Desktop 1440px and mobile 390px screenshots were inspected;
+  accessibility, settings persistence, clipboard fallback, timing, and transit
+  stale/unavailable states passed. `git diff --check` passed.
+- A separate real-feed local integration returned a stale snapshot with its
+  actual source timestamp. No alert status or delay duration is invented.
+  Native interactive browser access is disabled in this environment; Chromium
+  automation and screenshots supplied the browser verification.
+- At this handoff commit, local verification is complete; Preview, required CI,
+  merge, and Production acceptance are pending. The release PR's checks and
+  final deployment-verification comment record the exact revisions, deployment
+  IDs, aliases, smoke checks, and runtime-error query outcome. Do not interpret
+  this pre-release checkpoint as proof of deployment.
+- No schema, database, authentication, source media, dependency, existing route,
+  or environment changes. Hotel/contact details are omitted. Rollback is a
+  revert of the companion release PR; there is no migration to reverse.
 
 ## Release and product state
 
