@@ -1,6 +1,19 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+function trainSnapshot(now = Date.now()) {
+  return { checkedAt: new Date(now).toISOString(), services: [
+    { boardId: "canal", route: "N", status: "fresh", feedAt: new Date(now).toISOString(), arrivals: [{ id: "canal-n", at: new Date(now + 180_000).toISOString(), destinationAt: new Date(now + 1200_000).toISOString(), platform: "Manhattan Bridge platform" }] },
+    { boardId: "36th", route: "N", status: "fresh", feedAt: new Date(now).toISOString(), arrivals: [] },
+    { boardId: "36th", route: "D", status: "fresh", feedAt: new Date(now).toISOString(), arrivals: [{ id: "36th-d", at: new Date(now + 300_000).toISOString(), destinationAt: new Date(now + 900_000).toISOString(), platform: "" }] },
+    { boardId: "atlantic", route: "Q", status: "fresh", feedAt: new Date(now).toISOString(), arrivals: [{ id: "atlantic-q", at: new Date(now + 420_000).toISOString(), destinationAt: new Date(now + 2100_000).toISOString(), platform: "" }] },
+  ] };
+}
+
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/cheer/arrivals", (route) => route.fulfill({ json: trainSnapshot() }));
+});
+
 for (const width of [1440, 390]) {
   test(`cheer itinerary, timing, persistence and maps at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
@@ -68,4 +81,40 @@ test("copy plan works and has a manual fallback", async ({ page, context }) => {
   await page.evaluate(() => { Object.defineProperty(navigator.clipboard, "writeText", { value: () => Promise.reject(new Error("denied")) }); });
   await page.getByRole("button", { name: "Copy bib" }).click();
   await expect(page.getByLabel("Text to copy")).toHaveValue("10378");
+});
+
+test("live train boards show the right directions and hide stale countdowns", async ({ page }) => {
+  await page.route("**/api/cheer/transit", (route) => route.fulfill({ json: { status: "fresh", checkedAt: new Date().toISOString(), feedAt: new Date().toISOString(), alerts: [] } }));
+  await page.goto("/cheer");
+  const trains = page.getByRole("region", { name: "Next trains" });
+  await expect(trains.getByText("3 min", { exact: true })).toBeVisible();
+  await expect(trains.getByText("5 min", { exact: true })).toBeVisible();
+  await expect(trains.getByText("7 min", { exact: true })).toBeVisible();
+  await expect(trains).toContainText("Manhattan-bound N or D");
+  await expect(trains).toContainText("Manhattan Bridge platform");
+  await page.unroute("**/api/cheer/arrivals");
+  await page.route("**/api/cheer/arrivals", (route) => {
+    const stale = trainSnapshot(); stale.services.forEach((s) => { s.feedAt = new Date(Date.now() - 180_000).toISOString(); });
+    return route.fulfill({ json: stale });
+  });
+  await page.getByRole("button", { name: "Refresh train arrivals" }).click();
+  await expect(trains.getByText(/feed is old; countdowns hidden/)).toHaveCount(4);
+  await expect(trains.getByText("3 min", { exact: true })).toHaveCount(0);
+});
+
+test("partial and total train feed failures remain explicit", async ({ page }) => {
+  await page.unroute("**/api/cheer/arrivals");
+  await page.route("**/api/cheer/arrivals", (route) => {
+    const partial = trainSnapshot(); partial.services[2].status = "unavailable"; partial.services[2].arrivals = [];
+    return route.fulfill({ json: partial });
+  });
+  await page.goto("/cheer");
+  const trains = page.getByRole("region", { name: "Next trains" });
+  await expect(trains).toContainText("D: predictions unavailable");
+  await expect(trains.getByText("3 min", { exact: true })).toBeVisible();
+  await page.unroute("**/api/cheer/arrivals");
+  await page.route("**/api/cheer/arrivals", (route) => route.abort());
+  await page.getByRole("button", { name: "Refresh train arrivals" }).click();
+  await expect(trains).toContainText("Train times are unavailable");
+  await expect(trains.getByText("3 min", { exact: true })).toHaveCount(0);
 });

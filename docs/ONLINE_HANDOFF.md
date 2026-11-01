@@ -3,6 +3,36 @@
 Updated 2026-11-01 (EST). This is the canonical current-state record.
 Historical plans and unchecked backlog items are not automatically active work.
 
+## November 1 train arrival countdowns
+
+- Branch `codex/cheer-train-times`, based on deployed main `0585de06af5591997bf83c2f45a2ff57c5cf0a43`.
+  Adds Next trains to `/cheer`, with Canal Brooklyn-bound N, 36th Street
+  Manhattan-bound N/D, and Atlantic–Barclays uptown Q boards. Each shows the
+  next three usable trains, arrival countdowns, and the onward stop prediction
+  when provided by MTA. A Train times jump link works on phones.
+- New `/api/cheer/arrivals` reads the official NQRW and BDFM GTFS-RT feeds.
+  Directional stop IDs were verified against MTA stops.txt; protobuf fields
+  follow official GTFS-RT and NYCT schemas. Only assigned trains serving the
+  onward destination are shown. Cancelled, skipped, unassigned, departed,
+  individually stale, or wrong-direction trips cannot become live countdowns.
+- The browser refreshes every 30 seconds while visible and on return to the
+  page. Feed age over two minutes hides predictions, including as a page ages.
+  Partial outages preserve healthy lines while naming the missing line.
+  An empty prediction list is not described as a service suspension.
+- `protobufjs` 7.6.5 is promoted from the existing lockfile to a pinned direct
+  dependency; no package versions or transitive dependencies changed. No new
+  credentials, configuration, database/schema, or authentication changes.
+- PASS: Node 24 `npm run verify`: typecheck; lint (0 errors, 16 existing
+  warnings); 1,185 unit tests / 17 existing skips; build; search runtime trace;
+  54 Chromium tests / 26 existing skips. All ten added unit tests and two
+  added browser tests passed. Desktop 1440px/mobile 390px screenshots and
+  accessibility checks passed. Real local endpoint returned fresh N/D/Q
+  predictions, with arrival and onward stop times. `git diff --check` passed.
+- This is the pre-release checkpoint. Required CI/Preview checks and production
+  acceptance for this increment are recorded in its PR; use that PR's final
+  verification comment for the exact deployed revision, aliases, and live
+  checks. Rollback is a revert of this train-times increment.
+
 ## November 1 marathon companion
 
 - Authorized release: `codex/marathon-cheer`, based on freshly verified main
@@ -27,11 +57,12 @@ Historical plans and unchecked backlog items are not automatically active work.
   actual source timestamp. No alert status or delay duration is invented.
   Native interactive browser access is disabled in this environment; Chromium
   automation and screenshots supplied the browser verification.
-- At this handoff commit, local verification is complete; Preview, required CI,
-  merge, and Production acceptance are pending. The release PR's checks and
-  final deployment-verification comment record the exact revisions, deployment
-  IDs, aliases, smoke checks, and runtime-error query outcome. Do not interpret
-  this pre-release checkpoint as proof of deployment.
+- Released in [PR #36](https://github.com/zachringnight/rachandzach-gallery/pull/36)
+  at `0585de06af5591997bf83c2f45a2ff57c5cf0a43`. Production deployment
+  `dpl_44KpuP4EJUEF3hBvUM93DkUFHxuN` was READY with apex/www aliases;
+  public routes returned 200, anonymous admin gating passed, mobile browser
+  smoke passed, and the production error/fatal query was empty at 08:23 EST.
+  Its PR verification comment records the dated evidence.
 - No schema, database, authentication, source media, dependency, existing route,
   or environment changes. Hotel/contact details are omitted. Rollback is a
   revert of the companion release PR; there is no migration to reverse.
